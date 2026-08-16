@@ -1,12 +1,21 @@
-# Standalone build copy — node_modules is NOT tracked here (unlike the main repo).
-/node_modules/
+# Standalone build copy for EAS.
+#
+# ios/ IS COMMITTED here on purpose. The widget extension is created by a config
+# plugin during prebuild, and EAS resolves signing credentials on the client
+# BEFORE upload — so a plugin-generated target is invisible to it and never gets
+# a provisioning profile. Committing the generated Xcode project means EAS sees
+# both targets upfront and can provision the extension.
+#
+# Leading slashes matter: an unanchored ios/ also matches modules/*/ios/, which
+# holds the native Swift source.
 
-# Leading slashes are load-bearing: an unanchored ios/ also matches
-# modules/*/ios/, which holds the native Swift source.
-/ios/
+/node_modules/
+/ios/Pods/
+/ios/build/
+/ios/*.xcworkspace/xcuserdata/
+/ios/*.xcodeproj/xcuserdata/
 /android/
 /.expo/
 /dist/
-/Pods/
 .DS_Store
 *.log
