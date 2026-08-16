@@ -1,0 +1,50 @@
+LEVL BUILD 29
+=============
+
+You unzipped this. Here is what to do, in order.
+
+
+STEP 1 — Install the dependencies (5 minutes, needs internet)
+-------------------------------------------------------------
+This folder does NOT include the `node_modules` folder, because it is
+enormous and gets rebuilt from a list anyway. So first, open Terminal,
+drag this folder onto the Terminal window to get its path, and run:
+
+    cd <the path that appeared>
+    npm install
+
+Wait for it to finish. It will print some warnings — that is normal.
+
+
+STEP 2 — Follow the TestFlight guide
+-------------------------------------
+Open TESTFLIGHT-BUILD-29.md in this folder.
+
+It walks through everything: the five Supabase database files, the
+Apple Developer settings, and the two commands that build and upload.
+
+Short version:
+  Part 1  Supabase   — run the 5 SQL files in sql/ in order
+  Part 2  Apple      — create the App Group and the widget App ID
+  Part 3  Terminal   — npx eas-cli init, then eas-cli build
+  Part 4  Upload     — npx eas-cli submit
+
+
+WHAT IS IN THIS FOLDER
+-----------------------
+TESTFLIGHT-BUILD-29.md   step-by-step upload instructions (read this)
+BUILD-28.md              what changed and why, the XP maths, the schema
+sql/                     the 5 database files to run in Supabase
+src/                     the app itself
+modules/                 the Swift code (camera, Live Activity, Health)
+targets/levl-widgets/    the Lock Screen widget and Dynamic Island
+plugins/                 wires the widget into the Xcode project
+
+
+ONE THING TO KNOW
+------------------
+This build uses real iPhone features (both cameras at once, Live
+Activities, Apple Health), so it can no longer run in Expo Go.
+That is expected, not a bug. TestFlight is a real build, so it works
+there. If you want to test on your own phone plugged into the Mac,
+use `npx expo run:ios` instead of `npx expo start`.

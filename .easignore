@@ -1,0 +1,31 @@
+# What NOT to upload to EAS Build.
+#
+# When this file exists it REPLACES .gitignore for upload purposes, so it has to
+# list everything — not just the extras.
+#
+# The important line is node_modules. This repo tracks node_modules in git (an
+# unusual choice, but its own), so .gitignore does not exclude it, and without
+# this file EAS uploads ~258 MB of dependencies that the build server then
+# deletes and reinstalls from package-lock.json anyway. That turns a ten-second
+# upload into a ten-minute one.
+node_modules/
+
+# Generated native projects. EAS runs `expo prebuild` on the server, so these
+# are rebuilt there from app.json plus the config plugins. Uploading a local
+# copy would at best waste time and at worst ship a stale Xcode project that
+# disagrees with plugins/withLevlWidgets.js.
+ios/
+android/
+
+# Build output and caches
+.expo/
+dist/
+web-build/
+*.jsbundle
+build/
+Pods/
+
+# Local noise
+.DS_Store
+*.log
+.env.local

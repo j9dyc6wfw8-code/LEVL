@@ -1,0 +1,59 @@
+-- ============================================================================
+-- LEVL — profiles.character
+--
+-- WHY THIS FILE EXISTS
+-- The app has been writing a `character` column on every profile sync since
+-- Phase 6 (equipped cosmetics + title + decoration, and now the six stat
+-- levels). No migration in this repo ever created it. If the column is absent
+-- in your Supabase project, PostgREST rejects the whole upsert — and because
+-- the profile push is deliberately fire-and-forget, the failure is silent.
+--
+-- The consequence if that has been happening: NOTHING on the profile row has
+-- been updating. Not level, not rank, not streak, not best_e1rm. Leaderboards
+-- and friend profiles would show whatever was there the last time an insert
+-- succeeded.
+--
+-- Run this once in Supabase → SQL Editor. It is idempotent and non-destructive:
+-- if the column already exists, nothing changes.
+-- ============================================================================
+
+alter table public.profiles
+  add column if not exists character jsonb default '{}'::jsonb;
+
+-- What the app stores in it:
+--   {
+--     "equipped": { "helm": "helm_visor", "back": "...", "weapon": "...",
+--                   "aura": "...", "emote": "..." },
+--     "title":    "title_id" | null,
+--     "deco":     "decoration_id" | null,
+--     "stats":    { "STR": 28, "PWR": 22, "END": 19,
+--                   "VIT": 24, "MOB": 17, "DIS": 31 }
+--   }
+--
+-- It rides in one jsonb column on purpose: friends need to see a player's build
+-- and stat spread, and adding four more typed columns for it would mean a
+-- migration every time a cosmetic slot is added.
+
+-- ---------------------------------------------------------------------------
+-- Verify it worked. Both queries should return a row.
+-- ---------------------------------------------------------------------------
+-- 1. The column exists:
+--
+--   select column_name, data_type
+--   from information_schema.columns
+--   where table_schema = 'public'
+--     and table_name   = 'profiles'
+--     and column_name  = 'character';
+--
+-- 2. Profiles are actually being written (updated_at should be recent for
+--    anyone who has opened the app since you ran this):
+--
+--   select display_name, level, rank, updated_at,
+--          character -> 'stats' as stats
+--   from public.profiles
+--   order by updated_at desc
+--   limit 10;
+--
+-- If `stats` is null for a player, they have not opened the current build yet.
+-- If `updated_at` is old for everyone, the sync is still failing — check the
+-- console warning the app now prints (see syncService.js).
