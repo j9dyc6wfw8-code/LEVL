@@ -3,27 +3,33 @@
 # When this file exists it REPLACES .gitignore for upload purposes, so it has to
 # list everything — not just the extras.
 #
-# The important line is node_modules. This repo tracks node_modules in git (an
-# unusual choice, but its own), so .gitignore does not exclude it, and without
-# this file EAS uploads ~258 MB of dependencies that the build server then
-# deletes and reinstalls from package-lock.json anyway. That turns a ten-second
-# upload into a ten-minute one.
-node_modules/
+# THE LEADING SLASHES ARE LOAD-BEARING. `ios/` would match a directory named
+# `ios` at ANY depth, and this project has four:
+#
+#     ios/                                  <- generated, exclude
+#     modules/levl-dual-camera/ios/         <- Swift source, MUST upload
+#     modules/levl-live-activity/ios/       <- Swift source, MUST upload
+#     modules/levl-health/ios/              <- Swift source, MUST upload
+#
+# Excluding those three makes the build fail in prebuild, because the widget
+# config plugin cannot find LevlWorkoutAttributes.swift to copy into the
+# extension. `/ios/` anchors to the project root. Do not remove the slashes.
 
-# Generated native projects. EAS runs `expo prebuild` on the server, so these
-# are rebuilt there from app.json plus the config plugins. Uploading a local
-# copy would at best waste time and at worst ship a stale Xcode project that
-# disagrees with plugins/withLevlWidgets.js.
-ios/
-android/
+# The important line. This repo tracks node_modules in git, so .gitignore does
+# not exclude it, and without this EAS uploads ~258 MB of dependencies that the
+# build server then deletes and reinstalls from package-lock.json anyway.
+/node_modules/
+
+# Generated native projects — EAS runs prebuild on the server.
+/ios/
+/android/
 
 # Build output and caches
-.expo/
-dist/
-web-build/
+/.expo/
+/dist/
+/web-build/
+/Pods/
 *.jsbundle
-build/
-Pods/
 
 # Local noise
 .DS_Store
