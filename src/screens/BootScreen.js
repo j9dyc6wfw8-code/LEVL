@@ -8,6 +8,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, Animated, Easing, Dimensions } from 'react-native';
 import { C } from '../theme';
+import { LevlMark } from '../components/ui';
 
 /* Twelve short, well-attributed lines on training and self-improvement.
  * One is picked at random each launch, so the app rarely opens the same way
@@ -123,15 +124,11 @@ export default function BootScreen({ duration }) {
           transform: [{ rotate: ringSpin }],
         }} />
 
-        {/* static diamond frame — echoes the crest motif without the intensity */}
-        <Animated.View style={{
-          position: 'absolute', width: 104, height: 104,
-          borderWidth: 1, borderColor: 'rgba(245,192,74,0.42)',
-          opacity: rise, transform: [{ rotate: '45deg' }, { scale: riseScale }],
-        }} />
-
+        {/* The mark. This was a ▲ — the pre-rebrand ASCEND arrow — which meant
+            the launch screen, the sign-in screen and the header each showed a
+            different logo. One glyph now, everywhere. */}
         <Animated.View style={{ opacity: rise, transform: [{ scale: riseScale }, { translateY: riseY }] }}>
-          <Text style={{ fontSize: 44, color: C.gold, fontWeight: '800' }}>▲</Text>
+          <LevlMark size={74} />
         </Animated.View>
       </View>
 

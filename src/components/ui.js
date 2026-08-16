@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, Animated, Easing, Modal, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Polygon, Polyline, Line, Circle, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Polygon, Polyline, Line, Circle, Rect, Path, Text as SvgText } from 'react-native-svg';
 import { C, s, MONO, GRAD, RADIUS, TYPE, MOTION } from '../theme';
 import { STAT_META } from '../engine/engine';
 
@@ -579,23 +579,45 @@ export function ScreenHeader({ title, hint, right }) {
  * The wordmark, as a component so the top bar, the boot screen and any share
  * surface all draw the identical thing.
  */
+/* THE LEVL MARK.
+ *
+ * One glyph, used everywhere: the App Store icon, the launch screen, the header
+ * here, and the sign-in screen. It is drawn, not typed — a text "L" rendered in
+ * whatever weight the OS picks would drift between surfaces and could never
+ * match the exported icon exactly.
+ *
+ * The form is an L whose foot rises. It carries the product's whole idea — you
+ * are levelling up — without spelling it out, and it survives being shrunk: the
+ * angled foot stays readable at 30pt in this header, where a stepped or
+ * multi-bar mark collapses into a smudge.
+ *
+ * `LEVL_GLYPH` is the single source of truth. The icon PNGs in assets/ were
+ * generated from this exact path, so nothing can drift out of sync.
+ */
+export const LEVL_GLYPH = 'M30 15h19v52l38-15v19L49 85H30z';
+
 export function LevlMark({ size, showWord }) {
   const S = size || 30;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
       <View style={{
-        width: S, height: S, borderRadius: S * 0.3, backgroundColor: C.gold,
+        width: S, height: S, borderRadius: S * 0.28, overflow: 'hidden',
         alignItems: 'center', justifyContent: 'center',
-        shadowColor: C.gold, shadowOpacity: 0.45, shadowRadius: 8, shadowOffset: { width: 0, height: 0 },
+        shadowColor: C.gold, shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 0 },
       }}>
-        <Text style={{
-          fontSize: S * 0.56, fontWeight: '900', color: '#4a3405',
-          letterSpacing: -0.5, marginTop: -1,
-        }}>L</Text>
+        <LinearGradient
+          colors={['#ffdf74', '#ffc933', '#d5941a']}
+          locations={[0, 0.46, 1]}
+          start={{ x: 0.15, y: 0 }} end={{ x: 0.85, y: 1 }}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        />
+        <Svg width={S * 0.55} height={S * 0.55} viewBox="0 0 100 100">
+          <Path d={LEVL_GLYPH} fill={C.ink} />
+        </Svg>
       </View>
       {showWord ? (
         <Text style={{
-          fontSize: S * 0.52, fontWeight: '900', color: C.text,
+          fontSize: S * 0.52, fontWeight: '700', color: C.text,
           letterSpacing: S * 0.1, marginLeft: 8,
         }}>LEVL</Text>
       ) : null}

@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing, Dimensions } from 'react-native';
 import { C, s, MONO, RADIUS, TYPE, TOUCH } from '../theme';
-import { Card, Lbl, Chip, GoldBtn, GhostBtn, ChunkyBtn } from '../components/ui';
+import { Card, Lbl, Chip, GoldBtn, GhostBtn, ChunkyBtn, LevlMark } from '../components/ui';
 import { copyText, pasteText } from '../services/platform';
 import { isConfigured } from '../services/supabase/client';
 import { signInEmail, signUpEmail, resetPassword, verifyResetCode, setNewPassword } from '../services/supabase/authService';
@@ -123,8 +123,10 @@ function BrandMark() {
         transform: [{ rotate: rot }],
       }} />
       <View style={{ position: 'absolute', width: 96, height: 96, borderRadius: 48, borderWidth: 1, borderColor: 'rgba(255,201,51,0.13)' }} />
-      <View style={{ position: 'absolute', width: 66, height: 66, borderWidth: 1, borderColor: 'rgba(255,201,51,0.42)', transform: [{ rotate: '45deg' }] }} />
-      <Text style={{ fontSize: 34, color: C.gold, fontWeight: '900', marginTop: -2 }}>▲</Text>
+      {/* The mark, not a ▲. This screen used the old ASCEND arrow while the
+          header used a lettered chip and the boot screen used a third thing —
+          three different logos in one app. All of them are now this one. */}
+      <LevlMark size={58} />
     </Animated.View>
   );
 }
