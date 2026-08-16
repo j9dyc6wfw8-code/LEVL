@@ -1,41 +1,19 @@
-# NOTE ON THE LEADING SLASHES — they are load-bearing.
+# Standalone EAS build copy.
 #
-# In gitignore syntax, `ios/` matches a directory named `ios` AT ANY DEPTH.
-# This project has FOUR of them:
+# ios/ IS COMMITTED here on purpose — EAS resolves signing credentials before
+# upload, so a plugin-generated widget target is invisible to it unless the
+# Xcode project already exists. Do not add ios/ to this file.
 #
-#     ios/                                  <- generated, should be ignored
-#     modules/levl-dual-camera/ios/         <- Swift source, must be committed
-#     modules/levl-live-activity/ios/       <- Swift source, must be committed
-#     modules/levl-health/ios/              <- Swift source, must be committed
-#
-# An unanchored `ios/` silently excludes all three native modules. That produced
-# an EAS build that uploaded cleanly and then failed in prebuild, because the
-# widget config plugin could not find LevlWorkoutAttributes.swift to copy.
-#
-# `/ios/` anchors the pattern to the repository root, which is what we want.
-# Do not remove the leading slashes.
+# Leading slashes are load-bearing: unanchored ios/ also matches modules/*/ios/,
+# which holds the native Swift source.
 
-# Generated native projects. Rebuilt by `expo prebuild` from app.json plus the
-# config plugins, on every machine and every EAS build — so a committed copy
-# would go stale against plugins/withLevlWidgets.js.
-/ios/
+/node_modules/
+/ios/Pods/
+/ios/build/
+/ios/*.xcworkspace/xcuserdata/
+/ios/*.xcodeproj/xcuserdata/
 /android/
-
-# CocoaPods output
-/Pods/
-*.xcworkspace/xcuserdata/
-*.xcodeproj/xcuserdata/
-
-# Expo / Metro
 /.expo/
-/.expo-shared/
 /dist/
-/web-build/
-*.jsbundle
-
-# macOS
 .DS_Store
-
-# Local env
-.env
-.env.local
+*.log
