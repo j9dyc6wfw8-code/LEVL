@@ -537,18 +537,51 @@ friend relationships, and that Health data never leaves the device.
   one target dependency, and correct entitlements (App Group, HealthKit,
   aps-environment) with `NSSupportsLiveActivities` set.
 
-**Could not run here — and you should do it first:**
+### Verified running on an iPhone 17 simulator (iOS 26.5)
 
-- **Linking the full app target.** This Mac has the iOS SDKs but no iOS
-  *runtime* installed (`xcrun simctl list runtimes` is empty, and xcodebuild
-  reports `supportedRuntimes=[]`), so `xcodebuild -scheme LEVL` cannot resolve a
-  destination. Every piece I wrote compiles, and the JS bundle links, but the
-  final app link is unproven. Installing a runtime is a multi-gigabyte download
-  that changes your Xcode setup, so I left that to you.
+The app was built, installed and driven end to end. What was confirmed by
+actually using it, not by reading the code:
 
-  **Do this first:** open Xcode → Settings → Components, install an iOS
-  simulator runtime, then run `npx expo run:ios`. If anything fails, it will
-  fail there.
+| Checked | Result |
+|---|---|
+| Five-tab bar, correct order and icons | ✅ Train · Compete · Social · Hunter · Forge |
+| Train — muscle grid, exercise picker, logging, effort scale | ✅ unchanged |
+| **Session grouping** (what Check In attaches to) | ✅ named the day's work "Pull" from the exercises, and correctly split a later set into a 2nd session via the 3-hour gap rule |
+| PR detection | ✅ 45 kg × 8 → "NEW PERSONAL RECORD, est. 1RM 57 kg (was 43.3)" |
+| **Live Activity starts** on first logged set | ✅ green Active Workout bar, then the Lock Screen card |
+| **Lock Screen layout** | ✅ `LEVL PULL · Barbell Curl · Set 2 · 45 kg × 8 · Next 45 kg × 8 · WORKOUT 0:30 · +43 XP` |
+| Timer counts without app updates | ✅ 0:30 → 1:00 with the app backgrounded |
+| **Deep link from the Live Activity** | ✅ tapping it opened Barbell Curl, not the home screen |
+| **Live Activity ends on Finish** | ✅ Lock Screen completely clear — no zombie |
+| `levl://` URL scheme | ✅ registered; `levl://compete/leaderboard` opened the right tab AND segment |
+| Compete — unified Duels/Ranks/Leaderboard | ✅ standing card `#29 of 141 · Champion II · FR 3389`, nested toggle correctly suppressed |
+| Hunter — character, radar, appearance | ✅ |
+| Social — guest state | ✅ "Join LEVL to Check In with friends" |
+| SF Symbols | ✅ real system symbols rendering (people, bell) |
+| Train analytics entry point | ✅ TODAY strip + "Progress & analytics" |
+
+That covers the riskiest thing in this build — 255 lines of SwiftUI for the Live
+Activity that had been compiled but never seen render — plus the full lifecycle
+that would otherwise strand a workout on somebody's Lock Screen.
+
+### Two environment problems worth recording
+
+Neither is a code defect; both cost real time.
+
+1. **A space in the project path breaks the build.** `expo run:ios` fails inside
+   `ASCEND/levl 3` because an Expo build script doesn't quote the path — it
+   truncates at the space and reports `is a directory: /Users/.../ASCEND/levl`.
+   Build from a path with no spaces. **EAS is unaffected**, since it builds at a
+   clean path on its own servers.
+
+2. **iCloud Desktop sync + a full disk is destructive.** Installing the 16 GB
+   simulator runtime pushed the disk to 99%, and macOS responded by evicting
+   58,000 iCloud-backed files to dataless stubs — including the git packfile and
+   most of `node_modules`. Git reported a corrupt pack; Expo's own CLI crashed
+   with a nonsense error. Nothing was lost (reading a file re-downloads it), but
+   re-materialising 26,000 files at iCloud's throttle would have taken ~22 hours;
+   `npm ci` rebuilt them in two minutes. **Keep this project off the Desktop, or
+   keep several gigabytes free.**
 
 > A note on CocoaPods on this machine: `pod install` aborts unless the shell has
 > a UTF-8 locale. If you hit `Unicode Normalization not appropriate for
@@ -560,10 +593,11 @@ not run them because I have no credentials for your Supabase project. The
 scenario checks at the bottom of `sql/2803_social_rls.sql` are written so you
 can execute them yourself in the SQL editor.
 
-**Not tested, because it needs real hardware and two accounts:** the actual
-simultaneous capture on an A12+ device, a Live Activity appearing on a Lock
-Screen, the HealthKit permission sheet, and a real friend-to-friend feed. These
-compile and the logic is complete, but a device pass is the honest next step.
+**Still not tested, because it needs real hardware and a second account:**
+simultaneous dual-camera capture (the simulator has no cameras), the HealthKit
+permission sheet, push delivery, and a real friend-to-friend feed with
+reactions and comments. These compile and the logic is complete, but they need
+a TestFlight build on a physical phone.
 
 ### A short device checklist, in the order things are most likely to break
 

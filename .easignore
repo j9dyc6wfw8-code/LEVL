@@ -1,12 +1,37 @@
-# EAS upload rules. Replaces .gitignore for uploads, so it must list everything.
+# What NOT to upload to EAS Build.
 #
-# ios/ is deliberately NOT excluded — see .gitignore for why.
+# When this file exists it REPLACES .gitignore for upload purposes, so it has to
+# list everything — not just the extras.
+#
+# THE LEADING SLASHES ARE LOAD-BEARING. `ios/` would match a directory named
+# `ios` at ANY depth, and this project has four:
+#
+#     ios/                                  <- generated, exclude
+#     modules/levl-dual-camera/ios/         <- Swift source, MUST upload
+#     modules/levl-live-activity/ios/       <- Swift source, MUST upload
+#     modules/levl-health/ios/              <- Swift source, MUST upload
+#
+# Excluding those three makes the build fail in prebuild, because the widget
+# config plugin cannot find LevlWorkoutAttributes.swift to copy into the
+# extension. `/ios/` anchors to the project root. Do not remove the slashes.
 
+# The important line. This repo tracks node_modules in git, so .gitignore does
+# not exclude it, and without this EAS uploads ~258 MB of dependencies that the
+# build server then deletes and reinstalls from package-lock.json anyway.
 /node_modules/
-/ios/Pods/
-/ios/build/
+
+# Generated native projects — EAS runs prebuild on the server.
+/ios/
 /android/
+
+# Build output and caches
 /.expo/
 /dist/
+/web-build/
+/Pods/
+*.jsbundle
+
+# Local noise
 .DS_Store
 *.log
+.env.local

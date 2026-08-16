@@ -32,7 +32,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import { File, Directory, Paths } from 'expo-file-system';
 import { stGet, stSet, stDel } from './platform';
 import * as checkIns from './supabase/checkInService';
-import { currentUserId } from './supabase/authService';
+import { cachedUserId } from './supabase/authService';
 
 const PENDING_KEY = 'levl.checkIn.pending.v1';
 
@@ -140,7 +140,7 @@ export async function createPending({
   simultaneous,
   gapMs,
 }) {
-  const userId = await currentUserId();
+  const userId = await cachedUserId();
   if (!userId) throw new Error('Sign in to Check In.');
 
   // Generated once. Retrying reuses it, which is what makes a repeated upload
@@ -224,7 +224,7 @@ export async function flushPending(onStage) {
   try {
     // The signed-in account must still be the one that captured this. Switching
     // accounts with a pending Check In would otherwise post it as the new user.
-    const userId = await currentUserId();
+    const userId = await cachedUserId();
     if (!userId) return await fail('Sign in to finish posting.');
     if (userId !== job.userId) {
       await clearPending(job);

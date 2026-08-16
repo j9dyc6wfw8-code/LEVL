@@ -201,3 +201,26 @@ export async function currentUserId() {
     return null;
   }
 }
+
+// The signed-in user id, WITHOUT a network round trip.
+//
+// getUser() above calls the Supabase auth server to validate the token. That is
+// the right thing when the answer must be authoritative — but it returns null
+// when there is no signal, which made Check In refuse to save a capture in a
+// gym with no reception: the user saw "Sign in to Check In" while perfectly
+// signed in.
+//
+// getSession() reads the token AsyncStorage already holds and decodes it
+// locally, so it answers offline. Use this for anything that must work without
+// a connection; use currentUserId() when the server's opinion actually matters.
+export async function cachedUserId() {
+  if (!isConfigured) return null;
+  try {
+    const { data } = await supabase.auth.getSession();
+    const id = data && data.session && data.session.user && data.session.user.id;
+    if (id) return id;
+  } catch (e) { /* fall through to the networked check */ }
+  // No stored session — ask the server, in case this is a cold start that has
+  // not hydrated yet.
+  return currentUserId();
+}

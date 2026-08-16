@@ -14,7 +14,7 @@
 // ============================================================================
 
 import { supabase, isConfigured, offline } from './client';
-import { currentUserId } from './authService';
+import { cachedUserId } from './authService';
 import { titleFromExerciseNames } from '../../engine/session';
 
 export const BUCKET = 'check-ins';
@@ -50,7 +50,7 @@ export const DEFAULT_PREFERENCES = {
 
 export async function getPreferences() {
   if (!isConfigured) return { data: null, error: null };
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return { data: null, error: null };
   try {
     const { data, error } = await supabase
@@ -67,7 +67,7 @@ export async function getPreferences() {
 
 export async function savePreferences(patch) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   try {
     return await supabase
@@ -168,7 +168,7 @@ export async function signPhotoUrls(paths) {
 // have" instead of an error the user has to understand.
 export async function createCheckIn(input) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   try {
     const row = {
@@ -203,7 +203,7 @@ export async function createCheckIn(input) {
 
 export async function getMyCheckIn(localDate) {
   if (!isConfigured) return { data: null, error: null };
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return { data: null, error: null };
   try {
     return await supabase
@@ -243,7 +243,7 @@ export async function getCheckInDetail(id) {
     if (error) return { data: null, error };
     if (!row) return { data: null, error: null };
 
-    const uid = await currentUserId();
+    const uid = await cachedUserId();
     const [profileRes, mineRes, typesRes] = await Promise.all([
       supabase.from('profiles')
         .select('id, username, display_name, avatar, character, level')
@@ -285,7 +285,7 @@ export async function getCheckInDetail(id) {
 // client-supplied volume.
 export async function attachWorkout(checkInId, sessionId) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   try {
     return await supabase
@@ -302,7 +302,7 @@ export async function attachWorkout(checkInId, sessionId) {
 
 export async function setVisibility(checkInId, visibility) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   try {
     return await supabase
@@ -319,7 +319,7 @@ export async function setVisibility(checkInId, visibility) {
 
 export async function setPrimaryPhoto(checkInId, primary) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   try {
     return await supabase
@@ -342,7 +342,7 @@ export async function setPrimaryPhoto(checkInId, primary) {
 // rather than orphaning files. THE ATTACHED WORKOUT IS NEVER TOUCHED.
 export async function deleteCheckIn(checkInId) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   try {
     const { data: row } = await supabase
@@ -369,7 +369,7 @@ export async function deleteCheckIn(checkInId) {
 // Drain anything the trigger queued but the device never managed to delete.
 export async function drainStorageCleanup() {
   if (!isConfigured) return { data: 0, error: null };
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return { data: 0, error: null };
   try {
     const { data: rows, error } = await supabase
@@ -477,7 +477,7 @@ export const reactionByKey = (k) => REACTIONS.find((r) => r.key === k) || null;
 // by a unique constraint, so nobody can stack reactions to inflate a count.
 export async function setReaction(checkInId, reactionType) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   try {
     if (!reactionType) {
@@ -564,7 +564,7 @@ export async function listComments(checkInId, limit = 100) {
 
 export async function addComment(checkInId, body) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   const clean = sanitiseComment(body);
   if (!clean) return { data: null, error: { message: 'Write something first.' } };
@@ -687,7 +687,7 @@ export async function blockUser(targetId) {
 
 export async function unblockUser(targetId) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   try {
     return await supabase.from('user_blocks').delete().eq('blocker', uid).eq('blocked', targetId);
@@ -698,7 +698,7 @@ export async function unblockUser(targetId) {
 
 export async function listBlocked() {
   if (!isConfigured) return { data: [], error: null };
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return { data: [], error: null };
   try {
     const { data, error } = await supabase.from('user_blocks').select('blocked, created_at').eq('blocker', uid);
@@ -722,7 +722,7 @@ export const REPORT_REASONS = [
 
 export async function reportContent({ targetType, targetId, targetUser, reason, detail }) {
   if (!isConfigured) return offline();
-  const uid = await currentUserId();
+  const uid = await cachedUserId();
   if (!uid) return offline('Not signed in');
   try {
     const res = await supabase.from('content_reports').insert({

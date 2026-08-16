@@ -285,6 +285,55 @@ You'll get an email when it's finished.
 
 ---
 
+### The widget extension needs its own provisioning profile
+
+**This is the one that will catch you on a fresh setup.** It took three failed
+builds to find.
+
+LEVL ships as two programs: the app, and `LevlWidgets` (the Live Activity and
+Home Screen widget). Apple requires an app extension to have its **own**
+provisioning profile.
+
+The problem is one of ordering. EAS works out which credentials it needs **on
+your Mac, before uploading**. But the widget target is created by a config
+plugin during `expo prebuild`, which normally runs **on EAS's server, after
+that**. So EAS never sees the second target, never provisions it, and the build
+dies at signing.
+
+Worse, the error it reports is misleading:
+
+> Starting from Xcode 14, resource bundles are signed by default…
+
+That is EAS pattern-matching the phrase *"requires a development team"* in the
+log. The real message is Xcode complaining about `LevlWidgets`.
+
+**The fix, already applied in `~/levl-build-29`:** the generated `ios/` folder is
+committed there. That makes EAS use the existing Xcode project instead of
+prebuilding, so it sees both targets up front and provisions both. You will see
+it say:
+
+```
+Setting up credentials for target LevlWidgets (com.matteo.ascend.LevlWidgets)
+```
+
+If you ever start from a clean copy and hit this, run `npx expo prebuild
+--platform ios --clean`, commit the resulting `ios/` folder, and build again.
+
+> **Consequence to remember:** in that folder, `ios/` is now a build artefact
+> under version control. If you change `app.json` or a plugin, re-run
+> `npx expo prebuild --platform ios --clean` there before building, or your
+> change will not reach the build. Your main repo is unaffected — it still
+> ignores `ios/` and regenerates it, which is correct for source.
+
+### Resource bundle signing
+
+Also fixed, in `plugins/withResourceBundleSigning.js`. CocoaPods makes a
+separate target for every pod shipping resources — about 145 here, mostly
+Apple's privacy manifests — and since Xcode 14 each is signed on its own and
+wants a development team. The plugin turns signing off for those targets only;
+they are copied inside the app and signed with it, so signing them separately
+was always redundant. Nothing about the app's own signing changes.
+
 ### If the build fails
 
 Don't panic, and don't re-read the whole log. Scroll to the very bottom and find
