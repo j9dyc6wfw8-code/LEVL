@@ -73,7 +73,7 @@ import { useNotifications } from './src/hooks/useNotifications';
 import { TABS, MODALS } from './src/navigation/routes';
 import { isConfigured } from './src/services/supabase/client';
 import {
-  isRecoveryUrl, completeRecoveryFromUrl, currentUserId as getUid,
+  isRecoveryUrl, completeRecoveryFromUrl, currentUserId as getUid, getSession,
 } from './src/services/supabase/authService';
 import { challenge as challengeFriendSvc } from './src/services/supabase/duelService';
 import {
@@ -125,15 +125,53 @@ function AppInner() {
 
   useEffect(() => {
     (async () => {
+      // WHO IS SIGNED IN, and why this is more careful than it looks.
+      //
+      // Two independent records have to agree: the on-device registry
+      // (auth.users) and the Supabase session. Apple Sign In used to write only
+      // the second, so people were bounced to the login screen on every cold
+      // start despite being perfectly authenticated. AuthScreens now writes
+      // both — and the fallback below repairs anyone already in that state,
+      // rather than making them sign in one last time to fix it.
+      let signedInAs = null;
       try {
         const auth = await loadAuth();
         const last = auth.lastUser || (await stGet(LAST_USER_KEY));
-        if (last && auth.users[last]) {
-          await game.hydrateFor(last, null, false);
-          setStage('app');
-          return;
+        if (last && auth.users && auth.users[last]) signedInAs = last;
+
+        // Registry missing but Supabase still holds a session? Trust the
+        // session — it is the real credential — and rebuild the local entry.
+        if (!signedInAs) {
+          const { data } = await getSession();
+          const email = data && data.session && data.session.user && data.session.user.email;
+          if (email) {
+            signedInAs = email.toLowerCase();
+            const repaired = auth || { users: {}, lastUser: null };
+            repaired.users = repaired.users || {};
+            repaired.users[signedInAs] = {
+              ...(repaired.users[signedInAs] || {}),
+              email: signedInAs, name: (repaired.users[signedInAs] || {}).name || 'Hunter',
+              cloud: true, createdAt: Date.now(),
+            };
+            repaired.lastUser = signedInAs;
+            await saveAuth(repaired);
+            await stSet(LAST_USER_KEY, signedInAs);
+          }
         }
-      } catch (e) {}
+      } catch (e) { /* fall through to the sign-in screen */ }
+
+      if (signedInAs) {
+        // hydrateFor reaches the network to reconcile the cloud save. That must
+        // never decide whether you are logged in: a flaky connection at launch
+        // would otherwise read as "signed out" and strand you at the login
+        // screen with your data sitting on the device.
+        try {
+          await game.hydrateFor(signedInAs, null, false);
+        } catch (e) { /* keep going on whatever is stored locally */ }
+        setStage('app');
+        return;
+      }
+
       try {
         const seen = await stGet(INTRO_KEY);
         setStage(seen ? 'auth' : 'intro');

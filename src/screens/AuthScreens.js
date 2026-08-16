@@ -178,6 +178,30 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
 
   useEffect(() => { isAppleAuthAvailable().then(setAppleAvailable); }, []);
 
+  // Record the account in the ON-DEVICE registry.
+  //
+  // App.js decides at launch whether you are still signed in by checking
+  // `auth.users[lastUser]`. Apple Sign In and the password-reset flow both used
+  // to skip this — they authenticated with Supabase and called onAuthed, but
+  // never wrote the local entry. So the Supabase session persisted correctly and
+  // the app STILL sent you to the login screen on every cold start, because the
+  // thing it actually looks at was never created.
+  const rememberUser = async (em, name) => {
+    try {
+      const auth = await loadAuth();
+      auth.users = auth.users || {};
+      auth.users[em] = {
+        ...(auth.users[em] || {}),
+        email: em,
+        name: (auth.users[em] && auth.users[em].name) || name || 'Hunter',
+        cloud: true,
+        createdAt: (auth.users[em] && auth.users[em].createdAt) || Date.now(),
+      };
+      auth.lastUser = em;
+      await saveAuth(auth);
+    } catch (e) { /* the Supabase session is still the real source of truth */ }
+  };
+
   const doApple = async () => {
     setErr(''); setNotice(''); setBusy(true);
     const { data, error } = await signInWithApple();
@@ -189,7 +213,10 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
     }
     if (data && data.session) {
       const em = (data.session.user && data.session.user.email) || 'apple-user';
-      onAuthed(em, (data.session.user && data.session.user.user_metadata && data.session.user.user_metadata.full_name) || 'Hunter', false);
+      const name = (data.session.user && data.session.user.user_metadata
+        && data.session.user.user_metadata.full_name) || 'Hunter';
+      await rememberUser(em, name);
+      onAuthed(em, name, false);
     }
   };
 
@@ -306,7 +333,9 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
     setBusy(false);
     if (u.error) { setErr(readableAuthError(u.error.message)); return; }
     setResetSent(false); setResetCode(''); setResetPw('');
-    onAuthed(em, (email.split('@')[0] || 'Hunter'), false);
+    const name = email.split('@')[0] || 'Hunter';
+    await rememberUser(em, name);
+    onAuthed(em, name, false);
   };
 
   return (
