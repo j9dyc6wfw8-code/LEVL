@@ -122,7 +122,8 @@
           "defaultChannel": "default"
         }
       ],
-      "./plugins/withLevlWidgets"
+      "./plugins/withLevlWidgets",
+      "./plugins/withResourceBundleSigning"
     ],
     "extra": {
       "supabaseUrl": "https://pndocotsoadxoklqwzys.supabase.co",
