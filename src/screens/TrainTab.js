@@ -1076,8 +1076,11 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
 
   return (
     <Sheet visible title={isEdit ? 'Edit Workout Day' : 'Build a Workout Day'} onClose={onClose}>
+      {/* 0.52, not 0.68: the sheet is capped at 82% of the screen, so the
+          scroll area has to be short enough to leave room for the sticky save
+          footer below it. */}
       <ScrollView
-        style={{ maxHeight: Math.max(320, height * 0.68) }}
+        style={{ maxHeight: Math.max(260, height * 0.52) }}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
@@ -1115,15 +1118,39 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
             );
           })}
         </View>
-        <View style={{ marginTop: 16 }}>
-          <GoldBtn onPress={save} disabled={!name.trim() || !chosen.length}>{isEdit ? 'SAVE CHANGES' : 'SAVE WORKOUT DAY'}</GoldBtn>
-          {isEdit && (
-            <Pressable onPress={() => { onDelete(initial.id); onClose(); }} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
-              <Text style={{ fontSize: 12, color: C.red, fontWeight: '700' }}>Delete day</Text>
-            </Pressable>
-          )}
-        </View>
+        {isEdit && (
+          <Pressable onPress={() => { onDelete(initial.id); onClose(); }} hitSlop={8}
+            style={{ alignItems: 'center', marginTop: 16 }}>
+            <Text style={{ fontSize: 12, color: C.red, fontWeight: '700' }}>Delete day</Text>
+          </Pressable>
+        )}
       </ScrollView>
+
+      {/* ---- save: a STICKY footer, outside the scroll view --------------
+       * This used to live at the bottom of the list above, which put it below
+       * forty exercise rows — so the only button anyone could actually see was
+       * "Done" in the sheet header, and Done closes WITHOUT saving. People
+       * filled the whole form in, tapped the one visible button, and lost it.
+       *
+       * Now it is always on screen, and it states what is missing rather than
+       * just sitting there greyed out with no explanation. */}
+      <View style={{
+        paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16,
+        borderTopWidth: 1, borderTopColor: C.lineSoft, backgroundColor: C.bgElev,
+      }}>
+        <Text style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>
+          {!name.trim() && !chosen.length
+            ? 'Name it, then tap exercises to add them.'
+            : !name.trim()
+              ? `${chosen.length} exercise${chosen.length === 1 ? '' : 's'} added — now give it a name.`
+              : !chosen.length
+                ? 'Now tap the exercises you want in this day.'
+                : `${name.trim()} · ${chosen.length} exercise${chosen.length === 1 ? '' : 's'}`}
+        </Text>
+        <GoldBtn onPress={save} disabled={!name.trim() || !chosen.length}>
+          {isEdit ? 'SAVE CHANGES' : 'SAVE WORKOUT DAY'}
+        </GoldBtn>
+      </View>
     </Sheet>
   );
 }
