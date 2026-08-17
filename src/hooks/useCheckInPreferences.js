@@ -125,6 +125,35 @@ export function useCheckInPreferences(user) {
     return { status, ...res };
   }, [update]);
 
+  /* ---------------------- keep the push token current ----------------------
+   * The token used to be written in ONE place: inside enableReminders(). So
+   * anyone who never opened Check In settings had expo_push_token = null, and no
+   * amount of server work could deliver a friend request or duel result to them
+   * — the row simply had nowhere to send.
+   *
+   * Expo tokens also rotate (reinstall, restore from backup, OS upgrade), so a
+   * once-ever write was wrong even for the people it did cover. This refreshes
+   * whenever permission is already granted, and writes only on change so it
+   * isn't a database round-trip per launch.
+   * --------------------------------------------------------------------- */
+  const tokenSyncedRef = useRef(null);
+  useEffect(() => {
+    if (!prefs) return undefined;
+    let alive = true;
+    (async () => {
+      try {
+        if ((await notifications.getPermission()) !== 'granted') return;
+        const token = await notifications.getPushToken();
+        if (!alive || !token) return;
+        // Already correct in the row, or already written this session.
+        if (prefs.expo_push_token === token || tokenSyncedRef.current === token) return;
+        tokenSyncedRef.current = token;
+        await checkIns.savePreferences({ expo_push_token: token });
+      } catch (e) { /* push is an enhancement; never surface this */ }
+    })();
+    return () => { alive = false; };
+  }, [prefs]);
+
   return { prefs, loading, permission, reload: load, update, enableReminders };
 }
 

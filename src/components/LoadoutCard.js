@@ -165,7 +165,11 @@ function StatReadout({ stats }) {
 // Deliberately small and plain: a portrait-sized hunter (no aura FX, no ground
 // ring — they crowd the character at this scale), the four things they're
 // wearing, and what their stats actually mean. Nothing else.
-export function HunterShowcase({ avatar, equipped, rank, name, title, level, stats, username, height }) {
+// Memoised: this renders the full vector HunterFigure, which is the most
+// expensive tree in the app outside the Hunter tab itself. Callers that pass
+// stable props (see FriendProfileBody) then get it mounted once per profile
+// rather than rebuilt on every state change around it.
+export const HunterShowcase = React.memo(function HunterShowcase({ avatar, equipped, rank, name, title, level, stats, username, height }) {
   const rs = rankStyleFor(tierByName(rank));
   const tier = tierByName(rank);
   const t = title ? titleById(title) : null;
@@ -222,7 +226,7 @@ export function HunterShowcase({ avatar, equipped, rank, name, title, level, sta
       <StatReadout stats={stats} />
     </View>
   );
-}
+});
 
 /* -------------------------- side-by-side compare -------------------------- */
 // The duel version: two builds next to each other so both players can see what

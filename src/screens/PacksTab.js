@@ -4,8 +4,9 @@ import { View, Text, Pressable, Animated, Easing, ScrollView } from 'react-nativ
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { C, s, MONO, RADIUS, RARITY as RARITY_THEME } from '../theme';
+import { C, alpha, s, T, RADIUS, RARITY as RARITY_THEME } from '../theme';
 import { Card, Lbl, GoldBtn, GhostBtn, CountUp, ChunkyBtn, Stagger } from '../components/ui';
+import { PackGlyph, RewardGlyph, LockGlyph } from '../components/ItemGlyph';
 import { PACK_TYPES, packTypeByKey, packMeter, COSMETICS, PACK_TITLES, DECORATIONS } from '../engine/engine';
 import { Sheet } from '../components/ui';
 
@@ -125,7 +126,7 @@ function PackOpening({ packKey, reward, onDone }) {
         <Animated.View style={{ transform: [{ scale }, { translateX: shakeX }] }}>
           <LinearGradient colors={[pack.color, C.bgElev]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={{ width: 150, height: 190, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: pack.color }}>
-            <Text style={{ fontSize: 68 }}>{pack.emoji}</Text>
+            <PackGlyph packKey={packKey} size={84} color="#ffffff" strokeWidth={1.3} />
             <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14, marginTop: 8, letterSpacing: 1 }}>{pack.name.toUpperCase()}</Text>
           </LinearGradient>
         </Animated.View>
@@ -139,7 +140,7 @@ function PackOpening({ packKey, reward, onDone }) {
           <Text style={{ color: rar.color, fontWeight: '800', fontSize: 16, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 12 }}>{rar.name}</Text>
           <LinearGradient colors={rar.grad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
             style={{ width: 200, height: 250, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: rar.color, shadowColor: rar.color, shadowOpacity: 0.8, shadowRadius: 24, shadowOffset: { width: 0, height: 0 } }}>
-            <Text style={{ fontSize: 84 }}>{reward.emoji}</Text>
+            <RewardGlyph reward={reward} size={104} color="#ffffff" strokeWidth={1.25} />
             {(reward.kind === 'coins' || reward.kind === 'xp') ? (
               <CountUp value={reward.amount} suffix=" COINS" style={{ color: '#fff', fontWeight: '800', fontSize: 28, marginTop: 10, fontVariant: ['tabular-nums'] }} />
             ) : (
@@ -227,7 +228,7 @@ export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack })
             <View style={s.row}>
               <LinearGradient colors={[pack.color, C.bgElev]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={{ width: 64, height: 78, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: pack.color }}>
-                <Text style={{ fontSize: 34 }}>{pack.emoji}</Text>
+                <PackGlyph packKey={pack.key} size={40} color="#ffffff" strokeWidth={1.5} />
               </LinearGradient>
               <View style={{ flex: 1, marginLeft: 14 }}>
                 <Text style={{ fontSize: 16, fontWeight: '800', color: C.text }}>{pack.name}</Text>
@@ -337,14 +338,14 @@ function Catalogue({ data, onClose }) {
 
   const items = React.useMemo(() => {
     if (tab === 'title') {
-      return PACK_TITLES.map((t) => ({ id: t.id, name: t.name, rarity: t.rarity, emoji: '🏷️', have: titles.has(t.id) }));
+      return PACK_TITLES.map((t) => ({ id: t.id, name: t.name, rarity: t.rarity, kind: 'title', have: titles.has(t.id) }));
     }
     if (tab === 'decoration') {
       return DECORATIONS.filter((d) => d.id !== 'deco_none')
-        .map((d) => ({ id: d.id, name: d.name, rarity: d.rarity, emoji: '🖼️', have: decos.has(d.id) }));
+        .map((d) => ({ id: d.id, name: d.name, rarity: d.rarity, kind: 'decoration', have: decos.has(d.id) }));
     }
     return COSMETICS.filter((c) => !c.free)
-      .map((c) => ({ id: c.id, name: c.name, rarity: c.rarity === 'mythic' ? 'legendary' : c.rarity, emoji: c.emoji || '◆', have: owned.has(c.id), slot: c.slot }));
+      .map((c) => ({ id: c.id, name: c.name, rarity: c.rarity === 'mythic' ? 'legendary' : c.rarity, kind: 'cosmetic', have: owned.has(c.id), slot: c.slot }));
   }, [tab, data.owned, data.titles, data.decorations]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const shown = ownedOnly ? items.filter((i) => i.have) : items;
@@ -403,7 +404,9 @@ function Catalogue({ data, onClose }) {
                   opacity: it.have ? 1 : 0.55,
                 }}>
                   <View style={[s.between, { alignItems: 'center' }]}>
-                    <Text style={{ fontSize: 20 }}>{it.have ? it.emoji : '🔒'}</Text>
+                    {it.have
+                      ? <RewardGlyph reward={it} size={24} color={rarityTheme(it.rarity).color} />
+                      : <LockGlyph size={20} color={C.faint} />}
                     <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: rt.color }} />
                   </View>
                   <Text style={{ fontSize: 12.5, fontWeight: '800', color: it.have ? C.text : C.mut, marginTop: 7 }} numberOfLines={2}>

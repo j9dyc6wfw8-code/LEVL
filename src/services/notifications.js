@@ -39,6 +39,8 @@ import { stGet, stSet } from './platform';
 
 const CHECK_IN_TAG = 'levl.check-in';
 const REST_TAG = 'levl.rest';
+const STREAK_TAG = 'levl.streak';
+const DUEL_TAG = 'levl.duel';
 const LAST_SCHEDULE_KEY = 'levl.notif.lastSchedule.v1';
 export const NOTIFIED_AT_KEY = 'levl.notif.checkInFiredAt.v1';
 
@@ -209,6 +211,109 @@ export async function scheduleCheckInPrompts(prefs) {
 }
 
 // Has anything changed that invalidates the current schedule?
+/* ========================= streak guard ==================================
+ * The one notification with real stakes, and the app had nothing for it.
+ *
+ * The engine's rule (calcStreak) is precise: your streak survives while your
+ * last training day is within TWO days of today, and dies once the gap exceeds
+ * two. So there is exactly one day on which a reminder is genuinely useful —
+ * the last day the streak can still be saved, which is lastTrainedDay + 2.
+ *
+ * Firing every evening regardless would be nagging. Firing on the deadline is
+ * information.
+ *
+ * @param streak        current streak length (0 = nothing to protect)
+ * @param lastTrainedTs timestamp of the most recent logged entry
+ * @param minuteOfDay   when to nudge on the deadline day (default 18:30)
+ */
+export async function scheduleStreakGuard({ streak, lastTrainedTs, minuteOfDay = 18 * 60 + 30 } = {}) {
+  await cancelTagged(STREAK_TAG);
+  if (!streak || streak < 2) return { scheduled: 0, reason: 'no-streak-worth-guarding' };
+  if (!lastTrainedTs) return { scheduled: 0, reason: 'never-trained' };
+  if ((await getPermission()) !== 'granted') return { scheduled: 0, reason: 'no-permission' };
+
+  // Day arithmetic on local midnights, matching the engine's dayKeyOf grouping.
+  const last = new Date(lastTrainedTs); last.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const gap = Math.round((today - last) / 86400000);
+
+  if (gap < 0) return { scheduled: 0, reason: 'future-entry' };
+  if (gap > 2) return { scheduled: 0, reason: 'already-broken' };
+  if (gap === 0) {
+    // Trained today. The deadline is two days out; schedule for then so the
+    // reminder exists even if the app is never opened again before it.
+    const when = localDateAt(2, minuteOfDay);
+    return fireStreakAt(when, streak);
+  }
+  // gap 1 or 2 — the deadline day is lastTrainedDay + 2.
+  const when = localDateAt(2 - gap, minuteOfDay);
+  if (when.getTime() <= Date.now() + 60000) {
+    // The deadline hour has already passed today; nudge shortly instead of
+    // scheduling something in the past (which fires instantly and reads broken).
+    return fireStreakAt(new Date(Date.now() + 15 * 60000), streak);
+  }
+  return fireStreakAt(when, streak);
+}
+
+async function fireStreakAt(when, streak) {
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: `${streak}-day streak on the line`,
+        body: 'Today is the last day to keep it alive. One set counts.',
+        data: { tag: STREAK_TAG, url: 'levl://train' },
+        sound: true,
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when },
+    });
+    return { scheduled: 1, at: when.toISOString() };
+  } catch (e) {
+    return { scheduled: 0, reason: 'schedule-failed' };
+  }
+}
+
+export async function cancelStreakGuard() {
+  await cancelTagged(STREAK_TAG);
+  return { cancelled: true };
+}
+
+/* ========================= duel deadline =================================
+ * A duel you forget about is a duel you forfeit. Fires three hours before the
+ * end so there is still time to log something.
+ */
+export async function scheduleDuelEnding({ endT, opponent, behind } = {}) {
+  await cancelTagged(DUEL_TAG);
+  if (!endT) return { scheduled: 0, reason: 'no-active-duel' };
+  if ((await getPermission()) !== 'granted') return { scheduled: 0, reason: 'no-permission' };
+
+  const when = new Date(endT - 3 * 3600 * 1000);
+  if (when.getTime() <= Date.now() + 60000) return { scheduled: 0, reason: 'too-late' };
+
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Duel ends in 3 hours',
+        // Neutral unless we actually know the score. Telling someone to "hold
+        // your lead" when they're losing is worse than saying nothing specific.
+        body: behind === true
+          ? `You're behind${opponent ? ' against ' + opponent : ''}. Still time to take it.`
+          : `${opponent ? opponent + ' is still logging. ' : ''}Get a set in before it closes.`,
+        data: { tag: DUEL_TAG, url: 'levl://compete/duels' },
+        sound: true,
+      },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when },
+    });
+    return { scheduled: 1, at: when.toISOString() };
+  } catch (e) {
+    return { scheduled: 0, reason: 'schedule-failed' };
+  }
+}
+
+export async function cancelDuelEnding() {
+  await cancelTagged(DUEL_TAG);
+  return { cancelled: true };
+}
+
 export async function needsReschedule(prefs) {
   if (!prefs) return false;
   try {
@@ -347,6 +452,10 @@ export default {
   cancelCheckInPrompts,
   scheduleRestAlert,
   cancelRestAlert,
+  scheduleStreakGuard,
+  cancelStreakGuard,
+  scheduleDuelEnding,
+  cancelDuelEnding,
   onNotificationTap,
   onCheckInPromptReceived,
   getPromptFiredAt,

@@ -14,13 +14,16 @@ import { View, Text, Pressable, ScrollView, Animated, Easing, TextInput } from '
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { C, s, MONO, RADIUS, TYPE, TOUCH, MOTION } from '../theme';
+import { C, alpha, s, RADIUS, TYPE, T, MOTION } from '../theme';
 import { Card, Lbl, Chip, PBar, StatBar, ChunkyBtn, Sheet, EmptyState, ScreenHeader } from '../components/ui';
+import { ItemGlyph, ItemTile, PackGlyph, RewardGlyph } from '../components/ItemGlyph';
 import {
   COSMETICS, SLOTS, RARITY, TIERS, coinBalance, xpBalance, rankStyleFor,
   MATERIALS, materialById, materialBalance,
   FORGE_MAX, FORGE_TIERS, forgeLevelOf, forgeTemperOf, forgeCost, forgeChance, canForge,
-  FORGE_PASS, PASS_PREMIUM_COST, PASS_SEASON_TIERS, passTierUnlocked, passClaimable, passKey, rewardLabel,
+  // rewardLabel is deliberately not imported: it returns emoji-laden strings
+  // ('40 🪙', '🧥 Shadow Hood'). The pass draws real glyphs instead.
+  FORGE_PASS, PASS_PREMIUM_COST, PASS_SEASON_TIERS, passTierUnlocked, passClaimable, passKey,
 } from '../engine/engine';
 
 const rarOf = (item) => RARITY[item.rarity] || RARITY.common;
@@ -67,40 +70,29 @@ function ForgeMetric({ value, label, color }) {
   );
 }
 
-function MaterialTile({ mat, count }) {
-  const short = mat.id === 'mat_ore' ? 'ORE' : mat.id === 'mat_steel' ? 'STEEL' : mat.id === 'mat_ember' ? 'EMBER' : 'RELIC';
-  return (
-    <View style={{
-      width: '48.5%', flexDirection: 'row', alignItems: 'center', marginBottom: 8,
-      padding: 10, borderRadius: RADIUS.md, backgroundColor: C.sunken,
-      borderWidth: 1, borderColor: mat.color + '44',
-    }}>
-      <View style={{
-        width: 30, height: 30, borderRadius: 10, marginRight: 9,
-        backgroundColor: mat.color + '22', borderWidth: 1, borderColor: mat.color + '66',
-        alignItems: 'center', justifyContent: 'center', transform: [{ rotate: '45deg' }],
-      }}>
-        <View style={{ width: 8, height: 8, borderRadius: 3, backgroundColor: mat.color, transform: [{ rotate: '-45deg' }] }} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={{ ...TYPE.micro, color: mat.color }}>{short}</Text>
-        <Text style={{ ...TYPE.heading, color: C.text, fontVariant: ['tabular-nums'] }}>{count}</Text>
-      </View>
-    </View>
-  );
-}
-
+/* MaterialTile (a 2-across 48.5%-wide grid) was replaced by MaterialPill when
+   the four-card preamble collapsed into one header. Deleted rather than left
+   behind: the Forge already carried two dead locals (upgradedCount,
+   masteredCount) that survived because nothing flagged them. */
 function MaterialPill({ mat, count, need }) {
   const short = need != null && count < need;
+  // The name is worth showing now that these carry the whole materials story.
+  const label = mat.id === 'mat_ore' ? 'ORE'
+    : mat.id === 'mat_steel' ? 'STEEL'
+    : mat.id === 'mat_ember' ? 'EMBER' : 'RELIC';
   return (
     <View style={{
       flexDirection: 'row', alignItems: 'center',
-      backgroundColor: C.panel2, borderRadius: RADIUS.pill,
-      borderWidth: 1, borderColor: short ? C.red : mat.color + '55',
-      paddingLeft: 4, paddingRight: 9, paddingVertical: 3, marginRight: 6, marginBottom: 6,
+      backgroundColor: C.sunken, borderRadius: RADIUS.pill,
+      borderWidth: 1, borderColor: short ? C.red : alpha(mat.color, 0.45),
+      paddingLeft: 5, paddingRight: 11, paddingVertical: 4, marginRight: 6, marginBottom: 6,
     }}>
-      <View style={{ width: 16, height: 16, borderRadius: 999, backgroundColor: mat.color, marginRight: 6 }} />
-      <Text style={{ ...TYPE.micro, color: short ? C.red : C.text, fontVariant: ['tabular-nums'] }}>
+      <View style={{
+        width: 16, height: 16, borderRadius: 5, marginRight: 7,
+        backgroundColor: alpha(mat.color, 0.9), transform: [{ rotate: '45deg' }],
+      }} />
+      <Text style={{ ...T.caption2, color: C.dim, marginRight: 5, letterSpacing: 0.6 }}>{label}</Text>
+      <Text style={{ ...T.caption, fontWeight: '700', color: short ? C.red : C.text, ...T.numeric }}>
         {need != null ? count + '/' + need : count}
       </Text>
     </View>
@@ -169,18 +161,36 @@ function ForgeAnvil({ item, rarity, result, newLevel, onDone }) {
         opacity: phase === 'result' ? 0.32 : heatOp,
       }} />
 
-      {/* sparks */}
-      {[...Array(16)].map((_, i) => {
-        const ang = (i / 16) * Math.PI * 2;
-        const dist = 90 + (i % 4) * 34;
+      {/* Sparks as STREAKS, not dots.
+          These were 4x4 circles fanned evenly around a full circle, which reads
+          as confetti. A spark is a motion trail: it is elongated along its
+          travel vector, it fans UPWARD off the strike rather than in a ring, and
+          it falls. Rotating each one to its own angle and stretching it costs
+          nothing extra and is the whole difference. */}
+      {[...Array(22)].map((_, i) => {
+        // deterministic spread, biased upward (-150deg..-30deg)
+        const t = i / 21;
+        const ang = (-150 + t * 120 + ((i * 37) % 17) - 8) * (Math.PI / 180);
+        const dist = 96 + ((i * 53) % 90);
+        const len = 14 + ((i * 29) % 22);
         const tx = spark.interpolate({ inputRange: [0, 1], outputRange: [0, Math.cos(ang) * dist] });
-        const ty = spark.interpolate({ inputRange: [0, 1], outputRange: [0, Math.sin(ang) * dist - 30] });
-        const op = spark.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0, 1, 0] });
+        // + gravity on the way out
+        const ty = spark.interpolate({
+          inputRange: [0, 0.6, 1],
+          outputRange: [0, Math.sin(ang) * dist * 0.75, Math.sin(ang) * dist + 58],
+        });
+        const op = spark.interpolate({ inputRange: [0, 0.12, 0.6, 1], outputRange: [0, 1, 0.7, 0] });
+        const sy = spark.interpolate({ inputRange: [0, 0.25, 1], outputRange: [0.4, 1.6, 0.5] });
         return (
           <Animated.View key={i} pointerEvents="none" style={{
-            position: 'absolute', width: 4, height: 4, borderRadius: 2,
-            backgroundColor: i % 3 === 0 ? '#ffffff' : '#ffb648',
-            opacity: op, transform: [{ translateX: tx }, { translateY: ty }],
+            position: 'absolute', width: 3, height: len, borderRadius: 2,
+            backgroundColor: i % 4 === 0 ? '#ffffff' : '#ffb648',
+            opacity: op,
+            transform: [
+              { translateX: tx }, { translateY: ty },
+              { rotate: (ang + Math.PI / 2) + 'rad' },
+              { scaleY: sy },
+            ],
           }} />
         );
       })}
@@ -206,7 +216,12 @@ function ForgeAnvil({ item, rarity, result, newLevel, onDone }) {
               alignItems: 'center', justifyContent: 'center',
               borderWidth: 2, borderColor: phase === 'result' ? glowColor : '#ff8c3a',
             }}>
-            <Text style={{ fontSize: 56 }}>{item.emoji}</Text>
+            <ItemGlyph
+              item={item}
+              size={72}
+              color={phase === 'result' ? (win ? rarity.color : C.mut) : '#ffd9a8'}
+              strokeWidth={1.5}
+            />
           </LinearGradient>
         </Animated.View>
 
@@ -293,37 +308,47 @@ function ForgeBay({ data, onForge }) {
 
   return (
     <View>
-      {/* What this screen is. The Forge opened on a big POWER number with no
-          statement of what it does — and the single most important fact about
-          it (cosmetic only) was buried in a code comment. */}
+      {/* ONE header instead of three cards.
+          The Forge used to spend four full cards — an explainer, a materials
+          grid, a green integrity callout and a "Choose your gear" title — before
+          a single item appeared. Useful on first run, noise on the hundredth.
+          Everything below is the same information at a quarter of the height,
+          plus the collection progress this screen was already computing and
+          throwing away (upgradedCount / masteredCount were dead locals). */}
       <Card>
-        <Text style={{ fontSize: 17, fontWeight: '900', color: C.text }}>Upgrade an item's grade</Text>
-        <Text style={{ fontSize: 13.5, color: C.mut, marginTop: 5, lineHeight: 19 }}>
-          Costs coins and materials.
-        </Text>
-        <View style={{ marginTop: 11, padding: 10, borderRadius: 10, backgroundColor: C.greenSoft, borderWidth: 1, borderColor: C.green }}>
-          <Text style={{ fontSize: 12.5, color: C.green, fontWeight: '800', lineHeight: 17 }}>
-            Looks only. Never changes your rank or stats.
+        <View style={[s.between, { marginBottom: 8 }]}>
+          <Lbl style={{ marginBottom: 0 }}>Collection</Lbl>
+          <Text style={{ ...T.caption, color: C.mut, ...T.numeric }}>
+            <Text style={{ color: C.text, fontWeight: '700' }}>{upgradedCount}</Text>
+            <Text>/{owned.length} worked</Text>
+            {masteredCount > 0 ? (
+              <Text style={{ color: C.gold, fontWeight: '700' }}>{'  ·  ' + masteredCount + ' mastered'}</Text>
+            ) : null}
           </Text>
         </View>
-      </Card>
 
-
-      <Card>
-        <View style={[s.between, { marginBottom: 10 }]}>
-          <Text style={{ ...TYPE.heading, color: C.text }}>Forge materials</Text>
-          <Text style={{ ...TYPE.caption, color: C.gold, fontWeight: '700' }}>PRs + packs</Text>
+        <View style={{ height: 7, borderRadius: 7, backgroundColor: C.sunken, overflow: 'hidden' }}>
+          <View style={{
+            width: Math.max(1.5, owned.length ? (upgradedCount / owned.length) * 100 : 0) + '%',
+            height: 7, borderRadius: 7, backgroundColor: C.gold,
+          }} />
         </View>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
+
+        {/* materials inline — four tiles became four pills */}
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 12 }}>
           {MATERIALS.map((m) => (
-            <MaterialTile key={m.id} mat={m} count={materialBalance(data, m.id)} />
+            <MaterialPill key={m.id} mat={m} count={materialBalance(data, m.id)} />
           ))}
         </View>
+
+        <Text style={{ ...T.caption2, color: C.faint, marginTop: 2 }}>
+          Grades cost coins and materials.{' '}
+          <Text style={{ color: C.green, fontWeight: '700' }}>Looks only — never rank or stats.</Text>
+        </Text>
       </Card>
 
       {/* search + category filter */}
       <Card>
-        <Text style={{ ...TYPE.title, color: C.text, marginBottom: 12 }}>Choose your gear</Text>
         <TextInput
           value={query} onChangeText={setQuery}
           placeholder="Search your gear…" placeholderTextColor={C.dim}
@@ -352,16 +377,7 @@ function ForgeBay({ data, onForge }) {
             <Pressable key={it.id} onPress={() => setSel(it)}>
               <Card style={{ borderWidth: 1, borderColor: L > 0 ? r.color + '66' : C.lineSoft }}>
                 <View style={s.row}>
-                  <LinearGradient
-                    colors={L > 0 ? [r.color + '55', C.panel] : [C.panel2, C.panel]}
-                    start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                    style={{
-                      width: 54, height: 54, borderRadius: RADIUS.md,
-                      alignItems: 'center', justifyContent: 'center',
-                      borderWidth: 1, borderColor: L > 0 ? r.color : C.line,
-                    }}>
-                    <Text style={{ fontSize: 26 }}>{it.emoji}</Text>
-                  </LinearGradient>
+                  <ItemTile item={it} size={54} rarity={r} forgeLevel={L} />
 
                   <View style={{ flex: 1, marginLeft: 12 }}>
                     <Text style={{ ...TYPE.heading, color: C.text }} numberOfLines={1}>{it.name}</Text>
@@ -393,7 +409,7 @@ function ForgeBay({ data, onForge }) {
                   width: 66, height: 66, borderRadius: RADIUS.md, backgroundColor: C.panel2,
                   alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: C.line,
                 }}>
-                  <Text style={{ fontSize: 30 }}>{sel.emoji}</Text>
+                  <ItemGlyph item={sel} size={38} color={C.mut} />
                 </View>
                 <Text style={{ ...TYPE.caption, color: C.mut, marginTop: 6 }}>{FORGE_TIERS[lvl]}</Text>
               </View>
@@ -409,7 +425,7 @@ function ForgeBay({ data, onForge }) {
                     alignItems: 'center', justifyContent: 'center',
                     borderWidth: 1, borderColor: rar.color,
                   }}>
-                  <Text style={{ fontSize: 30 }}>{sel.emoji}</Text>
+                  <ItemGlyph item={sel} size={38} color={rar.color} />
                 </LinearGradient>
                 <Text style={{ ...TYPE.caption, color: rar.color, marginTop: 6, fontWeight: '700' }}>
                   {maxed ? 'Mastered' : FORGE_TIERS[lvl + 1]}
@@ -539,7 +555,7 @@ function ShopBay({ data, dv, buy, equip }) {
               borderWidth: 1, borderColor: isOn ? C.gold : rar.color + '44',
             }}>
               <View style={s.between}>
-                <Text style={{ fontSize: 22 }}>{it.emoji}</Text>
+                <ItemTile item={it} size={40} rarity={rar} forgeLevel={L} />
                 <Text style={{ ...TYPE.micro, color: rar.color }}>{rar.name.toUpperCase()}</Text>
               </View>
               <Text style={{ ...TYPE.body, fontWeight: '700', color: C.text, marginTop: 8 }} numberOfLines={1}>
@@ -647,6 +663,10 @@ function NextReward({ next, level, prevLevel, premium, claims, claimAll }) {
   const pct  = Math.min(100, (done / span) * 100);
   const togo = Math.max(0, next.level - level);
   const rw   = premium ? next.premium : next.free;
+  const nextItem = rw && rw.cosmetic ? COSMETICS.find((c) => c.id === rw.cosmetic) : null;
+  const nextLabel = nextItem
+    ? nextItem.name
+    : rw && rw.coins != null ? rw.coins.toLocaleString() + ' coins' : '—';
 
   return (
     <Card style={[s.hero, { overflow: 'hidden' }]}>
@@ -656,14 +676,18 @@ function NextReward({ next, level, prevLevel, premium, claims, claimAll }) {
       }} />
       <Text style={s.label}>Next reward</Text>
       <View style={[s.row, { marginTop: 4 }]}>
+        {/* The real item, not a sparkle placeholder next to an emoji label \u2014
+            rewardLabel() embeds emoji, which is the last place they survived. */}
         <View style={{
           width: 52, height: 52, borderRadius: RADIUS.md, backgroundColor: C.panel2,
           borderWidth: 1, borderColor: C.gold, alignItems: 'center', justifyContent: 'center',
         }}>
-          <Text style={{ fontSize: 24 }}>{'\u2726'}</Text>
+          {nextItem
+            ? <ItemGlyph item={nextItem} size={30} color={C.gold} />
+            : <RewardGlyph reward={{ kind: 'coins' }} size={28} color={C.gold} />}
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={{ ...TYPE.heading, color: C.text }}>{rewardLabel(rw)}</Text>
+          <Text style={{ ...TYPE.heading, color: C.text }} numberOfLines={1}>{nextLabel}</Text>
           <Text style={{ ...TYPE.caption, color: C.gold, marginTop: 2, fontWeight: '700' }}>
             Tier {next.tier}
           </Text>
@@ -683,53 +707,143 @@ function NextReward({ next, level, prevLevel, premium, claims, claimAll }) {
   );
 }
 
-// One tier row. State is legible at a glance and never colour-only.
-function TierRow({ row, unlocked, premium, claimedFree, claimedPrem, claimTier }) {
-  const Cell = ({ lane, rw, isClaimed, laneOpen }) => {
-    const can = unlocked && laneOpen && !isClaimed;
-    const tone = lane === 'premium' ? C.gold : C.green;
+/* ======================== the pass as a forged chain =======================
+ * The pass used to be a 20-row spreadsheet: TIER | FREE | PREMIUM. It worked,
+ * and it read like a table \u2014 three columns of text with no sense of travel, no
+ * sense of how far you'd come, and nothing tying it to the bay it lives in.
+ *
+ * This is a CHAIN being forged, link by link, down the centre of the screen.
+ *   - One continuous rail. It is lit gold up to the tier you've reached and
+ *     dark steel beyond, so progress is a physical length, not a fraction.
+ *   - Each tier is a link on that rail, carrying its own number.
+ *   - Free rewards hang to the left of the chain, premium to the right.
+ *   - The reward itself is drawn with the glyph system, so a pass cosmetic looks
+ *     like the item you'll actually get instead of a text label with an emoji.
+ *
+ * The metaphor is the point: the Forge, the Shop and the Pass are one bay, and
+ * this is the only one of the three that previously looked like a database.
+ * ======================================================================== */
+const PASS_ROW_H = 84;
+const PASS_NODE = 40;
+
+/* One reward, hanging off the chain. State is never colour-only: claimed shows
+   a tick, locked shows the level you need, premium-gated says so in words. */
+function PassReward({ rw, lane, state, level, onPress }) {
+  const tone = lane === 'premium' ? C.gold : C.green;
+  const can = state === 'claimable';
+  const claimed = state === 'claimed';
+  const item = rw && rw.cosmetic ? COSMETICS.find((c) => c.id === rw.cosmetic) : null;
+  const label = item ? item.name : rw && rw.coins != null ? rw.coins.toLocaleString() : '\u2014';
+  const sub = claimed ? '\u2713 Claimed'
+    : can ? 'Tap to claim'
+    : state === 'needsPremium' ? 'Premium'
+    : 'Lv ' + level;
+
+  // A tier with no reward in this lane (free coin slots alternate with 0) needs
+  // to render as an empty link, not a claimable nothing.
+  const empty = !rw || (rw.coins === 0 && !rw.cosmetic);
+  if (empty) {
     return (
-      <Pressable
-        disabled={!can}
-        onPress={() => claimTier(lane, row.tier)}
-        hitSlop={6}
-        style={{
-          flex: 1, marginLeft: 8, minHeight: TOUCH, paddingHorizontal: 8,
-          borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center',
-          backgroundColor: can ? (lane === 'premium' ? C.goldSoft : C.greenSoft) : C.panel2,
-          borderWidth: 1,
-          borderColor: can ? tone : isClaimed ? C.lineSoft : C.line,
-          opacity: !unlocked ? 0.45 : !laneOpen ? 0.4 : 1,
-        }}>
-        <Text
-          numberOfLines={1}
-          style={{
-            ...TYPE.caption, fontWeight: '700',
-            color: isClaimed ? C.dim : can ? C.text : C.mut,
-          }}>
-          {rewardLabel(rw)}
-        </Text>
-        <Text style={{ ...TYPE.micro, marginTop: 2, color: isClaimed ? C.green : can ? tone : C.faint }}>
-          {isClaimed ? '\u2713 CLAIMED' : can ? 'CLAIM' : !unlocked ? '\u25CF LV ' + row.level : 'PREMIUM'}
-        </Text>
-      </Pressable>
+      <View style={{ height: PASS_NODE + 14, justifyContent: 'center' }}>
+        <View style={{ width: 26, height: 2, borderRadius: 2, backgroundColor: C.lineSoft, alignSelf: lane === 'free' ? 'flex-end' : 'flex-start' }} />
+      </View>
     );
-  };
+  }
 
   return (
-    <View style={[s.row, { marginBottom: 8, alignItems: 'stretch' }]}>
+    <Pressable
+      disabled={!can}
+      onPress={onPress}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !can }}
+      accessibilityLabel={`${lane} tier reward, ${label}, ${sub}`}
+      style={{
+        flexDirection: lane === 'free' ? 'row' : 'row-reverse',
+        alignItems: 'center',
+        paddingVertical: 8, paddingHorizontal: 10, borderRadius: RADIUS.md,
+        backgroundColor: can ? alpha(tone, 0.12) : claimed ? 'transparent' : C.panel,
+        borderWidth: 1,
+        borderColor: can ? alpha(tone, 0.8) : claimed ? C.lineSoft : C.line,
+        opacity: state === 'locked' ? 0.5 : state === 'needsPremium' ? 0.55 : 1,
+      }}>
       <View style={{
-        width: 40, borderRadius: RADIUS.md, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: unlocked ? C.goldSoft : C.panel2,
-        borderWidth: 1, borderColor: unlocked ? C.gold : C.line,
+        width: 34, height: 34, borderRadius: 10,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: claimed ? C.panel2 : alpha(tone, 0.14),
+        borderWidth: 1, borderColor: claimed ? C.lineSoft : alpha(tone, 0.5),
+      }}>
+        {item
+          ? <ItemGlyph item={item} size={21} color={claimed ? C.dim : tone} />
+          : <RewardGlyph reward={{ kind: 'coins' }} size={20} color={claimed ? C.dim : tone} />}
+      </View>
+      <View style={{
+        flex: 1,
+        marginLeft: lane === 'free' ? 9 : 0,
+        marginRight: lane === 'free' ? 0 : 9,
+        alignItems: lane === 'free' ? 'flex-start' : 'flex-end',
+      }}>
+        <Text numberOfLines={1} style={{ ...T.caption, fontWeight: '700', color: claimed ? C.dim : C.text }}>
+          {label}
+        </Text>
+        <Text numberOfLines={1} style={{ ...T.caption2, color: claimed ? C.green : can ? tone : C.faint }}>
+          {sub}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+/* One link of the chain: the node, plus a reward hanging either side. */
+function PassLink({ row, unlocked, premium, claimedFree, claimedPrem, claimTier, isNext }) {
+  const freeState = claimedFree ? 'claimed' : unlocked ? 'claimable' : 'locked';
+  const premState = claimedPrem ? 'claimed'
+    : !premium ? 'needsPremium'
+    : unlocked ? 'claimable' : 'locked';
+
+  return (
+    <View style={{ height: PASS_ROW_H, justifyContent: 'center' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flex: 1, paddingRight: PASS_NODE / 2 + 12, alignItems: 'flex-end' }}>
+          <View style={{ width: '100%' }}>
+            <PassReward
+              rw={row.free} lane="free" state={freeState} level={row.level}
+              onPress={() => claimTier('free', row.tier)}
+            />
+          </View>
+        </View>
+        <View style={{ flex: 1, paddingLeft: PASS_NODE / 2 + 12 }}>
+          <View style={{ width: '100%' }}>
+            <PassReward
+              rw={row.premium} lane="premium" state={premState} level={row.level}
+              onPress={() => claimTier('premium', row.tier)}
+            />
+          </View>
+        </View>
+      </View>
+
+      {/* the link itself, sitting on the rail */}
+      <View pointerEvents="none" style={{
+        position: 'absolute', left: '50%', marginLeft: -PASS_NODE / 2,
+        width: PASS_NODE, height: PASS_NODE, borderRadius: PASS_NODE / 2,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: unlocked ? C.gold : C.bgElev,
+        borderWidth: 2,
+        borderColor: unlocked ? C.gold : isNext ? alpha(C.gold, 0.7) : C.line,
+        // the next link glows: it's the thing you're training toward
+        shadowColor: C.gold,
+        shadowOpacity: isNext || unlocked ? 0.6 : 0,
+        shadowRadius: isNext ? 12 : 6,
+        shadowOffset: { width: 0, height: 0 },
+        elevation: unlocked || isNext ? 5 : 0,
       }}>
         <Text style={{
-          ...TYPE.body, fontWeight: '800', fontVariant: ['tabular-nums'],
-          color: unlocked ? C.gold : C.faint,
-        }}>{row.tier}</Text>
+          ...T.footnote, fontWeight: '800', ...T.numeric,
+          color: unlocked ? C.ink : isNext ? C.gold : C.faint,
+        }}>
+          {row.tier}
+        </Text>
       </View>
-      <Cell lane="free" rw={row.free} isClaimed={claimedFree} laneOpen />
-      <Cell lane="premium" rw={row.premium} isClaimed={claimedPrem} laneOpen={premium} />
     </View>
   );
 }
@@ -765,15 +879,19 @@ function PassBay({ data, dv, claimTier, claimAll, buyPremium }) {
 
       <Card>
         <View style={s.between}>
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={s.label}>{dv.season}</Text>
             <Text style={{ ...TYPE.heading, color: premium ? C.gold : C.text }}>
-              {premium ? 'Premium' : 'Free pass'}
+              {premium ? 'Premium pass' : 'Free pass'}
             </Text>
           </View>
           <Text style={{ ...TYPE.title, color: C.text, fontVariant: ['tabular-nums'] }}>
             {unlocked}<Text style={{ ...TYPE.caption, color: C.faint }}>/{PASS_SEASON_TIERS}</Text>
           </Text>
+        </View>
+        {/* Length of chain forged, as a bar. Mirrors the rail below. */}
+        <View style={{ marginTop: 12 }}>
+          <PBar pct={(unlocked / PASS_SEASON_TIERS) * 100} color={C.gold} height={7} />
         </View>
         {!premium ? (
           <View style={{ marginTop: 14 }}>
@@ -781,7 +899,7 @@ function PassBay({ data, dv, claimTier, claimAll, buyPremium }) {
               GO PREMIUM · {PASS_PREMIUM_COST.toLocaleString()}
             </ChunkyBtn>
             <Text style={{ ...TYPE.caption, color: C.dim, marginTop: 8 }}>
-              Doubles every tier. Cosmetic only — never rank.
+              Unlocks the right-hand side of every link. Cosmetic only — never rank.
             </Text>
           </View>
         ) : null}
@@ -789,22 +907,47 @@ function PassBay({ data, dv, claimTier, claimAll, buyPremium }) {
 
       <Animated.View style={{ transform: [{ scale: cheer }] }}>
       <Card>
-        <View style={[s.row, { marginBottom: 10 }]}>
-          <Text style={{ ...TYPE.micro, color: C.faint, width: 40 }}>TIER</Text>
-          <Text style={{ ...TYPE.micro, color: C.green, flex: 1, textAlign: 'center', marginLeft: 8 }}>FREE</Text>
-          <Text style={{ ...TYPE.micro, color: premium ? C.gold : C.faint, flex: 1, textAlign: 'center', marginLeft: 8 }}>PREMIUM</Text>
+        {/* lane headers, anchored to the sides the rewards actually hang on */}
+        <View style={[s.row, { marginBottom: 6 }]}>
+          <Text style={{ ...T.label, color: C.green, flex: 1 }}>FREE</Text>
+          <Text style={{ ...T.label, color: premium ? C.gold : C.faint, flex: 1, textAlign: 'right' }}>
+            PREMIUM{premium ? '' : ' · LOCKED'}
+          </Text>
         </View>
-        {FORGE_PASS.map((row) => (
-          <TierRow
-            key={row.tier}
-            row={row}
-            unlocked={row.tier <= unlocked}
-            premium={premium}
-            claimedFree={claimed.includes(passKey('free', row.tier))}
-            claimedPrem={claimed.includes(passKey('premium', row.tier))}
-            claimTier={claimOne}
-          />
-        ))}
+
+        <View style={{ position: 'relative' }}>
+          {/* the chain: dark steel for the whole season... */}
+          <View pointerEvents="none" style={{
+            position: 'absolute', left: '50%', marginLeft: -2, top: 0,
+            height: PASS_ROW_H * FORGE_PASS.length, width: 4,
+            borderRadius: 2, backgroundColor: C.line,
+          }} />
+          {/* ...lit gold for the part you've forged. Row height is fixed
+              (PASS_ROW_H) precisely so this length can be computed rather than
+              measured — no onLayout, no reflow, no flicker on mount. */}
+          {unlocked > 0 ? (
+            <View pointerEvents="none" style={{
+              position: 'absolute', left: '50%', marginLeft: -2, top: 0,
+              height: Math.min(FORGE_PASS.length, unlocked) * PASS_ROW_H - PASS_ROW_H / 2,
+              width: 4, borderRadius: 2, backgroundColor: C.gold,
+              shadowColor: C.gold, shadowOpacity: 0.7, shadowRadius: 8,
+              shadowOffset: { width: 0, height: 0 }, elevation: 4,
+            }} />
+          ) : null}
+
+          {FORGE_PASS.map((row) => (
+            <PassLink
+              key={row.tier}
+              row={row}
+              unlocked={row.tier <= unlocked}
+              isNext={row.tier === unlocked + 1}
+              premium={premium}
+              claimedFree={claimed.includes(passKey('free', row.tier))}
+              claimedPrem={claimed.includes(passKey('premium', row.tier))}
+              claimTier={claimOne}
+            />
+          ))}
+        </View>
       </Card>
       </Animated.View>
     </View>

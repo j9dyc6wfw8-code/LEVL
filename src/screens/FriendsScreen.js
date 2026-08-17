@@ -10,8 +10,11 @@
 // playing as a guest, it shows a friendly "sign in to add friends" state rather
 // than erroring.
 
-import React, { useState } from 'react';
-import useFriendProfile, { summarizeWorkouts, byExercise } from '../hooks/useFriendProfile';
+import React, { useState, useMemo } from 'react';
+// summarizeWorkouts / byExercise are no longer imported: the hook returns them
+// already memoised, so calling them here would reintroduce the per-render walk
+// over 100 rows that made this sheet lag.
+import useFriendProfile from '../hooks/useFriendProfile';
 import { View, Text, Pressable, ScrollView, TextInput } from 'react-native';
 import { C, s, TYPE, RADIUS, TOUCH, MONO } from '../theme';
 import { MiniHunter } from '../components/Hunter';
@@ -379,9 +382,29 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
  * Two views: a per-exercise rollup (what they actually train) and a recent
  * session list (what they did lately).
  */
-function FriendProfileBody({ userId, onClose }) {
-  const { profile, workouts, loading } = useFriendProfile(userId);
-  const [mode, setMode] = useState('exercises');   // 'exercises' | 'recent'
+const FriendProfileBody = React.memo(function FriendProfileBody({ userId, onClose }) {
+  // Memoised on userId: this sheet lives inside FriendsScreen, whose `query`
+  // state changes on every keystroke in the search box. Without React.memo the
+  // whole profile — HunterShowcase included — re-rendered per character typed.
+  const { profile, summary, exercises, recent, workouts, loading } = useFriendProfile(userId);
+  // Recent lifts lead. "What have they been lifting" is the question people
+  // open a profile to answer; the per-exercise rollup is the follow-up.
+  const [mode, setMode] = useState('recent');   // 'recent' | 'exercises'
+
+  // HunterShowcase renders the full vector HunterFigure. Its `avatar` prop was
+  // an inline spread, so a NEW object identity was produced on every render and
+  // the whole figure re-rendered even when nothing about them had changed.
+  // (The figure's own bob/shimmer loops are useNativeDriver:true, so they run on
+  // the UI thread and were never the problem — this was.)
+  // Declared above the early returns: rules of hooks.
+  const showcaseAvatar = useMemo(
+    () => ({ ...DEFAULT_DATA.avatar, ...((profile && profile.avatar) || {}) }),
+    [profile && profile.avatar],
+  );
+  const showcaseEquipped = useMemo(
+    () => (profile && profile.character && profile.character.equipped) || DEFAULT_DATA.equipped,
+    [profile && profile.character && profile.character.equipped],
+  );
 
   if (!userId) return null;
   if (loading && !profile) {
@@ -396,8 +419,9 @@ function FriendProfileBody({ userId, onClose }) {
     );
   }
 
-  const sum = summarizeWorkouts(workouts);
-  const exercises = byExercise(workouts);
+  // summary / exercises / recent now arrive pre-computed and memoised from the
+  // hook. They used to be built here in the render body on every pass.
+  const sum = summary;
 
   return (
     <View style={{ padding: 4 }}>
@@ -406,8 +430,8 @@ function FriendProfileBody({ userId, onClose }) {
           not to re-stage the whole character screen. */}
       <View style={{ paddingVertical: 8 }}>
         <HunterShowcase
-          avatar={{ ...DEFAULT_DATA.avatar, ...(profile.avatar || {}) }}
-          equipped={(profile.character && profile.character.equipped) || DEFAULT_DATA.equipped}
+          avatar={showcaseAvatar}
+          equipped={showcaseEquipped}
           stats={profile.character && profile.character.stats}
           rank={profile.rank}
           name={profile.display_name}
@@ -418,27 +442,59 @@ function FriendProfileBody({ userId, onClose }) {
         />
       </View>
 
-      <View style={[s.row, { marginTop: 6, backgroundColor: C.panel2, borderRadius: RADIUS.md, paddingVertical: 12 }]}>
-        <StatPill label="STREAK" value={(profile.streak || 0) + 'd'} tint={C.orange} />
-        <StatPill label="XP" value={profile.xp || 0} tint={C.green} />
-        <StatPill label="BEST LIFT" value={profile.best_e1rm ? Math.round(profile.best_e1rm) + 'kg' : '—'} tint={C.red} />
-      </View>
+      {/* ONE stat block, not two identical strips.
+          Before: six numbers in two visually identical pill rows with no
+          hierarchy, one of which ("SESSIONS") was counting sets. Now the headline
+          number is their best lift — the thing you actually compare yourself
+          against — and the rest is a labelled supporting row. */}
+      <View style={{
+        marginTop: 8, backgroundColor: C.panel2, borderRadius: RADIUS.md,
+        borderWidth: 1, borderColor: C.lineSoft, padding: 14,
+      }}>
+        <View style={[s.between, { alignItems: 'flex-end' }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ ...TYPE.label, color: C.dim }}>BEST LIFT</Text>
+            <Text style={{ fontSize: 34, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'], letterSpacing: -0.6 }}>
+              {profile.best_e1rm
+                ? Math.round(profile.best_e1rm) + ' ' + (sum.unit || 'kg')
+                : sum.bestLift ? Math.round(sum.bestLift) + ' ' + (sum.unit || 'kg') : '—'}
+            </Text>
+            {(profile.best_lift_name || sum.bestName) ? (
+              <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 1 }} numberOfLines={1}>
+                {profile.best_lift_name || sum.bestName}
+              </Text>
+            ) : null}
+          </View>
+          <View style={{ alignItems: 'flex-end' }}>
+            <Text style={{ ...TYPE.label, color: C.dim }}>STREAK</Text>
+            <Text style={{ fontSize: 26, fontWeight: '800', color: C.orange, fontVariant: ['tabular-nums'] }}>
+              {(profile.streak || 0)}<Text style={{ fontSize: 15, color: C.mut }}>d</Text>
+            </Text>
+          </View>
+        </View>
 
-      <View style={[s.row, { marginTop: 10, backgroundColor: C.panel2, borderRadius: RADIUS.md, paddingVertical: 12 }]}>
-        <StatPill label="SESSIONS" value={sum.sessions} />
-        <StatPill label="TRAIN DAYS" value={sum.days} />
-        <StatPill label="PRs" value={sum.prs} tint={C.gold} />
+        <View style={[s.row, {
+          marginTop: 14, paddingTop: 12, borderTopWidth: 1, borderTopColor: C.lineSoft,
+        }]}>
+          <StatPill label="SESSIONS" value={sum.sessions} />
+          <StatPill label="SETS" value={sum.sets} />
+          <StatPill label="DAYS" value={sum.days} />
+          <StatPill label="PRs" value={sum.prs} tint={C.gold} />
+        </View>
+        <Text style={{ ...TYPE.micro, color: C.faint, marginTop: 10 }}>
+          Last {Math.min(workouts.length, 100)} logged sets
+        </Text>
       </View>
 
       {/* view switch */}
       <View style={[s.row, { marginTop: 18 }]}>
-        {[['exercises', 'Exercises'], ['recent', 'Recent']].map(([k, label]) => (
+        {[['recent', 'Recent lifts'], ['exercises', 'By exercise']].map(([k, label]) => (
           <Pressable key={k} onPress={() => setMode(k)} hitSlop={6}
             style={{
               flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: RADIUS.pill,
               backgroundColor: mode === k ? C.goldSoft : 'transparent',
               borderWidth: 1, borderColor: mode === k ? C.gold : C.line,
-              marginRight: k === 'exercises' ? 8 : 0,
+              marginRight: k === 'recent' ? 8 : 0,
             }}>
             <Text style={{ ...TYPE.caption, fontWeight: '700', color: mode === k ? C.gold : C.dim }}>{label}</Text>
           </Pressable>
@@ -447,34 +503,59 @@ function FriendProfileBody({ userId, onClose }) {
 
       {workouts.length === 0 ? (
         <Text style={{ ...TYPE.caption, color: C.dim, marginTop: 14 }}>
-          No sessions shared yet — they'll appear here as soon as they log a workout.
+          Nothing shared yet — their lifts appear here as soon as they log one.
         </Text>
       ) : mode === 'exercises' ? (
         exercises.map((e) => (
-          <View key={e.name} style={[s.between, { marginTop: 12 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ ...TYPE.caption, color: C.text, fontWeight: '700' }}>
-                {e.name}{e.prs ? <Text style={{ color: C.gold }}> · {e.prs} PR{e.prs > 1 ? 's' : ''}</Text> : null}
+          <View key={e.name} style={[s.between, {
+            marginTop: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.lineSoft,
+          }]}>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }} numberOfLines={1}>
+                {e.name}
               </Text>
-              <Text style={{ ...TYPE.micro, color: C.dim }}>
-                {e.count} session{e.count > 1 ? 's' : ''}{e.best ? ` · best ${e.best}` : ''}
+              <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 1 }}>
+                {e.sets} set{e.sets > 1 ? 's' : ''}
+                {e.prs ? <Text style={{ color: C.gold }}> · {e.prs} PR{e.prs > 1 ? 's' : ''}</Text> : null}
               </Text>
             </View>
-            <Text style={{ ...TYPE.caption, color: C.green, fontWeight: '700' }}>+{e.xp}</Text>
+            {/* Best weight is the number worth reading here, with its unit —
+                it used to print bare, so kg and lb were indistinguishable. */}
+            <View style={{ alignItems: 'flex-end' }}>
+              <Text style={{ ...TYPE.body, color: C.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+                {e.best ? Math.round(e.best) + ' ' + (e.unit || 'kg') : '—'}
+              </Text>
+              <Text style={{ ...TYPE.micro, color: C.green, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+                +{e.xp.toLocaleString()} XP
+              </Text>
+            </View>
           </View>
         ))
       ) : (
-        workouts.slice(0, 25).map((w, i) => (
-          <View key={w.id || i} style={[s.between, { marginTop: 10 }]}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ ...TYPE.caption, color: C.text, fontWeight: '600' }}>
-                {w.exercise || 'Workout'} {w.is_pr ? <Text style={{ color: C.gold }}>· PR</Text> : null}
+        recent.map((w, i) => (
+          <View key={w.id || i} style={[s.between, {
+            marginTop: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.lineSoft,
+          }]}>
+            <View style={{ flex: 1, marginRight: 10 }}>
+              <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }} numberOfLines={1}>
+                {w.exercise}
+                {w.isPR ? <Text style={{ color: C.gold, fontWeight: '800' }}>  PR</Text> : null}
               </Text>
-              <Text style={{ ...TYPE.micro, color: C.dim }}>
-                {w.weight ? `${w.weight} × ${w.reps}` : w.duration ? `${w.duration} min` : ''} · {ago(w.date)} ago
+              <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 1 }}>
+                {ago(w.date)} ago{w.rpe ? ' · RPE ' + w.rpe : ''}
               </Text>
             </View>
-            <Text style={{ ...TYPE.caption, color: C.green, fontWeight: '700' }}>+{w.xp_earned}</Text>
+            <View style={{ alignItems: 'flex-end' }}>
+              {/* The actual lift, formatted like a lifter writes it. */}
+              <Text style={{ ...TYPE.body, color: C.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+                {w.isLift
+                  ? Math.round(w.weight) + ' ' + w.unit + ' × ' + w.reps
+                  : w.duration ? w.duration + ' min' : '—'}
+              </Text>
+              <Text style={{ ...TYPE.micro, color: C.green, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+                +{w.xp.toLocaleString()} XP
+              </Text>
+            </View>
           </View>
         ))
       )}
@@ -484,4 +565,4 @@ function FriendProfileBody({ userId, onClose }) {
       </View>
     </View>
   );
-}
+});

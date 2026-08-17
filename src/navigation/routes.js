@@ -36,7 +36,10 @@ export const MODALS = {
 };
 
 // Sub-views inside a tab that a deep link may target.
-export const COMPETE_VIEWS = ['duels', 'ranks', 'leaderboard'];
+// 'friends' joined these when it was promoted out of DuelTab's inner segment
+// into a peer destination. The three original keys are untouched, so every
+// existing levl://compete/... link still resolves.
+export const COMPETE_VIEWS = ['duels', 'friends', 'ranks', 'leaderboard'];
 
 /**
  * Parse a levl:// URL into { tab, view, modal, params }.

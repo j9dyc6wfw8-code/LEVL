@@ -11,3 +11,9 @@
 /dist/
 .DS_Store
 *.log
+
+# Edge Functions are Deno code that runs on Supabase, not in the app bundle.
+# Nothing imports them, so Metro never touches them — but there is no reason to
+# ship them to EAS either. (Adding a .ts file here is also what made Expo add
+# tsconfig.json and the typescript devDependency; both are harmless.)
+/supabase/
