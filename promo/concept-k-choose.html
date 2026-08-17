@@ -1,0 +1,156 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — Choose Your Path</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#05060a}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0d13}
+  #world{position:absolute;inset:0;will-change:transform}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div id="stage"><div id="world"></div></div>
+<script src="levl-kit.js"></script>
+<script>
+/* ============================================================================
+   CONCEPT K — "Skip it or log it."
+   Fake-interactive: the viewer feels like they're choosing. Deliberately does
+   NOT imply LEVL has a branching-choice screen — the two doors are an editorial
+   device, and the consequences shown (streak, FR, rank) are all real mechanics.
+   ========================================================================== */
+const K = LEVLKit;
+const { C, E, el, seg, lerp, px, fmt, rgba, icon, chroma, clamp01 } = K;
+
+K.boot({ accent: C.red });
+K.setImpacts([0.20, 1.30, 2.10, 3.60, 4.60, 6.20, 7.30, 8.40, 9.50, 11.60], [2.10, 4.60, 9.50, 11.60]);
+const DURATION = 15.0;
+const W = K.world;
+
+const prompt = el('div', W, {
+  position:'absolute', left:'60px', right:'60px', top:'330px', textAlign:'center',
+  fontSize:'82px', fontWeight:'800', letterSpacing:'-2px', lineHeight:'1.1',
+}, '8PM. YOU\'RE TIRED.');
+
+/* ---- the two doors ------------------------------------------------------ */
+function mkDoor(label, sub, colour, left){
+  const d = el('div', W, {
+    position:'absolute', left:px(left), top:'560px', width:'420px', height:'520px',
+    borderRadius:'44px', opacity:'0',
+    background:'linear-gradient(180deg,'+rgba(colour,0.20)+','+rgba(colour,0.05)+')',
+    border:'4px solid '+rgba(colour,0.7),
+    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'22px',
+    transformOrigin:'50% 50%',
+  });
+  el('div', d, { fontSize:'34px', fontWeight:'800', letterSpacing:'6px', color:C.dim,
+    textTransform:'uppercase' }, label === 'SKIP IT' ? 'A' : 'B');
+  el('div', d, { fontSize:'58px', fontWeight:'800', color:colour, letterSpacing:'1px' }, label);
+  el('div', d, { fontSize:'26px', fontWeight:'600', color:C.mut, textAlign:'center',
+    padding:'0 24px', lineHeight:'1.35' }, sub);
+  return d;
+}
+const doorA = mkDoor('SKIP IT', 'Netflix is right there', C.red, 70);
+const doorB = mkDoor('LOG IT',  'One set. Ten minutes.',  C.gold, 590);
+
+/* ---- consequence panel (reused for both branches) ---------------------- */
+const conseq = el('div', W, { position:'absolute', left:'110px', right:'110px', top:'1160px', opacity:'0' });
+const conseqRows = ['Streak','Fitness Rating','Rank'].map(label => {
+  const r = el('div', conseq, {
+    display:'flex', alignItems:'center', justifyContent:'space-between',
+    padding:'26px 34px', borderRadius:'26px', background:C.panel,
+    border:'2px solid '+C.lineSoft, marginBottom:'16px',
+  });
+  el('div', r, { fontSize:'32px', fontWeight:'700', color:C.mut, letterSpacing:'2px',
+    textTransform:'uppercase' }, label);
+  const v = el('div', r, { fontSize:'46px', fontWeight:'800', fontVariantNumeric:'tabular-nums' }, '');
+  return { r, v };
+});
+
+/* ---- rewind flourish ---------------------------------------------------- */
+const rewind = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'880px', textAlign:'center', opacity:'0',
+  fontSize:'120px', fontWeight:'800', letterSpacing:'6px', color:C.cyan,
+  textShadow:'0 0 70px '+rgba(C.cyan,0.8),
+}, '◀◀ REWIND');
+
+const winRing = K.makeShockwave(W, rgba(C.gold,0.92));
+const winSparks = K.makeSparks(W, 30, C.gold, 7272);
+
+const closer = el('div', W, {
+  position:'absolute', left:'60px', right:'60px', top:'880px', textAlign:'center', opacity:'0',
+  fontSize:'96px', fontWeight:'800', letterSpacing:'-2px', lineHeight:'1.1',
+}, 'SAME NIGHT.<br><span style="color:'+C.gold+'">DIFFERENT YEAR.</span>');
+
+const endCard = K.makeEndCard(W, { tag:'Your move.', cta:'Link in bio' });
+
+/* =============================================================== RENDER == */
+function setConseq(streak, fr, rank, colour){
+  conseqRows[0].v.textContent = streak; conseqRows[0].v.style.color = colour;
+  conseqRows[1].v.textContent = fr;     conseqRows[1].v.style.color = colour;
+  conseqRows[2].v.textContent = rank;   conseqRows[2].v.style.color = colour;
+}
+
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+  K.frame(t);
+
+  const promptOut = seg(t, 5.90, 6.20);
+  prompt.style.opacity = String(seg(t,0.04,0.18) * (1 - promptOut));
+  prompt.style.transform = `scale(${lerp(1.3,1,E.slam(seg(t,0.04,0.60)))})`;
+  chroma(prompt, lerp(14,0,E.outCubic(seg(t,0.04,0.40))));
+
+  /* doors appear, A is chosen at 2.10 */
+  const dIn = E.slam(seg(t, 1.30, 1.85));
+  [doorA, doorB].forEach((d,i) => {
+    d.style.opacity = String(seg(t, 1.30 + i*0.07, 1.50 + i*0.07) * (1 - seg(t, 5.90, 6.20)));
+  });
+  const pickA = seg(t, 2.10, 2.55);
+  const pickB = seg(t, 6.20, 6.70);
+  doorA.style.transform =
+    `translateY(${lerp(120,0,dIn)}px) scale(${lerp(0.8,1,dIn) * lerp(1, 1.06, pickA) * lerp(1, 0.86, pickB)})`;
+  doorA.style.filter = `grayscale(${pickB}) brightness(${lerp(1,0.5,pickB)})`;
+  doorB.style.transform =
+    `translateY(${lerp(120,0,dIn)}px) scale(${lerp(0.8,1,dIn) * lerp(1, 0.86, pickA) * lerp(1, 1.06, pickB)})`;
+  doorB.style.filter = `grayscale(${pickA * (1 - pickB)}) brightness(${lerp(1,0.5,pickA * (1-pickB))})`;
+
+  /* branch A consequences (bad) */
+  const showA = t >= 3.60 && t < 5.60;
+  /* branch B consequences (good) */
+  const showB = t >= 7.30 && t < 9.50;
+  if (showA){
+    setConseq('0 days', '−18', '#12 ▼', C.red);
+    conseq.style.opacity = String(seg(t,3.60,3.85) * (1 - seg(t,5.35,5.60)));
+    conseq.style.transform = `translateY(${lerp(50,0,E.outQuart(seg(t,3.60,4.05)))}px)`;
+  } else if (showB){
+    const step = t >= 8.40 ? 1 : 0;
+    setConseq(step ? '7 days' : '1 day', step ? '+96' : '+32', step ? '#6 ▲' : '#10 ▲', C.green);
+    conseq.style.opacity = String(seg(t,7.30,7.55) * (1 - seg(t,9.30,9.50)));
+    conseq.style.transform = `translateY(${lerp(50,0,E.outQuart(seg(t,7.30,7.75)))}px)`;
+  } else {
+    conseq.style.opacity = '0';
+  }
+
+  /* rewind */
+  const rw = seg(t, 4.60, 5.20);
+  rewind.style.opacity = String(seg(t,4.60,4.74) * (1 - seg(t,5.70,5.95)));
+  rewind.style.transform = `scale(${lerp(1.9,1,E.slam(rw))}) translateX(${Math.sin(t*30)*12*(1-rw)}px)`;
+  chroma(rewind, lerp(28,0,E.outCubic(seg(t,4.60,5.20))));
+
+  K.driveShockwave(winRing, seg(t,9.50,10.25), 7.0, 0, 940-960);
+  K.driveSparks(winSparks, seg(t,9.50,10.35), 0, 940-960);
+
+  const cl = seg(t, 9.50, 10.10);
+  closer.style.opacity = String(seg(t,9.50,9.66) * (1 - seg(t,11.40,11.60)));
+  closer.style.transform = `scale(${lerp(1.35,1,E.slam(cl))})`;
+
+  if (t >= 11.60) endCard.drive(t - 11.60); else endCard.root.style.opacity = '0';
+};
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>

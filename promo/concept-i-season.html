@@ -1,0 +1,160 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — Season Resets Tonight</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#05060a}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0d13}
+  #world{position:absolute;inset:0;will-change:transform}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div id="stage"><div id="world"></div></div>
+<script src="levl-kit.js"></script>
+<script>
+/* ============================================================================
+   CONCEPT I — "The season resets tonight."
+   FOMO/live-ops. Uses the real tier bands: Gold 1,200-1,799, Platinum at 1,800.
+   The 42 XP gap is an illustrative number, not a product claim.
+   ========================================================================== */
+const K = LEVLKit;
+const { C, E, el, seg, lerp, px, fmt, rgba, icon, chroma, clamp01, TIERS } = K;
+
+K.boot({ accent: C.cyan });
+K.setImpacts([0.20, 1.60, 3.00, 4.20, 5.40, 6.60, 8.00, 9.60, 12.20], [8.00, 9.60, 12.20]);
+const DURATION = 15.4;
+const W = K.world;
+
+const GOLD = TIERS[2], PLAT = TIERS[3];
+const FR_START = 1758, FR_TARGET = 1800;
+
+/* ---- 1. THE CLOCK (frame one) ------------------------------------------ */
+const clockWrap = el('div', W, { position:'absolute', left:'0', right:'0', top:'400px', textAlign:'center' });
+el('div', clockWrap, { fontSize:'34px', fontWeight:'800', letterSpacing:'9px', color:C.red,
+  textTransform:'uppercase' }, 'Season ends in');
+const clockNum = el('div', clockWrap, {
+  fontSize:'220px', fontWeight:'800', letterSpacing:'-8px', lineHeight:'1.05', marginTop:'12px',
+  fontVariantNumeric:'tabular-nums', color:'#fff', textShadow:'0 0 80px '+rgba(C.red,0.7),
+}, '00:59');
+const clockSub = el('div', clockWrap, { fontSize:'32px', fontWeight:'800', letterSpacing:'6px',
+  color:C.mut, textTransform:'uppercase', marginTop:'10px' }, 'Leaderboard resets');
+
+/* ---- 2. YOUR STANDING --------------------------------------------------- */
+const standing = el('div', W, { position:'absolute', left:'120px', right:'120px', top:'860px', opacity:'0' });
+const tierCard = el('div', standing, {
+  borderRadius:'38px', padding:'34px 40px',
+  background:'linear-gradient(180deg,'+rgba(GOLD.color,0.22)+','+rgba(GOLD.color,0.06)+')',
+  border:'3px solid '+rgba(GOLD.color,0.7),
+});
+const tierRow = el('div', tierCard, { display:'flex', alignItems:'center', gap:'26px' },
+  `<div style="width:104px;height:104px;border-radius:999px;background:${rgba(GOLD.color,0.18)};
+     border:3px solid ${rgba(GOLD.color,0.8)};display:flex;align-items:center;justify-content:center">
+     <svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke="${GOLD.color}" stroke-width="1.9"
+       stroke-linecap="round" stroke-linejoin="round">${K.ICONS.profile}</svg></div>`);
+const tierText = el('div', tierRow, { flex:'1' },
+  `<div style="font-size:52px;font-weight:800;color:${GOLD.color};letter-spacing:1px">GOLD</div>
+   <div style="font-size:26px;font-weight:700;color:${C.dim};letter-spacing:3px;text-transform:uppercase;margin-top:4px">Current tier</div>`);
+const frVal = el('div', tierRow, { fontSize:'66px', fontWeight:'800', color:'#fff',
+  fontVariantNumeric:'tabular-nums' }, '1,758');
+const barTrack = el('div', tierCard, { height:'28px', borderRadius:'999px', background:C.sunken,
+  border:'2px solid '+C.line, overflow:'hidden', marginTop:'28px' });
+const barFill = el('div', barTrack, { height:'100%', width:'0%', borderRadius:'999px',
+  background:'linear-gradient(90deg,'+GOLD.color+','+PLAT.color+')', boxShadow:'0 0 34px '+rgba(PLAT.color,0.7) });
+const gapLine = el('div', standing, { textAlign:'center', marginTop:'26px',
+  fontSize:'38px', fontWeight:'700', color:C.mut }, '');
+
+/* ---- 3. THE PUSH -------------------------------------------------------- */
+const lifter = K.makeLifter(W, C.gold, 0.72);
+lifter.root.style.left = '50%';
+lifter.root.style.top = '1400px';
+lifter.root.style.opacity = '0';
+const gains = [
+  { t:4.20, xp:14 }, { t:5.40, xp:16 }, { t:6.60, xp:12 },
+].map(g => ({ ...g, node: el('div', W, {
+  position:'absolute', left:'50%', top:'1250px', padding:'12px 30px', borderRadius:'999px',
+  background:rgba(C.green,0.18), border:'3px solid '+rgba(C.green,0.75),
+  fontSize:'36px', fontWeight:'800', color:C.green, whiteSpace:'nowrap', opacity:'0',
+  boxShadow:'0 0 34px '+rgba(C.green,0.55),
+}, '+'+g.xp+' FR') }));
+
+/* ---- 4. PROMOTION + NEW SEASON ----------------------------------------- */
+const promo = el('div', W, { position:'absolute', left:'0', right:'0', top:'760px', textAlign:'center', opacity:'0' });
+el('div', promo, { fontSize:'40px', fontWeight:'800', letterSpacing:'10px', color:C.mut,
+  textTransform:'uppercase' }, 'Promoted');
+const promoTier = el('div', promo, { fontSize:'150px', fontWeight:'800', color:PLAT.color,
+  letterSpacing:'-2px', lineHeight:'1.1', marginTop:'8px',
+  textShadow:'0 0 90px '+rgba(PLAT.color,0.9) }, 'PLATINUM');
+const promoRing = K.makeShockwave(W, rgba(PLAT.color,0.95));
+const promoSparks = K.makeSparks(W, 34, PLAT.color, 8383);
+
+const newSeason = el('div', W, { position:'absolute', left:'0', right:'0', top:'820px', textAlign:'center', opacity:'0' });
+el('div', newSeason, { fontSize:'34px', fontWeight:'800', letterSpacing:'10px', color:C.gold,
+  textTransform:'uppercase' }, 'New season');
+el('div', newSeason, { fontSize:'92px', fontWeight:'800', letterSpacing:'-2px', lineHeight:'1.12',
+  marginTop:'18px' }, 'Everyone starts<br>climbing again.');
+
+const endCard = K.makeEndCard(W, { tag:'Seasons reset. Ranks don\'t lie.', cta:'Link in bio' });
+
+/* =============================================================== RENDER == */
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+  K.frame(t);
+
+  /* clock runs down to 00:00 at the reset beat (8.00) */
+  const total = Math.max(0, Math.round(lerp(59, 0, clamp01(seg(t, 0.0, 8.0)))));
+  clockNum.textContent = '00:' + String(total).padStart(2,'0');
+  clockNum.style.color = total <= 10 ? C.red : '#fff';
+  const clockOut = seg(t, 8.00, 8.35);
+  clockWrap.style.opacity = String(1 - clockOut);
+  clockWrap.style.transform = `translateY(${lerp(0,-140,E.outCubic(clockOut))}px) scale(${lerp(1,0.6,E.outCubic(clockOut))})`;
+  chroma(clockNum, lerp(14,0,E.outCubic(seg(t,0.05,0.42))) + (total<=5 ? 10*Math.abs(Math.sin(t*22)) : 0));
+
+  /* standing */
+  let fr = FR_START;
+  gains.forEach(g => { if (t >= g.t) fr += g.xp; });
+  const lastG = gains.filter(g => t >= g.t).pop();
+  const prevFr = FR_START + gains.filter(g => g.t < (lastG?lastG.t:0)).reduce((a,g)=>a+g.xp,0);
+  const shown = lastG ? lerp(prevFr, fr, E.outQuart(seg(t, lastG.t, lastG.t+0.5))) : FR_START;
+  frVal.textContent = fmt(shown);
+  barFill.style.width = (clamp01((shown - GOLD.min)/(PLAT.min - GOLD.min))*100).toFixed(2)+'%';
+  const remain = Math.max(0, Math.round(FR_TARGET - shown));
+  gapLine.innerHTML = remain > 0
+    ? `<span style="color:${C.red};font-weight:800">${remain} FR</span> to Platinum`
+    : `<span style="color:${C.green};font-weight:800">Platinum reached</span>`;
+  standing.style.opacity = String(seg(t,1.60,1.95) * (1 - seg(t,7.70,8.00)));
+
+  lifter.root.style.opacity = String(seg(t,3.00,3.35) * (1 - seg(t,7.60,7.95)));
+  K.driveLifter(lifter, clamp01(seg(t,3.3,7.6))*3.4, 0.72);
+
+  gains.forEach((g,i) => {
+    const q = seg(t, g.t, g.t+0.80);
+    g.node.style.opacity = q>0 ? String(seg(t,g.t,g.t+0.07) * (1 - E.inCubic(seg(t,g.t+0.42,g.t+0.80)))) : '0';
+    g.node.style.transform =
+      `translate(calc(-50% + ${[-170,160,-40][i]*E.outQuart(q)}px), ${lerp(0,-200,E.outQuart(q))}px) scale(${lerp(0.5,1,E.outBack(clamp01(q*3)))})`;
+  });
+
+  /* promotion at the buzzer */
+  const pr = seg(t, 8.00, 8.70);
+  promo.style.opacity = String(seg(t,8.00,8.14) * (1 - seg(t,9.40,9.60)));
+  promo.style.transform = `scale(${lerp(0.3,1,E.slam(pr))})`;
+  chroma(promoTier, lerp(30,0,E.outCubic(seg(t,8.00,8.65))));
+  K.driveShockwave(promoRing, seg(t,8.00,8.80), 7.6, 0, 900-960);
+  K.driveSparks(promoSparks, seg(t,8.00,8.95), 0, 900-960);
+
+  /* new season */
+  const ns = seg(t, 9.60, 10.20);
+  newSeason.style.opacity = String(seg(t,9.60,9.76) * (1 - seg(t,12.00,12.20)));
+  newSeason.style.transform = `scale(${lerp(1.3,1,E.slam(ns))})`;
+
+  if (t >= 12.20) endCard.drive(t - 12.20); else endCard.root.style.opacity = '0';
+};
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>

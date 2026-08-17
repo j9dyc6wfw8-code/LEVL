@@ -60,6 +60,8 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
   const { width: winW } = useWindowDimensions();
   const [region, setRegion] = useState(null);   // selected body region, drives the picker
   const [infoOpen, setInfoOpen] = useState(false);
+  // Arms the two-tap confirm on END, so a single mistap can't discard a day.
+  const [endArmed, setEndArmed] = useState(false);
   const unit = data.unit;
   const days = workoutDays || [];
   const totalLogged = (data.lifts || []).length + (data.cardio || []).length;
@@ -68,32 +70,63 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
   const tileW = (winW - 28) * 0.315;
   const figSize = Math.max(38, Math.min(56, Math.round(tileW * 0.44)));
 
+  /* ------------------------- running a Workout Day -------------------------
+   * The old model was a bare cursor: { day, idx }, advanced only by idx + 1.
+   * Two things followed from that, both reported as bugs:
+   *
+   *   - You could never go BACK, and never jump. If the squat rack was busy you
+   *     had no way to take exercise 4 first and return to 2 — the day walked in
+   *     one direction only.
+   *   - END wiped the run instantly with no confirmation, so one stray tap on a
+   *     control sitting right next to "NEXT EXERCISE" lost your place entirely.
+   *
+   * `done` turns the cursor into real progress: which exercises you've actually
+   * finished, independent of where you're standing right now.
+   * ---------------------------------------------------------------------- */
+  const resetEntry = () => { setW(''); setR(''); setRpe(8); setLast(null); };
+
   const startDay = (day) => {
     if (!day.exercises || !day.exercises.length) return;
-    setDayMode({ day, idx: 0 });
+    setDayMode({ day, idx: 0, done: [] });
     setSel(day.exercises[0]);
+    resetEntry();
+    setEndArmed(false);
+  };
+
+  // Jump to ANY exercise. Tapping a chip moves you without marking anything
+  // done — you're choosing where to stand, not claiming to have finished.
+  const goToExercise = (i) => {
+    if (!dayMode) return;
+    const list = dayMode.day.exercises || [];
+    if (i < 0 || i >= list.length) return;
+    setDayMode({ day: dayMode.day, idx: i, done: dayMode.done || [] });
+    setSel(list[i]);
+    resetEntry();
+    setEndArmed(false);
+  };
+
+  const finishDay = () => {
+    setDayMode(null);
+    setSel(null);
     setW('');
     setR('');
-    setRpe(8);
     setLast(null);
+    setEndArmed(false);
   };
+
+  // "Next" ticks off the current exercise and lands on the first one still
+  // outstanding, so jumping around never strands you on a finished lift.
   const advanceDay = () => {
     if (!dayMode) return;
-    const nextIdx = dayMode.idx + 1;
-    if (nextIdx >= dayMode.day.exercises.length) {
-      setDayMode(null);
-      setSel(null);
-      setW('');
-      setR('');
-      setLast(null);
-      return;
-    }
-    setDayMode({ day: dayMode.day, idx: nextIdx });
-    setSel(dayMode.day.exercises[nextIdx]);
-    setW('');
-    setR('');
-    setRpe(8);
-    setLast(null);
+    const list = dayMode.day.exercises || [];
+    const prev = dayMode.done || [];
+    const done = prev.includes(dayMode.idx) ? prev : prev.concat(dayMode.idx);
+    const nextUndone = list.findIndex((_, i) => !done.includes(i));
+    if (nextUndone === -1) { finishDay(); return; }
+    setDayMode({ day: dayMode.day, idx: nextUndone, done });
+    setSel(list[nextUndone]);
+    resetEntry();
+    setEndArmed(false);
   };
 
   const list = useMemo(() => {
@@ -276,32 +309,114 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
         </View>
       ) : (
         <View>
-        {dayMode && (
+        {dayMode && (() => {
+          const list = dayMode.day.exercises || [];
+          const done = dayMode.done || [];
+          const doneCount = done.length;
+          const allDone = doneCount >= list.length;
+          return (
           <Card style={{ borderWidth: 1, borderColor: C.gold, marginBottom: 10 }}>
             <View style={s.between}>
               <View style={{ flex: 1, marginRight: 12 }}>
                 <Text style={{ fontSize: 10, fontWeight: '800', color: C.gold, letterSpacing: 1.1 }}>WORKOUT DAY</Text>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: C.text, marginTop: 3 }}>{dayMode.day.name}</Text>
               </View>
+              {/* Progress is DONE / total. It used to be idx+1 / total, which
+                  claimed exercise 1 was complete the instant you started. */}
               <Text style={{ fontSize: 13, color: C.gold, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
-                {dayMode.idx + 1}/{dayMode.day.exercises.length}
+                {doneCount}/{list.length} done
               </Text>
             </View>
             <View style={{ marginTop: 10 }}>
-              <PBar pct={((dayMode.idx + 1) / dayMode.day.exercises.length) * 100} color={C.gold} height={7} />
+              <PBar pct={(doneCount / Math.max(1, list.length)) * 100} color={C.gold} height={7} />
             </View>
-            <View style={{ flexDirection: 'row', marginTop: 12 }}>
+
+            {/* The whole day, tappable. This is the fix for training out of
+                order: take whatever rack is free, come back to the rest. */}
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={{ marginTop: 12, marginHorizontal: -2 }}
+              contentContainerStyle={{ paddingHorizontal: 2 }}>
+              {list.map((name, i) => {
+                const isDone = done.includes(i);
+                const isNow = i === dayMode.idx;
+                return (
+                  <Pressable
+                    key={name + i}
+                    onPress={() => goToExercise(i)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: isNow }}
+                    accessibilityLabel={`${name}${isDone ? ', done' : ''}${isNow ? ', current' : ''}`}
+                    style={{
+                      minHeight: 40, justifyContent: 'center',
+                      paddingHorizontal: 12, marginRight: 6, borderRadius: 10,
+                      backgroundColor: isNow ? C.gold : isDone ? C.greenSoft : C.panel2,
+                      borderWidth: 1,
+                      borderColor: isNow ? C.gold : isDone ? C.green : C.line,
+                    }}>
+                    <Text
+                      numberOfLines={1}
+                      style={{
+                        fontSize: 12, fontWeight: '800', maxWidth: 132,
+                        color: isNow ? C.ink : isDone ? C.green : C.mut,
+                      }}>
+                      {isDone ? '✓ ' : (i + 1) + '. '}{name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <View style={{ flexDirection: 'row', marginTop: 12, alignItems: 'center' }}>
+              {/* Going backwards was simply impossible before. */}
+              <Pressable
+                onPress={() => goToExercise(dayMode.idx - 1)}
+                disabled={dayMode.idx === 0}
+                accessibilityRole="button"
+                accessibilityLabel="Previous exercise"
+                style={{
+                  minWidth: 46, minHeight: 42, borderRadius: 11, marginRight: 7,
+                  alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
+                  opacity: dayMode.idx === 0 ? 0.4 : 1,
+                }}>
+                <Text style={{ fontSize: 15, color: C.mut, fontWeight: '800' }}>‹</Text>
+              </Pressable>
+
               <Pressable onPress={advanceDay} style={{ flex: 1, minHeight: 42, borderRadius: 11, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ fontSize: 12, fontWeight: '800', color: C.ink }}>
-                  {dayMode.idx + 1 >= dayMode.day.exercises.length ? 'FINISH DAY' : 'NEXT EXERCISE  ›'}
+                  {allDone ? 'FINISH DAY' : 'DONE — NEXT  ›'}
                 </Text>
               </Pressable>
-              <Pressable onPress={() => { setDayMode(null); setSel(null); setW(''); setR(''); }} style={{ minWidth: 58, minHeight: 42, marginLeft: 7, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 12, color: C.mut, fontWeight: '700' }}>END</Text>
+
+              {/* Two-tap confirm. This sits next to the primary action, and
+                  wiping an in-progress day on a single stray tap is exactly
+                  what people reported losing. */}
+              <Pressable
+                onPress={() => { if (endArmed) finishDay(); else setEndArmed(true); }}
+                accessibilityRole="button"
+                accessibilityLabel={endArmed ? 'Confirm end workout day' : 'End workout day'}
+                style={{
+                  minWidth: 66, minHeight: 42, marginLeft: 7, borderRadius: 11,
+                  alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: endArmed ? C.redSoft : 'transparent',
+                  borderWidth: 1, borderColor: endArmed ? C.red : 'transparent',
+                }}>
+                <Text style={{ fontSize: 12, color: endArmed ? C.red : C.mut, fontWeight: '800' }}>
+                  {endArmed ? 'SURE?' : 'END'}
+                </Text>
               </Pressable>
             </View>
+
+            {endArmed ? (
+              <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 8, lineHeight: 16 }}>
+                Ends the day. Sets you've already logged are kept — tap anywhere else to cancel.
+              </Text>
+            ) : null}
           </Card>
-        )}
+          );
+        })()}
         <Card>
           <View style={[s.between, { alignItems: 'flex-start' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>

@@ -1,0 +1,181 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — Beat Your Rival</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#05060a}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0d13}
+  #world{position:absolute;inset:0;will-change:transform}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div id="stage"><div id="world"></div></div>
+<script src="levl-kit.js"></script>
+<script>
+/* ============================================================================
+   CONCEPT E — "53 XP behind."
+   The report's "Beat the Creator" angle, re-pointed onto LEVL's real 1v1 duel.
+   Rewards on screen are the genuine engine values: DUEL_TIERS.contender pays
+   500 XP + 250 coins for a won 7-day duel.
+   ========================================================================== */
+const K = LEVLKit;
+const { C, E, el, seg, lerp, px, fmt, rgba, icon, chroma, clamp01 } = K;
+
+K.boot({ accent: C.blue });
+K.setImpacts([0.24, 1.85, 3.05, 4.30, 5.55, 6.80, 7.70, 8.90, 11.40, 12.80],
+             [7.70, 8.90, 12.80]);
+const DURATION = 16.0;
+const W = K.world;
+
+const YOU_START = 4102, RIVAL_END = 4155, YOU_END = 4321;
+
+/* ---- duel context chip -------------------------------------------------- */
+const chip = el('div', W, {
+  position:'absolute', left:'50%', top:'300px', marginLeft:'-250px', width:'500px',
+  padding:'16px 0', borderRadius:'999px', textAlign:'center',
+  background:'rgba(9,10,15,0.72)', border:'2px solid '+rgba(C.gold,0.5),
+  fontSize:'30px', fontWeight:'800', letterSpacing:'4px', color:C.gold, textTransform:'uppercase',
+}, '7-day duel · day 7');
+
+/* ---- leaderboard rows (they physically swap on the overtake) ------------- */
+function mkRow(rank, name, colour, initial){
+  const row = el('div', W, {
+    position:'absolute', left:'90px', width:'900px', height:'190px', top:'0',
+    borderRadius:'34px', background:'linear-gradient(180deg,'+rgba(colour,0.20)+','+rgba(colour,0.06)+')',
+    border:'3px solid '+rgba(colour,0.65), display:'flex', alignItems:'center',
+    padding:'0 40px', gap:'28px', willChange:'transform',
+  });
+  const rankEl = el('div', row, { fontSize:'62px', fontWeight:'800', color:colour, width:'110px' }, rank);
+  el('div', row, { width:'104px', height:'104px', borderRadius:'999px', flexShrink:'0',
+    background:rgba(colour,0.16), border:'3px solid '+rgba(colour,0.75),
+    display:'flex', alignItems:'center', justifyContent:'center',
+    fontSize:'46px', fontWeight:'800', color:colour }, initial);
+  el('div', row, { flex:'1', fontSize:'46px', fontWeight:'700' }, name);
+  const val = el('div', row, { fontSize:'56px', fontWeight:'800', color:colour, fontVariantNumeric:'tabular-nums' }, '0');
+  return { row, rankEl, val };
+}
+const rowRival = mkRow('#2', 'Kai',    C.blue, 'K');
+const rowYou   = mkRow('#3', 'You',    C.gold, 'Y');
+const ROW_TOP_A = 520, ROW_TOP_B = 740;
+
+/* ---- the gap: the actual hook ------------------------------------------- */
+const gapWrap = el('div', W, { position:'absolute', left:'0', right:'0', top:'1010px', textAlign:'center' });
+const gapNum = el('div', gapWrap, {
+  fontSize:'190px', fontWeight:'800', color:C.red, letterSpacing:'-6px', lineHeight:'1',
+  textShadow:'0 0 80px '+rgba(C.red,0.8),
+}, '53');
+const gapLbl = el('div', gapWrap, {
+  fontSize:'52px', fontWeight:'800', letterSpacing:'8px', textTransform:'uppercase', marginTop:'6px',
+}, 'XP behind');
+const gapSub = el('div', gapWrap, {
+  fontSize:'34px', fontWeight:'700', letterSpacing:'5px', color:C.mut, textTransform:'uppercase', marginTop:'22px',
+}, '2 hours left');
+
+/* ---- the response ------------------------------------------------------- */
+const lifter = K.makeLifter(W, C.gold, 0.78);
+lifter.root.style.left = '50%';
+lifter.root.style.top = '1330px';
+lifter.root.style.opacity = '0';
+
+const sets = [
+  { t:3.05, xp:'+58 XP' }, { t:4.30, xp:'+62 XP' }, { t:5.55, xp:'+54 XP' }, { t:6.80, xp:'+45 XP' },
+].map(s => ({ ...s, node: el('div', W, {
+  position:'absolute', left:'50%', top:'1180px', padding:'12px 30px', borderRadius:'999px',
+  background:rgba(C.green,0.18), border:'3px solid '+rgba(C.green,0.75),
+  fontSize:'36px', fontWeight:'800', color:C.green, whiteSpace:'nowrap', opacity:'0',
+  boxShadow:'0 0 34px '+rgba(C.green,0.55),
+}, s.xp) }));
+
+/* ---- overtake + victory ------------------------------------------------- */
+const overtake = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'1010px', textAlign:'center',
+  fontSize:'120px', fontWeight:'800', letterSpacing:'-2px', color:C.gold, opacity:'0',
+  textShadow:'0 0 70px '+rgba(C.gold,0.8),
+}, 'OVERTAKE');
+const otRing = K.makeShockwave(W, rgba(C.gold,0.9));
+
+const win = el('div', W, {
+  position:'absolute', left:'50%', top:'1080px', marginLeft:'-360px', width:'720px',
+  padding:'34px 0', textAlign:'center', borderRadius:'34px', opacity:'0',
+  background:'linear-gradient(135deg,#fff0bd,'+C.gold+' 50%,'+C.goldDeep+')',
+  boxShadow:'0 26px 90px '+rgba(C.gold,0.55),
+}, `<div style="font-size:64px;font-weight:800;letter-spacing:10px;color:${C.ink}">VICTORY</div>
+    <div style="font-size:28px;font-weight:800;color:${rgba('#0e1016',0.66)};margin-top:8px;letter-spacing:1px">+500 XP · +250 FORGE COINS</div>`);
+const winSparks = K.makeSparks(W, 32, C.gold, 6161);
+
+const endCard = K.makeEndCard(W, { tag:'Someone is always training.', cta:'Link in bio' });
+
+/* =============================================================== RENDER == */
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+  K.frame(t);
+
+  /* rows: rival on top until the overtake, then they swap */
+  const swap = E.slam(seg(t, 7.70, 8.40));
+  const youTop   = lerp(ROW_TOP_B, ROW_TOP_A, swap);
+  const rivalTop = lerp(ROW_TOP_A, ROW_TOP_B, swap);
+  rowYou.row.style.transform   = `translateY(${youTop}px) scale(${1 + 0.06*Math.sin(swap*Math.PI)})`;
+  rowRival.row.style.transform = `translateY(${rivalTop}px)`;
+  rowYou.rankEl.textContent   = swap > 0.5 ? '#2' : '#3';
+  rowRival.rankEl.textContent = swap > 0.5 ? '#3' : '#2';
+
+  /* your XP climbs with each logged set; the rival barely moves — they're done */
+  let you = YOU_START;
+  sets.forEach(s => { if (t >= s.t) you += parseInt(s.xp.replace(/\D/g,''),10); });
+  const lastSet = sets.filter(s => t >= s.t).pop();
+  const smooth = lastSet ? E.outQuart(seg(t, lastSet.t, lastSet.t+0.45)) : 0;
+  const prev = YOU_START + sets.filter(s => s.t < (lastSet?lastSet.t:0)).reduce((a,s)=>a+parseInt(s.xp.replace(/\D/g,''),10),0);
+  const shown = lastSet ? lerp(prev, you, smooth) : YOU_START;
+  rowYou.val.textContent   = fmt(shown);
+  rowRival.val.textContent = fmt(RIVAL_END);
+
+  /* the gap number counts down to zero, then the hook block clears */
+  const gapOut = seg(t, 7.30, 7.75);
+  const gap = Math.max(0, RIVAL_END - shown);
+  gapNum.textContent = gap > 0 ? String(Math.round(gap)) : '0';
+  gapNum.style.color = gap > 0 ? C.red : C.green;
+  gapWrap.style.opacity = String(1 - gapOut);
+  gapWrap.style.transform = `scale(${lerp(1,0.7,E.outCubic(gapOut))})`;
+  chroma(gapNum, lerp(15,0,E.outCubic(seg(t,0.05,0.40))));
+
+  /* lifter appears once the challenge is set */
+  lifter.root.style.opacity = String(seg(t,1.85,2.20) * (1 - seg(t,7.30,7.70)));
+  K.driveLifter(lifter, clamp01(seg(t,2.2,7.3))*4.2, 0.78);
+
+  sets.forEach((s,i) => {
+    const q = seg(t, s.t, s.t+0.75);
+    s.node.style.opacity = q>0 ? String(seg(t,s.t,s.t+0.07) * (1 - E.inCubic(seg(t,s.t+0.38,s.t+0.75)))) : '0';
+    s.node.style.transform =
+      `translate(calc(-50% + ${[-190,180,-120,150][i]*E.outQuart(q)}px), ${lerp(0,-220,E.outQuart(q))}px) scale(${lerp(0.5,1,E.outBack(clamp01(q*3)))})`;
+  });
+
+  /* overtake beat, then victory */
+  const ot = seg(t, 7.70, 8.60);
+  overtake.style.opacity = String(seg(t,7.70,7.80) * (1 - seg(t,8.65,8.90)));
+  overtake.style.transform = `scale(${lerp(2.0,1,E.slam(ot))})`;
+  chroma(overtake, lerp(30,0,E.outCubic(seg(t,7.70,8.30))));
+  K.driveShockwave(otRing, seg(t,7.70,8.45), 7.0, 0, 1010-960);
+
+  const wv = seg(t, 8.90, 9.55);
+  win.style.opacity = String(seg(t,8.90,8.98) * (1 - seg(t,12.5,12.8)));
+  win.style.transform = `scale(${lerp(2.1,1,E.slam(wv))}) rotate(${lerp(7,0,E.outQuart(wv))}deg)`;
+  win.style.filter = `blur(${lerp(16,0,E.outQuart(seg(t,8.90,9.15)))}px)`;
+  K.driveSparks(winSparks, seg(t,8.92,9.80), 0, 1080-960);
+
+  /* rows clear before the end card so it lands on a clean frame */
+  const rowsOut = seg(t, 12.4, 12.8);
+  [rowYou, rowRival].forEach(r => { r.row.style.opacity = String(1 - rowsOut); });
+  chip.style.opacity = String((1 - rowsOut) * seg(t,0.0,0.15));
+
+  if (t >= 12.8) endCard.drive(t - 12.8); else endCard.root.style.opacity = '0';
+};
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>

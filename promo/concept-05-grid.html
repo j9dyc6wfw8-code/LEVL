@@ -1,0 +1,178 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — The Grid</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#05060a}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0d13}
+  #world{position:absolute;inset:0;will-change:transform}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div id="stage"><div id="world"></div></div>
+<script src="levl-kit.js"></script>
+<script>
+/* ============================================================================
+   CONCEPT 05 — "THE GRID"
+   Pivot: a daily-puzzle share grid -> LEVL's 28-day consistency window.
+   Nothing morphs. The camera pulls back and the MEANING changes: what looked
+   like a 5-wide puzzle result is a 7x4 month of training.
+
+   Real feature: LiveLeaderboard.js -> "Days trained in the last 28".
+   The pattern is 24/28 = 86%, with rest days staggered across columns.
+   ========================================================================== */
+const K = LEVLKit;
+const { C, E, el, seg, lerp, px, fmt, rgba, icon, chroma, clamp01 } = K;
+
+K.boot({ accent: C.green, grid:false });
+/* Deliberate silence between 4.60 and 6.00: no impacts at all, so the pivot
+   lands into stillness rather than out of noise. */
+K.setImpacts([0.22, 1.05, 1.75, 2.45, 3.15, 3.85, 4.55, 6.00, 8.60, 11.60],
+             [6.00, 8.60, 11.60]);
+const DURATION = 14.6;
+const W = K.world;
+
+const COLS = 7, ROWS = 4, N = COLS*ROWS;      // 28 days
+const CELL = 118, GAP = 18;
+const GRID_W = COLS*CELL + (COLS-1)*GAP;
+const GRID_H = ROWS*CELL + (ROWS-1)*GAP;
+// staggered rest days — evenly spaced indices render as a straight stripe
+const REST = new Set([3, 8, 16, 23]);
+
+/* the whole grid lives in a rig we can dolly */
+const rig = el('div', W, {
+  position:'absolute', left:'50%', top:'1000px', width:px(GRID_W), height:px(GRID_H),
+  marginLeft:px(-GRID_W/2), marginTop:px(-GRID_H/2), transformOrigin:'50% 50%',
+});
+const cells = Array.from({length:N}, (_,i) => {
+  const c = el('div', rig, {
+    position:'absolute',
+    left:px((i%COLS)*(CELL+GAP)), top:px(Math.floor(i/COLS)*(CELL+GAP)),
+    width:px(CELL), height:px(CELL), borderRadius:'22px',
+    background:'#20242f', border:'2px solid #2c3344', opacity:'0',
+    transformOrigin:'50% 50%',
+  });
+  return c;
+});
+
+/* phase-1 caption — makes it read as a puzzle share, not a fitness app */
+const puzzleCap = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'318px', textAlign:'center', zIndex:'6',
+  fontSize:'46px', fontWeight:'800', letterSpacing:'8px', color:C.mut, textTransform:'uppercase',
+}, 'Daily 1,204');
+const puzzleSub = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'392px', textAlign:'center', zIndex:'6',
+  fontSize:'30px', fontWeight:'600', letterSpacing:'3px', color:C.faint,
+}, 'shared 2 minutes ago');
+
+/* phase-2 labels */
+const windowLbl = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'480px', textAlign:'center', opacity:'0',
+  fontSize:'34px', fontWeight:'800', letterSpacing:'9px', color:C.gold, textTransform:'uppercase',
+}, 'Last 28 days');
+const statWrap = el('div', W, { position:'absolute', left:'0', right:'0', top:'1180px', textAlign:'center', opacity:'0' });
+const statPct = el('div', statWrap, {
+  fontSize:'170px', fontWeight:'800', color:C.green, letterSpacing:'-6px', lineHeight:'1',
+  fontVariantNumeric:'tabular-nums', textShadow:'0 0 80px '+rgba(C.green,0.7),
+}, '0%');
+el('div', statWrap, { fontSize:'34px', fontWeight:'800', letterSpacing:'7px', color:C.mut,
+  textTransform:'uppercase', marginTop:'12px' }, 'Consistency');
+const streakChip = el('div', W, {
+  position:'absolute', left:'50%', top:'1420px', marginLeft:'-210px', width:'420px',
+  padding:'18px 0', borderRadius:'999px', textAlign:'center', opacity:'0',
+  background:rgba(C.orange,0.16), border:'3px solid '+rgba(C.orange,0.6),
+  fontSize:'40px', fontWeight:'800', color:C.orange,
+}, '🔥 12 day streak');
+
+/* the open loop: one square left unfilled */
+const tonight = el('div', W, {
+  position:'absolute', left:'70px', right:'70px', top:'1200px', textAlign:'center', opacity:'0',
+  fontSize:'76px', fontWeight:'800', letterSpacing:'-1.5px', lineHeight:'1.15',
+}, 'One square left.<br><span style="color:'+C.gold+'">You\'ve got until midnight.</span>');
+
+const ring = K.makeShockwave(W, rgba(C.green,0.9));
+const endCard = K.makeEndCard(W, { tag:'Don\'t leave it grey.', cta:'Link in bio' });
+
+/* =============================================================== RENDER == */
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+  K.frame(t);
+
+  /* ---- camera: starts tight on ~4 columns, pulls back to the full month --- */
+  const pull = E.inOutCubic(seg(t, 6.00, 7.40));
+  // 1.85 crops to ~4.5 columns — enough to read as a puzzle share, not a month
+  const scale = lerp(1.85, 1.0, pull);
+  // while zoomed, sit over the left-centre of the grid so the crop looks natural
+  const offX = lerp(110, 0, pull), offY = lerp(30, 0, pull);
+  const drift = (1 - pull) * Math.sin(t*0.7) * 10;
+  rig.style.transform = `translate(${offX + drift}px, ${offY}px) scale(${scale})`;
+
+  /* ---- tiles flip in, seven at a time, like a share graphic --------------- */
+  let trained = 0;
+  cells.forEach((c,i) => {
+    const st = 0.22 + i*0.092;   // whole month lands by ~2.8s
+    const on = t >= st;
+    const rest = REST.has(i);
+    if (on && !rest) trained++;
+    const q = E.slam(seg(t, st, st+0.26));
+    c.style.opacity = String(seg(t, st, st+0.09));
+    // flip on X — reads as a physical tile turning over
+    c.style.transform = `perspective(600px) rotateX(${lerp(-92,0,q)}deg) scale(${lerp(0.86,1,q)})`;
+    if (on){
+      if (rest){ c.style.background = '#191d27'; c.style.borderColor = '#2c3344'; c.style.boxShadow = 'none'; }
+      else {
+        // before the pivot the fill is neutral; after it, it's LEVL green
+        const brand = seg(t, 6.00, 6.90);
+        c.style.background  = brand > 0 ? rgba(C.green, 0.30 + brand*0.5) : '#39404f';
+        c.style.borderColor = brand > 0 ? rgba(C.green, 0.50 + brand*0.5) : '#4a5262';
+        c.style.boxShadow   = brand > 0.2 ? `0 0 ${26*brand}px ${rgba(C.green,0.55*brand)}` : 'none';
+      }
+    }
+  });
+
+  /* the very last cell is TODAY and stays empty until the payoff */
+  const todayCell = cells[N-1];
+  const filled = seg(t, 11.10, 11.60);
+  todayCell.style.opacity = String(seg(t, 0.30 + (N-1)*0.145, 0.30 + (N-1)*0.145 + 0.09));
+  if (t >= 9.0){
+    const pulse = 0.5 + 0.5*Math.sin(t*5.2);
+    if (filled < 1){
+      todayCell.style.background = rgba(C.gold, 0.10 + pulse*0.16);
+      todayCell.style.borderColor = rgba(C.gold, 0.55 + pulse*0.45);
+      todayCell.style.boxShadow = `0 0 ${28 + pulse*34}px ${rgba(C.gold, 0.4 + pulse*0.3)}`;
+    } else {
+      todayCell.style.background = rgba(C.green, 0.8);
+      todayCell.style.borderColor = C.green;
+      todayCell.style.boxShadow = '0 0 40px '+rgba(C.green,0.7);
+    }
+  }
+
+  /* ---- phase 1 captions clear at the pivot -------------------------------- */
+  const capOut = seg(t, 5.70, 6.10);
+  puzzleCap.style.opacity = String(seg(t,0.10,0.45) * (1 - capOut));
+  puzzleSub.style.opacity = String(seg(t,0.20,0.55) * (1 - capOut));
+
+  /* ---- phase 2 ----------------------------------------------------------- */
+  windowLbl.style.opacity = String(seg(t, 6.30, 6.75) * (1 - seg(t, 13.9, 14.2)));
+  /* 28 days, 4 rest days. Today is unfilled until the payoff, so the number
+     steps 82% -> 86% exactly when the last square lands. */
+  statPct.textContent = (t >= 11.60 ? 86 : 82) + '%';
+  statWrap.style.opacity = String(seg(t, 8.60, 9.10) * (1 - seg(t, 10.7, 11.0)));
+  streakChip.style.opacity = String(seg(t, 9.10, 9.55) * (1 - seg(t, 10.7, 11.0)));
+
+  tonight.style.opacity = String(seg(t, 11.20, 11.65) * (1 - seg(t, 13.35, 13.60)));
+  tonight.style.transform = `scale(${lerp(1.25,1,E.slam(seg(t,11.20,11.80)))})`;
+  K.driveShockwave(ring, seg(t, 11.60, 12.35), 6.4, 0, 840-960);
+
+  if (t >= 13.60) endCard.drive(t - 13.60); else endCard.root.style.opacity = '0';
+};
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>

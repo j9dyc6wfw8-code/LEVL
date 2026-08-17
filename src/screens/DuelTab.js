@@ -1,5 +1,5 @@
 // LEVL React Native — Duel (1v1 weekly) screen
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { C, s, MONO, TYPE, RADIUS } from '../theme';
@@ -7,7 +7,6 @@ import { Card, Lbl, PBar, GoldBtn } from '../components/ui';
 import { MiniHunter } from '../components/Hunter';
 import { LoadoutCompare } from '../components/LoadoutCard';
 import { shareText } from '../services/platform';
-import FriendsScreen from './FriendsScreen';
 import FriendDuelDetail from './FriendDuelDetail';
 import {
   DUEL_TIERS, duelTierByKey, estimateDailyOutput, recommendedDuelTier,
@@ -106,14 +105,13 @@ function DuelHistory({ past }) {
   );
 }
 
-export default function DuelTab({ data, dv, startDuel, claimDuel, forfeitDuel, friends, friendDuels, onChallengeFriend, focusFriendsSignal, onCreateInvite, onJoinByCode }) {
+// Friends is a peer destination in CompeteTab now, not a segment inside this
+// screen. That removes the second stacked segmented control — this screen used
+// to render a gold pill row identical to the one directly above it — and it
+// also retires a duplicate doorway, since Friends already had its own modal
+// route (levl://friends). The focusFriendsSignal effect moved up with it.
+export default function DuelTab({ data, dv, startDuel, claimDuel, forfeitDuel, friendDuels, onCreateInvite, onJoinByCode }) {
   const now = Date.now();
-  const [seg, setSeg] = useState('bot');   // 'bot' | 'friends'
-  // A tapped friend-request/challenge notification bumps this signal; jump to
-  // the Friends segment (where Accept/Decline lives) and refresh.
-  useEffect(() => {
-    if (focusFriendsSignal) { setSeg('friends'); if (friends && friends.refresh) friends.refresh(); }
-  }, [focusFriendsSignal]); // eslint-disable-line react-hooks/exhaustive-deps
   const [confirmFF, setConfirmFF] = useState(false);
   const duels = data.duels || [];
   const active = duels.find((x) => x.status === 'active');
@@ -121,30 +119,8 @@ export default function DuelTab({ data, dv, startDuel, claimDuel, forfeitDuel, f
   const est = estimateDailyOutput(data, now);
   const recKey = recommendedDuelTier(est);
 
-  // Segmented header: bot duels (the existing feature) vs friend duels (new).
-  const Segment = () => (
-    <View style={{ flexDirection: 'row', backgroundColor: C.panel2, borderRadius: RADIUS.pill, padding: 4, margin: 16, marginBottom: 0 }}>
-      {[['bot', 'Quick Duel'], ['friends', 'Friends']].map(([k, label]) => (
-        <Pressable key={k} onPress={() => setSeg(k)}
-          style={{ flex: 1, minHeight: 40, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: seg === k ? C.goldSoft : 'transparent', borderWidth: 1, borderColor: seg === k ? C.gold : 'transparent' }}>
-          <Text style={{ ...TYPE.caption, fontWeight: '700', color: seg === k ? C.gold : C.dim }}>{label}</Text>
-        </Pressable>
-      ))}
-    </View>
-  );
-
-  if (seg === 'friends') {
-    return (
-      <View style={{ flex: 1 }}>
-        <Segment />
-        <FriendsScreen fr={friends} duels={friendDuels} onChallenge={onChallengeFriend} onOpenDuel={() => setSeg('bot')} />
-      </View>
-    );
-  }
-
   return (
     <View style={{ flex: 1 }}>
-      <Segment />
       <DuelBotView
         data={data} dv={dv} now={now} confirmFF={confirmFF} setConfirmFF={setConfirmFF}
         duels={duels} active={active} past={past} est={est} recKey={recKey}
@@ -155,8 +131,9 @@ export default function DuelTab({ data, dv, startDuel, claimDuel, forfeitDuel, f
   );
 }
 
-// The original bot-duel screen body, unchanged — just extracted so the segment
-// switch above can choose between it and the Friends view.
+// The bot-duel screen body. Kept as its own component (rather than folded back
+// into DuelTab) because the active-friend-duel takeover below reads far more
+// clearly as one self-contained view.
 function DuelBotView({ data, dv, now, confirmFF, setConfirmFF, duels, active, past, est, recKey, startDuel, claimDuel, forfeitDuel, friendDuels, onCreateInvite, onJoinByCode }) {
   const [duelDays, setDuelDays] = useState(7);
   const durMult = (DUEL_DURATIONS.find((d) => d.days === duelDays) || DUEL_DURATIONS[2]).mult;

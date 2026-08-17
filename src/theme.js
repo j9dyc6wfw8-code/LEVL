@@ -60,6 +60,38 @@ export const C = {
   pink:      '#ff5fa2',  pinkSoft:  'rgba(255,95,162,0.14)',
 };
 
+/* ALPHA — the one correct way to tint a token.
+ *
+ * The codebase is full of `item.color + '55'`. That works only while every
+ * colour is a 6-digit hex: the moment one is `rgba()`, an 8-digit hex or a
+ * 3-digit shorthand it produces a silently invalid colour, and RN renders it as
+ * black rather than throwing. It is also unreadable — nobody knows what '55' is
+ * without reaching for a converter (it's 33%).
+ *
+ * alpha('#ffc933', 0.33) says what it means and survives any input format.
+ */
+export function alpha(color, a) {
+  const v = Math.max(0, Math.min(1, a));
+  if (typeof color !== 'string') return color;
+  let h = color.trim();
+  if (h[0] === '#') {
+    h = h.slice(1);
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    if (h.length === 8) h = h.slice(0, 6);            // drop existing alpha
+    if (h.length !== 6) return color;
+    const n = parseInt(h, 16);
+    if (Number.isNaN(n)) return color;
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${v})`;
+  }
+  // already rgb()/rgba() — rewrite the alpha channel rather than nesting
+  const m = h.match(/^rgba?\(([^)]+)\)$/i);
+  if (m) {
+    const p = m[1].split(',').map((x) => x.trim());
+    if (p.length >= 3) return `rgba(${p[0]},${p[1]},${p[2]},${v})`;
+  }
+  return color;
+}
+
 /* RARITY LADDER — the learned ARPG convention (Diablo/WoW). Users read this
  * instantly. Never signalled by hue alone: pair with frame, glow and a label,
  * so it survives grayscale and colour-blindness. */

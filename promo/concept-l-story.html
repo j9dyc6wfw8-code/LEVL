@@ -1,0 +1,145 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — Ninety Days</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#05060a}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0d13}
+  #world{position:absolute;inset:0;will-change:transform}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div id="stage"><div id="world"></div></div>
+<script src="levl-kit.js"></script>
+<script>
+/* ============================================================================
+   CONCEPT L — "Ninety days."
+   The emotional/story angle. Explicitly labelled an illustrative scenario, NOT
+   a customer testimonial — there is no real user data to draw on, and inventing
+   one would be fabricated social proof.
+
+   Every number moves through real LEVL structures: Brzycki e1RM, the TIERS
+   ladder (Bronze 0 -> Silver 600 -> Gold 1,200), and the 28-day consistency
+   window. Deliberately calmer than the rest of the set: fewer impacts, slower
+   cuts, no glitch tearing.
+   ========================================================================== */
+const K = LEVLKit;
+const { C, E, el, seg, lerp, px, fmt, rgba, icon, chroma, clamp01, TIERS } = K;
+
+K.boot({ accent: C.gold });
+K.setImpacts([0.30, 2.60, 12.60, 15.40, 18.60], [15.40]);
+const DURATION = 22.0;
+const W = K.world;
+
+/* ---- honesty label ------------------------------------------------------ */
+const disclaimer = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'250px', textAlign:'center',
+  fontSize:'22px', fontWeight:'600', letterSpacing:'3px', color:C.faint, textTransform:'uppercase',
+}, 'Illustrative story · not a customer testimonial');
+
+/* ---- day counter -------------------------------------------------------- */
+const dayWrap = el('div', W, { position:'absolute', left:'0', right:'0', top:'400px', textAlign:'center', opacity:'0' });
+el('div', dayWrap, { fontSize:'30px', fontWeight:'800', letterSpacing:'12px', color:C.mut, textTransform:'uppercase' }, 'Day');
+const dayNum = el('div', dayWrap, {
+  fontSize:'230px', fontWeight:'800', letterSpacing:'-8px', lineHeight:'1.02',
+  fontVariantNumeric:'tabular-nums', marginTop:'4px',
+}, '1');
+
+/* ---- the three tracked numbers ----------------------------------------- */
+const statsWrap = el('div', W, { position:'absolute', left:'110px', right:'110px', top:'800px', opacity:'0' });
+function mkStat(label, unit){
+  const r = el('div', statsWrap, {
+    display:'flex', alignItems:'center', justifyContent:'space-between',
+    padding:'30px 38px', borderRadius:'28px', background:C.panel,
+    border:'2px solid '+C.lineSoft, marginBottom:'20px',
+  });
+  el('div', r, { fontSize:'30px', fontWeight:'700', color:C.mut, letterSpacing:'3px', textTransform:'uppercase' }, label);
+  const v = el('div', r, { fontSize:'54px', fontWeight:'800', fontVariantNumeric:'tabular-nums' }, '');
+  const u = el('div', r, { fontSize:'26px', fontWeight:'600', color:C.faint, marginLeft:'10px', minWidth:'40px' }, unit||'');
+  return { r, v, u };
+}
+const sBench = mkStat('Bench e1RM', 'kg');
+const sTier  = mkStat('Tier', '');
+const sCons  = mkStat('Consistency', '%');
+
+/* ---- the bar, rising ---------------------------------------------------- */
+const lifter = K.makeLifter(W, C.gold, 0.85);
+lifter.root.style.left = '50%';
+lifter.root.style.top = '1420px';
+lifter.root.style.opacity = '0';
+
+/* ---- closing beats ------------------------------------------------------ */
+const closer1 = el('div', W, {
+  position:'absolute', left:'70px', right:'70px', top:'760px', textAlign:'center', opacity:'0',
+  fontSize:'78px', fontWeight:'800', letterSpacing:'-1.5px', lineHeight:'1.15',
+}, 'Nobody saw<br>the first 89 days.');
+const closer2 = el('div', W, {
+  position:'absolute', left:'70px', right:'70px', top:'1060px', textAlign:'center', opacity:'0',
+  fontSize:'86px', fontWeight:'800', letterSpacing:'-1.5px', color:C.gold,
+}, 'The bar did.');
+const closeRing = K.makeShockwave(W, rgba(C.gold,0.85));
+
+const endCard = K.makeEndCard(W, { tag:'Ninety days from now.', cta:'Link in bio' });
+
+/* Brzycki, as the app computes it: w * 36 / (37 - r) */
+const brzycki = (w, r) => w * 36 / (37 - r);
+const tierFor = fr => { let t = TIERS[0]; for (const x of TIERS) if (fr >= x.min) t = x; return t; };
+
+/* =============================================================== RENDER == */
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+  K.frame(t);
+
+  disclaimer.style.opacity = String(seg(t,0.10,0.60) * (1 - seg(t,4.00,4.60)));
+
+  /* day 1 -> 90 over the middle of the piece */
+  const prog = E.inOutCubic(clamp01(seg(t, 2.60, 12.60)));
+  const day = Math.round(lerp(1, 90, prog));
+  dayNum.textContent = String(day);
+  const dayOut = seg(t, 13.80, 14.30);
+  dayWrap.style.opacity = String(seg(t,0.30,0.90) * (1 - dayOut));
+  dayWrap.style.transform = `scale(${lerp(0.86,1,E.outQuint(seg(t,0.30,1.10)))})`;
+
+  /* the numbers move with the days */
+  const workWeight = lerp(60, 87.5, prog);          // working weight on the bar
+  const e1 = brzycki(workWeight, 5);                 // 5 reps, as logged
+  const fr = lerp(120, 1420, prog);
+  const cons = lerp(0, 86, E.outQuart(clamp01(seg(t, 3.20, 12.60))));
+  const tier = tierFor(fr);
+
+  sBench.v.textContent = (Math.round(e1*2)/2).toFixed(1);
+  sBench.v.style.color = C.gold;
+  sTier.v.textContent = tier.name;
+  sTier.v.style.color = tier.color;
+  sTier.u.textContent = fmt(fr) + ' FR';
+  sTier.u.style.color = C.faint;
+  sCons.v.textContent = Math.round(cons);
+  sCons.v.style.color = C.green;
+  statsWrap.style.opacity = String(seg(t,1.40,2.10) * (1 - seg(t,13.90,14.40)));
+
+  /* the lifter presses heavier as the story runs */
+  lifter.root.style.opacity = String(seg(t,2.10,2.70) * (1 - seg(t,13.70,14.20)));
+  lifter.root.style.transform = `scale(${lerp(0.92, 1.06, prog)})`;
+  K.driveLifter(lifter, clamp01(seg(t, 2.7, 13.0)) * 7.5, 0.85);
+
+  /* closing */
+  const c1 = seg(t, 15.40, 16.10);
+  closer1.style.opacity = String(c1 * (1 - seg(t,18.40,18.60)));
+  closer1.style.transform = `translateY(${lerp(40,0,E.outQuint(c1))}px)`;
+  const c2 = seg(t, 16.90, 17.60);
+  closer2.style.opacity = String(c2 * (1 - seg(t,18.40,18.60)));
+  closer2.style.transform = `translateY(${lerp(40,0,E.outQuint(c2))}px) scale(${lerp(1.12,1,E.outQuint(c2))})`;
+  K.driveShockwave(closeRing, seg(t,15.40,16.30), 6.4, 0, 900-960);
+
+  if (t >= 18.60) endCard.drive(t - 18.60); else endCard.root.style.opacity = '0';
+};
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>

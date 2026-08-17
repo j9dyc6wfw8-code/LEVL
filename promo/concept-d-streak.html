@@ -1,0 +1,221 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — Streak Boss</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#05060a}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0d13}
+  #world{position:absolute;inset:0;will-change:transform}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div id="stage"><div id="world"></div></div>
+<script src="levl-kit.js"></script>
+<script>
+/* ============================================================================
+   CONCEPT D — "Day 6. One set left."
+   Angle: the streak/habit loop dramatised as a boss fight. The villain is
+   procrastination itself ("I'LL GO TOMORROW"), not rest — rest days are healthy
+   and making them the enemy would be an ugly message for a training app.
+   Hook lands in frame one: streak at risk, clock running, one set to go.
+   ========================================================================== */
+const K = LEVLKit;
+const { C, E, el, seg, lerp, px, fmt, rgba, icon, chroma, clamp01 } = K;
+
+K.boot({ accent: C.red });
+K.setImpacts(
+  [0.28, 1.55, 3.10, 4.85, 6.60, 9.00, 11.20, 13.40, 15.00],
+  [9.00, 11.20, 15.00]
+);
+const DURATION = 18.0;
+const W = K.world;
+
+/* ---- 1. HOOK: streak + countdown, on screen at frame one ---------------- */
+/* Frame one has to carry the whole hook, so it fills the safe area rather than
+   sitting in a band at the top. */
+const hookWrap = el('div', W, { position:'absolute', left:'0', right:'0', top:'470px', textAlign:'center' });
+const streakBig = el('div', hookWrap, {
+  fontSize:'240px', fontWeight:'800', color:C.orange, letterSpacing:'-8px', lineHeight:'1',
+  textShadow:'0 0 90px '+rgba(C.orange,0.9),
+}, '🔥 6');
+const streakLbl = el('div', hookWrap, {
+  fontSize:'38px', fontWeight:'800', letterSpacing:'10px', color:C.mut, textTransform:'uppercase', marginTop:'14px',
+}, 'Day streak');
+const clock = el('div', hookWrap, {
+  fontSize:'76px', fontWeight:'800', color:C.red, fontVariantNumeric:'tabular-nums', marginTop:'26px',
+  textShadow:'0 0 50px '+rgba(C.red,0.7),
+}, '23:58:04');
+const hookLine = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'1130px', textAlign:'center',
+  fontSize:'110px', fontWeight:'800', letterSpacing:'-3px', opacity:'0',
+}, 'ONE SET LEFT.');
+
+/* Stakes stay on screen through the fight so the tension never disappears. */
+const stakesChip = el('div', W, {
+  position:'absolute', left:'50%', top:'300px', marginLeft:'-230px', width:'460px',
+  padding:'16px 0', borderRadius:'999px', textAlign:'center', opacity:'0',
+  background:'rgba(9,10,15,0.72)', border:'2px solid '+rgba(C.orange,0.55),
+  fontSize:'34px', fontWeight:'800', letterSpacing:'2px', color:C.orange,
+  fontVariantNumeric:'tabular-nums',
+}, '🔥 6 · 23:57:41');
+
+/* ---- 2. THE BOSS -------------------------------------------------------- */
+const boss = el('div', W, {
+  position:'absolute', left:'50%', top:'900px', width:'560px', height:'420px',
+  marginLeft:'-280px', marginTop:'-210px', opacity:'0', transformOrigin:'50% 90%',
+});
+el('div', boss, {
+  position:'absolute', inset:'0', borderRadius:'46% 54% 40% 60% / 58% 42% 58% 42%',
+  background:'radial-gradient(60% 55% at 42% 34%, #4a3350 0%, #2a1b30 55%, #150e1a 100%)',
+  boxShadow:'0 0 120px '+rgba(C.purp,0.5)+', inset 0 -30px 60px rgba(0,0,0,0.6)',
+});
+// half-lidded eyes + a smirk: this thing is smug and lazy, not cheerful
+[[190,150],[360,150]].forEach(([x,y]) => {
+  const eye = el('div', boss, { position:'absolute', left:px(x), top:px(y), width:'70px', height:'70px',
+    borderRadius:'999px', background:'#fff', overflow:'hidden' });
+  el('div', eye, { position:'absolute', left:'18px', top:'26px', width:'34px', height:'34px',
+    borderRadius:'999px', background:'#120e18' });
+  // heavy eyelid dropping over the top half
+  el('div', eye, { position:'absolute', left:'0', top:'0', width:'70px', height:'34px',
+    background:'#3a2942' });
+});
+// smirk — a curve lifted on one side
+el('div', boss, { position:'absolute', left:'232px', top:'262px', width:'150px', height:'54px',
+  borderRadius:'0 0 120px 40px', borderBottom:'12px solid #120e18', borderRight:'12px solid #120e18',
+  transform:'rotate(-8deg)' });
+
+const bossName = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'1150px', textAlign:'center',
+  fontSize:'46px', fontWeight:'800', letterSpacing:'2px', color:C.purp, opacity:'0',
+  textShadow:'0 0 40px '+rgba(C.purp,0.8),
+}, '"I\'LL GO TOMORROW"');
+const hpWrap = el('div', W, { position:'absolute', left:'170px', right:'170px', top:'1235px', opacity:'0' });
+const hpTrack = el('div', hpWrap, { height:'26px', borderRadius:'999px', background:C.sunken,
+  border:'2px solid '+C.line, overflow:'hidden' });
+const hpBar = el('div', hpTrack, { height:'100%', width:'100%', borderRadius:'999px',
+  background:'linear-gradient(90deg,'+C.purp+','+C.red+')', boxShadow:'0 0 30px '+rgba(C.red,0.7) });
+
+/* ---- 3. THE LIFTER (human presence) ------------------------------------- */
+const lifter = K.makeLifter(W, C.gold, 0.8);
+lifter.root.style.left = '50%';
+lifter.root.style.top = '1470px';
+lifter.root.style.opacity = '0';
+
+/* ---- 4. HIT FEEDBACK ---------------------------------------------------- */
+const hits = [
+  { t:3.10, xp:'+128 XP' }, { t:4.85, xp:'+128 XP' }, { t:6.60, xp:'+140 XP' },
+].map(h => ({
+  ...h,
+  node: el('div', W, {
+    position:'absolute', left:'50%', top:'900px', padding:'14px 34px', borderRadius:'999px',
+    background:rgba(C.green,0.18), border:'3px solid '+rgba(C.green,0.75),
+    fontSize:'40px', fontWeight:'800', color:C.green, whiteSpace:'nowrap', opacity:'0',
+    boxShadow:'0 0 40px '+rgba(C.green,0.6),
+  }, h.xp),
+}));
+
+/* ---- 5. DEFEAT + STREAK SAVED ------------------------------------------- */
+const bossRing = K.makeShockwave(W, rgba(C.purp,0.95));
+const bossSparks = K.makeSparks(W, 34, C.purp, 1717);
+const winRing = K.makeShockwave(W, rgba(C.orange,0.95));
+const winSparks = K.makeSparks(W, 32, C.orange, 2828);
+
+const saved = el('div', W, { position:'absolute', left:'0', right:'0', top:'700px', textAlign:'center', opacity:'0' });
+const savedNum = el('div', saved, {
+  fontSize:'220px', fontWeight:'800', color:C.orange, letterSpacing:'-8px',
+  textShadow:'0 0 100px '+rgba(C.orange,0.9),
+}, '🔥 7');
+const savedTxt = el('div', saved, {
+  fontSize:'62px', fontWeight:'800', letterSpacing:'6px', textTransform:'uppercase', marginTop:'10px',
+}, 'Streak saved');
+const tomorrow = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'1180px', textAlign:'center',
+  fontSize:'40px', fontWeight:'800', letterSpacing:'7px', color:C.mut, textTransform:'uppercase', opacity:'0',
+}, 'Tomorrow: day 8');
+
+/* ---- 6. END CARD -------------------------------------------------------- */
+const endCard = K.makeEndCard(W, { tag:'Don\'t break the chain.', cta:'Link in bio' });
+
+/* =============================================================== RENDER == */
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+  const imp = K.frame(t);
+
+  const inEnd = t >= 15.0;
+
+  /* hook block: holds, then shrinks up out of the way */
+  const hookOut = seg(t, 1.35, 1.95);
+  hookWrap.style.opacity = String(1 - hookOut);
+  hookWrap.style.transform = `translateY(${lerp(0,-190,E.outCubic(hookOut))}px) scale(${lerp(1,0.52,E.outCubic(hookOut))})`;
+  const fmtClock = (base) => {
+    const cs = Math.max(0, base - Math.floor(t));
+    return `${String(Math.floor(cs/3600)).padStart(2,'0')}:${String(Math.floor(cs/60)%60).padStart(2,'0')}:${String(cs%60).padStart(2,'0')}`;
+  };
+  clock.textContent = fmtClock(23*3600 + 58*60 + 4);
+  chroma(streakBig, lerp(26,0,E.outCubic(seg(t,0,0.5))));
+
+  hookLine.style.opacity = String(seg(t,0.10,0.24) * (1 - seg(t,1.45,1.8)));
+  hookLine.style.transform = `scale(${lerp(1.5,1,E.slam(seg(t,0.10,0.70)))})`;
+  // the hook line must be READABLE on frame one, so the split is light and brief
+  chroma(hookLine, lerp(15,0,E.outCubic(seg(t,0.10,0.40))));
+
+  /* the stakes stay pinned once the hook clears */
+  stakesChip.style.opacity = String(seg(t,1.85,2.15) * (1 - seg(t,10.4,10.8)));
+  stakesChip.textContent = '🔥 6 · ' + fmtClock(23*3600 + 58*60 + 4);
+
+  /* boss rises */
+  const bp = E.slam(seg(t,1.55,2.35));
+  const dead = seg(t,9.0,9.6);
+  boss.style.opacity = String(seg(t,1.55,1.72) * (1-dead));
+  const idle = Math.sin(t*2.4)*10;
+  boss.style.transform =
+    `translateY(${lerp(420,idle,bp)}px) scale(${lerp(0.6,1,bp)*lerp(1,1.5,dead)}) rotate(${Math.sin(t*1.7)*2.5}deg)`;
+  boss.style.filter = `blur(${dead*22}px)`;
+  bossName.style.opacity = String(seg(t,1.95,2.30) * (1-seg(t,8.9,9.3)));
+  hpWrap.style.opacity = String(seg(t,2.10,2.45) * (1-seg(t,8.9,9.3)));
+
+  /* lifter enters and reps on each hit */
+  lifter.root.style.opacity = String(seg(t,2.30,2.70) * (1 - seg(t,10.4,10.9)));
+  const repPhase = clamp01(seg(t,2.7,9.0)) * 3.4;
+  K.driveLifter(lifter, repPhase, 0.8);
+
+  /* three hits knock the HP down in steps */
+  let hp = 1;
+  hits.forEach((h,i) => {
+    if (t >= h.t) hp = Math.min(hp, 1 - (i+1)/3);
+    const q = seg(t, h.t, h.t+0.95);
+    h.node.style.opacity = q>0 ? String(seg(t,h.t,h.t+0.08) * (1 - E.inCubic(seg(t,h.t+0.45,h.t+0.95)))) : '0';
+    h.node.style.transform =
+      `translate(calc(-50% + ${[-150,160,-40][i]*E.outQuart(q)}px), ${lerp(0,-230,E.outQuart(q))}px) scale(${lerp(0.5,1.05,E.outBack(clamp01(q*3)))})`;
+  });
+  // ease the bar toward the stepped value so it drains rather than jumps
+  const lastHit = hits.filter(h => t >= h.t).pop();
+  const drain = lastHit ? E.outQuart(seg(t, lastHit.t, lastHit.t+0.42)) : 0;
+  const prevHp = lastHit ? 1 - (hits.indexOf(lastHit))/3 : 1;
+  hpBar.style.width = (lerp(prevHp, hp, drain)*100).toFixed(1)+'%';
+
+  K.driveShockwave(bossRing, seg(t,9.0,9.75), 7.2, 0, 980-960);
+  K.driveSparks(bossSparks, seg(t,9.0,9.85), 0, 980-960);
+
+  /* streak saved */
+  const sv = seg(t,11.2,11.9);
+  saved.style.opacity = String(seg(t,11.2,11.34) * (1 - seg(t,14.6,15.0)));
+  saved.style.transform = `scale(${lerp(0.35,1,E.slam(sv))})`;
+  chroma(savedNum, lerp(34,0,E.outCubic(seg(t,11.2,11.85))));
+  K.driveShockwave(winRing, seg(t,11.2,12.0), 7.6, 0, 820-960);
+  K.driveSparks(winSparks, seg(t,11.2,12.1), 0, 820-960);
+  tomorrow.style.opacity = String(seg(t,13.4,13.8) * (1 - seg(t,14.7,15.0)));
+
+  /* end card */
+  if (inEnd) endCard.drive(t - 15.0); else endCard.root.style.opacity = '0';
+};
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>

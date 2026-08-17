@@ -1,0 +1,404 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — The Steel Held</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#05060a}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#07080c}
+  #world{position:absolute;inset:0;will-change:transform}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div id="stage"><div id="world"></div></div>
+<script src="levl-kit.js"></script>
+<script>
+/* ============================================================================
+   CONCEPT 02 — "THE STEEL HELD"     [MACRO RISK TEST]
+   Pivot: blacksmith ASMR -> LEVL's Forge. The sparks that fly off the anvil
+   resolve into UI particles and the strike becomes a probability roll.
+
+   Real feature (ShopTab.js + engine.js):
+     STRIKE THE ANVIL · THE STEEL HELD · CANNOT FORGE
+     FORGE_TIERS = Base · Honed · Tempered · Radiant · Apex · Mythforged
+     forgeTemper = pity counter, builds on every failure
+     materials    = EMBER / STEEL / RELIC
+     "Inferno" is a real aura cosmetic.
+
+   TECHNIQUE NOTE — why this is the risk test:
+   There is no live-action here. "Cinematic macro" is built from
+     (a) a single pre-softened bokeh layer instead of blur() filters, because
+         large blurred elements cost ~40ms/frame and this is ~930 frames;
+     (b) the hot steel acting as the scene's only light source, with every other
+         element tinted by it;
+     (c) sparks drawn as elongated gradient streaks, not dots — at macro scale a
+         spark is a motion trail;
+     (d) exactly one genuinely blurred foreground layer to sell the shallow
+         focus plane.
+   ========================================================================== */
+const K = LEVLKit;
+const { C, E, el, seg, lerp, px, fmt, rgba, icon, chroma, clamp01 } = K;
+
+/* No perspective grid — this is a physical space, not a HUD. */
+K.boot({ accent: C.orange, grid:false });
+
+const STRIKES = [0.70, 1.70, 2.70, 3.90];
+/* Deliberate silence 4.60 -> 7.20: the roll hangs. */
+K.setImpacts([...STRIKES, 4.50, 7.25, 8.30, 10.40, 12.10],
+             [3.90, 7.25, 12.10]);
+const DURATION = 15.6;
+const W = K.world;
+
+/* ------------------------------------------------------------ 1. THE FORGE */
+/* Deep background — cold dark with a warm floor bounce from the steel. */
+el('div', W, {
+  position:'absolute', inset:'0',
+  background:'radial-gradient(120% 70% at 50% 78%, #241109 0%, #120a08 42%, #07080c 100%)',
+});
+
+/* Background bokeh: ONE element, eight soft radial gradients. No blur filter. */
+const bokeh = el('div', W, {
+  position:'absolute', left:'-15%', top:'-15%', width:'130%', height:'130%',
+  pointerEvents:'none', mixBlendMode:'screen', opacity:'0.85',
+  background:
+    'radial-gradient(circle 90px at 18% 22%, rgba(255,140,40,0.26), rgba(0,0,0,0) 70%),'+
+    'radial-gradient(circle 130px at 78% 16%, rgba(255,110,30,0.20), rgba(0,0,0,0) 70%),'+
+    'radial-gradient(circle 70px at 62% 34%, rgba(255,180,80,0.22), rgba(0,0,0,0) 70%),'+
+    'radial-gradient(circle 150px at 12% 62%, rgba(255,90,25,0.16), rgba(0,0,0,0) 70%),'+
+    'radial-gradient(circle 100px at 88% 58%, rgba(255,150,60,0.18), rgba(0,0,0,0) 70%),'+
+    'radial-gradient(circle 60px at 40% 12%, rgba(255,200,120,0.20), rgba(0,0,0,0) 70%),'+
+    'radial-gradient(circle 110px at 30% 82%, rgba(255,120,40,0.14), rgba(0,0,0,0) 70%),'+
+    'radial-gradient(circle 80px at 70% 88%, rgba(255,160,70,0.14), rgba(0,0,0,0) 70%)',
+});
+
+/* The anvil — dark silhouette, rim-lit from the steel above it. */
+const anvil = el('div', W, {
+  position:'absolute', left:'50%', top:'1180px', width:'760px', height:'300px',
+  marginLeft:'-380px', transformOrigin:'50% 20%',
+});
+/* SVG silhouette, not stacked boxes. A rounded rectangle reads as UI no matter
+   how you light it — an anvil is recognised entirely by its outline. */
+el('div', anvil, { position:'absolute', inset:'0' }, `
+<svg width="760" height="300" viewBox="0 0 760 300">
+  <defs>
+    <linearGradient id="anvBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="#6b4b38"/>
+      <stop offset="35%"  stop-color="#33201800"/>
+      <stop offset="35%"  stop-color="#332018"/>
+      <stop offset="100%" stop-color="#150d09"/>
+    </linearGradient>
+  </defs>
+  <!-- face + horn -->
+  <path d="M34,10 H556 L648,26 L736,52 L646,72 L556,78 H34 L14,44 Z" fill="url(#anvBody)"/>
+  <!-- waist -->
+  <path d="M248,78 H372 L398,196 H222 Z" fill="#241610"/>
+  <!-- base -->
+  <path d="M156,196 H444 L468,276 H132 Z" fill="#1c1209"/>
+  <!-- rim light along the struck face -->
+  <path d="M34,10 H556 L648,26" fill="none" stroke="rgba(255,196,120,0.95)" stroke-width="5"/>
+  <path d="M34,78 H556" fill="none" stroke="rgba(255,150,70,0.38)" stroke-width="3"/>
+  <path d="M156,196 H444" fill="none" stroke="rgba(255,140,60,0.20)" stroke-width="3"/>
+</svg>`);
+
+/* ---------------------------------------------------------- 2. THE STEEL */
+/* The hero and the only light source. Everything else is tinted by it. */
+const steelWrap = el('div', W, {
+  position:'absolute', left:'50%', top:'1150px', width:'420px', height:'104px',
+  marginLeft:'-210px', transformOrigin:'50% 100%',
+});
+/* Hot steel, as an irregular forged billet with the heat concentrated where the
+   hammer lands. The glossy inner highlight of the first attempt was exactly what
+   made this read as a button — real hot metal has no specular, it IS the light. */
+const steelSvg = el('div', steelWrap, { position:'absolute', inset:'0' }, `
+<svg width="420" height="104" viewBox="0 0 420 104">
+  <defs>
+    <linearGradient id="heat" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#7d2103"/>
+      <stop offset="16%"  stop-color="#d9500a"/>
+      <stop offset="34%"  stop-color="#ff9b1e"/>
+      <stop offset="50%"  stop-color="#fff8e2"/>
+      <stop offset="66%"  stop-color="#ff9b1e"/>
+      <stop offset="84%"  stop-color="#d9500a"/>
+      <stop offset="100%" stop-color="#7d2103"/>
+    </linearGradient>
+    <linearGradient id="heatTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%"   stop-color="rgba(255,255,255,0.55)"/>
+      <stop offset="45%"  stop-color="rgba(255,220,150,0.12)"/>
+      <stop offset="100%" stop-color="rgba(120,30,0,0.45)"/>
+    </linearGradient>
+  </defs>
+  <path id="billet" d="M9,32 L42,15 H377 L412,33 L409,72 L376,90 H41 L7,71 Z" fill="url(#heat)"/>
+  <path d="M9,32 L42,15 H377 L412,33 L409,72 L376,90 H41 L7,71 Z" fill="url(#heatTop)"/>
+</svg>`);
+const steel = steelSvg;
+/* the glow the steel casts into the room */
+const cast = el('div', W, {
+  position:'absolute', left:'50%', top:'1200px', width:'1400px', height:'1400px',
+  marginLeft:'-700px', marginTop:'-700px', pointerEvents:'none', mixBlendMode:'screen',
+  background:'radial-gradient(circle, rgba(255,140,40,0.55) 0%, rgba(255,90,20,0.18) 28%, rgba(0,0,0,0) 62%)',
+});
+/* anamorphic streak across the hot spot — the single most "lens" cue available */
+const streak = el('div', W, {
+  position:'absolute', left:'50%', top:'1202px', width:'1500px', height:'6px',
+  marginLeft:'-750px', pointerEvents:'none', mixBlendMode:'screen',
+  background:'linear-gradient(90deg,rgba(255,160,60,0) 0%,rgba(255,190,110,0.85) 50%,rgba(255,160,60,0) 100%)',
+  filter:'blur(3px)',
+});
+
+/* the chance, burned into the metal at the pivot */
+const burned = el('div', steelWrap, {
+  position:'absolute', left:'0', right:'0', top:'14px', textAlign:'center', opacity:'0',
+  fontSize:'62px', fontWeight:'800', color:'#2a0f04', letterSpacing:'2px',
+  textShadow:'0 0 26px rgba(255,235,180,0.9)',
+}, '72%');
+
+/* ---------------------------------------------------------- 3. THE HAMMER */
+const hammer = el('div', W, {
+  position:'absolute', left:'50%', top:'0', width:'300px', height:'720px',
+  marginLeft:'-150px', transformOrigin:'50% 100%',
+});
+el('div', hammer, { position:'absolute', inset:'0' }, `
+<svg width="300" height="720" viewBox="0 0 300 720">
+  <defs>
+    <linearGradient id="haft" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#1c110b"/><stop offset="42%" stop-color="#5d3d27"/>
+      <stop offset="100%" stop-color="#180e09"/>
+    </linearGradient>
+    <linearGradient id="headG" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#7d8592"/><stop offset="30%" stop-color="#41474f"/>
+      <stop offset="100%" stop-color="#171a1f"/>
+    </linearGradient>
+  </defs>
+  <path d="M126,0 h48 l6,548 h-60 Z" fill="url(#haft)"/>
+  <!-- tapered head with a peen, so the silhouette is a hammer not a slab -->
+  <path d="M26,548 H274 L292,586 L296,646 L272,692 H28 L4,646 L8,586 Z" fill="url(#headG)"/>
+  <path d="M26,548 H274" fill="none" stroke="rgba(255,180,110,0.5)" stroke-width="4"/>
+</svg>`);
+
+/* ------------------------------------------------------------- 4. SPARKS */
+/* At macro scale a spark is a STREAK, not a dot. Each is a gradient bar
+   rotated to its travel vector and stretched by speed. */
+function makeSparkBurst(n, seed){
+  const rnd = K.mulberry32(seed);
+  return Array.from({length:n}, () => {
+    const ang = -Math.PI/2 + (rnd()-0.5)*Math.PI*1.25;   // upward fan
+    const speed = 260 + rnd()*620;
+    const len = 26 + rnd()*70;
+    const node = el('div', W, {
+      position:'absolute', left:'50%', top:'1190px', width:'4px', height:px(len),
+      marginLeft:'-2px', opacity:'0', pointerEvents:'none', mixBlendMode:'screen',
+      borderRadius:'3px', transformOrigin:'50% 100%',
+      background:'linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,225,150,0.95) 55%,rgba(255,140,40,1) 100%)',
+    });
+    return { node, ang, speed, life: 0.55 + rnd()*0.65, delay: rnd()*0.05, spin:(rnd()-0.5)*0.6 };
+  });
+}
+function driveBurst(list, local){
+  list.forEach(s => {
+    const q = clamp01((local - s.delay) / s.life);
+    if (local <= 0 || q <= 0 || q >= 1){ s.node.style.opacity = '0'; return; }
+    const e = E.outQuart(q);
+    const dx = Math.cos(s.ang) * s.speed * e;
+    const dy = Math.sin(s.ang) * s.speed * e + q*q*760;   // gravity
+    const vel = (1 - e);
+    s.node.style.opacity = String(Math.pow(1-q, 1.5));
+    s.node.style.transform =
+      `translate(${dx}px, ${dy}px) rotate(${(s.ang + Math.PI/2) + s.spin*q}rad) scaleY(${0.35 + vel*1.9})`;
+  });
+}
+const bursts = STRIKES.map((_,i) => makeSparkBurst(26, 3100 + i*137));
+const bigBurst = makeSparkBurst(46, 9911);
+
+/* ------------------------------------------- 5. THE FOREGROUND FOCUS PLANE */
+/* Exactly one blurred element. Sells "macro lens" more than anything else. */
+const fg = el('div', W, {
+  position:'absolute', left:'-10%', bottom:'-6%', width:'120%', height:'34%',
+  pointerEvents:'none', filter:'blur(34px)', opacity:'0.9',
+  background:'linear-gradient(0deg, rgba(10,6,4,0.96) 0%, rgba(20,10,6,0.55) 55%, rgba(0,0,0,0) 100%)',
+});
+
+/* ------------------------------------------------------------- 6. THE UI */
+const ui = el('div', W, { position:'absolute', inset:'0', opacity:'0' });
+const itemRow = el('div', ui, {
+  position:'absolute', left:'110px', right:'110px', top:'420px',
+  padding:'28px 34px', borderRadius:'30px',
+  background:'rgba(12,10,14,0.72)', border:'2px solid '+rgba(C.orange,0.5),
+  display:'flex', alignItems:'center', gap:'24px',
+});
+el('div', itemRow, {
+  width:'86px', height:'86px', borderRadius:'22px', flexShrink:'0',
+  background:rgba(C.orange,0.16), border:'2px solid '+rgba(C.orange,0.7),
+  display:'flex', alignItems:'center', justifyContent:'center',
+}, icon('shop', 46, C.orange, 2));
+const itemText = el('div', itemRow, { flex:'1' },
+  `<div style="font-size:36px;font-weight:800">Inferno Aura</div>
+   <div style="font-size:24px;font-weight:700;letter-spacing:3px;color:${C.dim};text-transform:uppercase;margin-top:4px">Legendary</div>`);
+const gradeNow = el('div', itemRow, {
+  fontSize:'34px', fontWeight:'800', color:C.orange, letterSpacing:'1px',
+}, 'APEX');
+
+/* chance + temper (the real pity counter) */
+const rollPanel = el('div', ui, {
+  position:'absolute', left:'110px', right:'110px', top:'600px',
+  padding:'30px 34px', borderRadius:'30px',
+  background:'rgba(12,10,14,0.72)', border:'2px solid '+C.line, textAlign:'center',
+});
+el('div', rollPanel, { fontSize:'25px', fontWeight:'800', letterSpacing:'6px',
+  color:C.dim, textTransform:'uppercase' }, 'Success chance');
+const chanceNum = el('div', rollPanel, {
+  fontSize:'118px', fontWeight:'800', color:C.gold, letterSpacing:'-4px', lineHeight:'1.08',
+  fontVariantNumeric:'tabular-nums', textShadow:'0 0 60px '+rgba(C.gold,0.7),
+}, '72%');
+const temperRow = el('div', rollPanel, {
+  display:'flex', justifyContent:'center', gap:'12px', marginTop:'14px',
+});
+const temperPips = [0,1,2,3,4].map(i => el('div', temperRow, {
+  width:'46px', height:'12px', borderRadius:'999px',
+  background: i < 2 ? C.orange : C.panel3,
+  boxShadow: i < 2 ? '0 0 18px '+rgba(C.orange,0.8) : 'none',
+}));
+el('div', rollPanel, { fontSize:'22px', fontWeight:'700', letterSpacing:'3px',
+  color:C.faint, textTransform:'uppercase', marginTop:'14px' }, 'Temper · 2 failures banked');
+
+const strikeBtn = el('div', ui, {
+  position:'absolute', left:'110px', right:'110px', top:'900px', height:'116px',
+  borderRadius:'999px', background:'linear-gradient(180deg,#ffb04d,'+C.orange+')',
+  display:'flex', alignItems:'center', justifyContent:'center',
+  boxShadow:'0 18px 60px '+rgba(C.orange,0.5),
+}, `<span style="font-size:34px;font-weight:800;letter-spacing:4px;color:#1a0c04;text-transform:uppercase">Strike the anvil</span>`);
+
+/* ---------------------------------------------------------- 7. THE RESULT */
+const held = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'560px', textAlign:'center', opacity:'0',
+});
+const heldBig = el('div', held, {
+  fontSize:'128px', fontWeight:'800', letterSpacing:'-2px', lineHeight:'1.06',
+  color:'#fff', textShadow:'0 0 90px '+rgba(C.orange,0.95),
+}, 'THE STEEL<br>HELD');
+const ladder = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'980px', textAlign:'center', opacity:'0',
+});
+const gradeFrom = el('div', ladder, {
+  fontSize:'40px', fontWeight:'800', letterSpacing:'8px', color:C.dim, textTransform:'uppercase',
+}, 'Apex');
+const gradeArrow = el('div', ladder, { fontSize:'44px', fontWeight:'800', color:C.faint, margin:'6px 0' }, '↓');
+const gradeTo = el('div', ladder, {
+  fontSize:'104px', fontWeight:'800', letterSpacing:'-1px',
+  color:'#ff4d6d', textShadow:'0 0 80px rgba(255,77,109,0.9)',
+}, 'MYTHFORGED');
+
+const ring1 = K.makeShockwave(W, rgba(C.orange,0.95));
+const ring2 = K.makeShockwave(W, rgba('#ff4d6d',0.9));
+
+const endCard = K.makeEndCard(W, { tag:'Earned at the anvil.', cta:'Link in bio' });
+
+/* =============================================================== RENDER == */
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+  K.frame(t);
+
+  /* ---- camera: slow macro push, plus a kick on every strike -------------- */
+  let kick = 0;
+  STRIKES.forEach(s => {
+    const d = t - s;
+    if (d >= 0 && d < 0.45) kick = Math.max(kick, Math.exp(-d/0.09));
+  });
+  // the push is applied per-layer, not on #world — the kit owns that transform
+  // for camera shake, and stacking onto it would fight the impact system
+  const push = lerp(1.0, 1.16, E.inOutCubic(clamp01(seg(t, 0, 8.0))));
+  const forgeScale = push * (1 + kick*0.02);
+
+  /* ---- heat: the steel brightens with every strike ----------------------- */
+  let struck = 0;
+  STRIKES.forEach(s => { if (t >= s) struck++; });
+  const heat = 0.55 + struck*0.12 + kick*0.35;
+  const cool = seg(t, 10.40, 11.90);          // the steel lets go once forged
+  steelWrap.style.transform = `scale(${forgeScale}) scaleY(${1 - kick*0.16})`;
+  // heat now lives in the SVG gradient; brightness + saturation carry the glow
+  steel.style.filter =
+    `brightness(${(heat + 0.45) * (1 - cool*0.55)}) saturate(${1 + kick*0.5})`;
+  cast.style.opacity = String(clamp01(0.42 + struck*0.09 + kick*0.55) * (1 - cool*0.7));
+  cast.style.transform = `scale(${forgeScale * (1 + kick*0.10)})`;
+  streak.style.opacity = String(clamp01(0.30 + struck*0.10 + kick*0.75));
+  streak.style.transform = `scale(${forgeScale}) scaleX(${1 + kick*0.25})`;
+  anvil.style.transform = `scale(${forgeScale}) translateY(${kick*7}px)`;
+  bokeh.style.transform = `translate(${Math.sin(t*0.22)*26}px, ${Math.cos(t*0.17)*20}px) scale(${1 + (push-1)*0.4})`;
+  fg.style.opacity = String(0.9 - kick*0.15);
+
+  /* ---- hammer: falls, strikes, lifts ------------------------------------- */
+  let hy = -760, hblur = 0, hrot = -6;
+  STRIKES.forEach((s,i) => {
+    const fall = seg(t, s-0.42, s);          // descent
+    const lift = seg(t, s+0.05, s+0.62);     // recoil
+    if (t > s - 0.5 && t < s + 0.72){
+      if (t <= s){
+        hy = lerp(-760, 470, E.inQuart(fall));
+        hblur = E.inQuart(fall) * 26;
+        hrot = lerp(-16, 0, E.inQuart(fall));
+      } else {
+        hy = lerp(470, -760, E.outQuart(lift));
+        hblur = (1 - E.outQuart(lift)) * 18;
+        hrot = lerp(0, -16, E.outQuart(lift));
+      }
+    }
+  });
+  // after the pivot the hammer stays out of frame until the loop
+  const hammerGone = seg(t, 4.30, 4.70);
+  hammer.style.transform = `translateY(${hy}px) rotate(${hrot}deg) scale(${forgeScale})`;
+  hammer.style.filter = `blur(${hblur}px)`;
+  hammer.style.opacity = String(1 - hammerGone);
+
+  /* ---- sparks ------------------------------------------------------------ */
+  bursts.forEach((b,i) => driveBurst(b, t - STRIKES[i]));
+  driveBurst(bigBurst, t - 7.25);
+
+  /* ---- PIVOT: the 4th strike burns a probability into the metal ---------- */
+  burned.style.opacity = String(seg(t, 3.92, 4.25) * (1 - seg(t, 4.85, 5.15)));
+  burned.style.transform = `scale(${lerp(1.5,1,E.outQuint(seg(t,3.92,4.45)))})`;
+
+  /* ---- the Forge UI asserts itself --------------------------------------- */
+  const uiIn = seg(t, 4.50, 5.10);
+  ui.style.opacity = String(uiIn * (1 - seg(t, 7.05, 7.25)));
+  itemRow.style.transform = `translateY(${lerp(60,0,E.slam(seg(t,4.50,5.10)))}px)`;
+  rollPanel.style.transform = `translateY(${lerp(80,0,E.slam(seg(t,4.66,5.28)))}px)`;
+  strikeBtn.style.transform = `translateY(${lerp(90,0,E.slam(seg(t,4.82,5.46)))}px) scale(${1 + Math.sin(Math.max(0,t-5.5)*6.2)*0.014})`;
+  // the roll counts, wavers, then locks — the tension beat
+  const rolling = t >= 6.30 && t < 7.25;
+  if (rolling){
+    const r = K.mulberry32(Math.round(t*60))();
+    chanceNum.textContent = Math.round(lerp(40, 96, r)) + '%';
+    chanceNum.style.color = C.gold;
+  } else {
+    chanceNum.textContent = '72%';
+    chanceNum.style.color = C.gold;
+  }
+  chroma(chanceNum, rolling ? 18 : 0);
+
+  /* ---- RESULT ------------------------------------------------------------ */
+  const hv = seg(t, 7.25, 7.95);
+  held.style.opacity = String(seg(t, 7.25, 7.42) * (1 - seg(t, 10.10, 10.40)));
+  held.style.transform = `scale(${lerp(0.35,1,E.slam(hv))})`;
+  chroma(heldBig, lerp(30,0,E.outCubic(seg(t,7.25,7.95))));
+  K.driveShockwave(ring1, seg(t, 7.25, 8.10), 7.6, 0, 1190-960);
+
+  const lv = seg(t, 8.30, 9.00);
+  ladder.style.opacity = String(seg(t, 8.30, 8.52) * (1 - seg(t, 11.85, 12.10)));
+  gradeFrom.style.opacity = String(1 - seg(t, 10.40, 10.80));
+  gradeArrow.style.opacity = String(1 - seg(t, 10.40, 10.80));
+  gradeTo.style.transform = `scale(${lerp(0.5,1,E.slam(seg(t,10.40,11.10)))})`;
+  chroma(gradeTo, lerp(28,0,E.outCubic(seg(t,10.40,11.05))));
+  K.driveShockwave(ring2, seg(t, 10.40, 11.25), 7.0, 0, 1100-960);
+
+  steelWrap.style.opacity = String(1 - cool*0.75);
+
+  if (t >= 12.10) endCard.drive(t - 12.10); else endCard.root.style.opacity = '0';
+};
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>

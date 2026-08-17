@@ -1,0 +1,153 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — POV You Actually Finish</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#05060a}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0d13}
+  #world{position:absolute;inset:0;will-change:transform}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div id="stage"><div id="world"></div></div>
+<script src="levl-kit.js"></script>
+<script>
+/* ============================================================================
+   CONCEPT J — "POV: you actually finish the programme."
+   The pain-point angle. Opens on the graveyard of abandoned training blocks
+   everyone recognises, then replaces it with LEVL's structure. The payoff is
+   consistency, which the app measures for real (share of last 28 days trained).
+   ========================================================================== */
+const K = LEVLKit;
+const { C, E, el, seg, lerp, px, fmt, rgba, icon, chroma, clamp01 } = K;
+
+K.boot({ accent: C.purp });
+K.setImpacts([0.20, 1.10, 1.90, 4.30, 5.60, 6.90, 8.20, 10.10, 12.40, 14.00],
+             [4.30, 10.10, 14.00]);
+const DURATION = 17.2;
+const W = K.world;
+
+/* ---- 1. THE GRAVEYARD --------------------------------------------------- */
+const pov = el('div', W, {
+  position:'absolute', left:'60px', right:'60px', top:'330px', textAlign:'center',
+  fontSize:'70px', fontWeight:'800', letterSpacing:'-1px', lineHeight:'1.1',
+}, 'POV: you actually<br>finish the programme');
+
+const DEAD = [
+  { name:'PPL 6-Day Split',      pct:14, wk:'abandoned week 2' },
+  { name:'531 Boring But Big',   pct:31, wk:'abandoned week 4' },
+  { name:'Couch to 5K',          pct:8,  wk:'abandoned week 1' },
+  { name:'"New Year, New Me"',   pct:3,  wk:'abandoned day 4'  },
+];
+const deadRows = DEAD.map((d,i) => {
+  const row = el('div', W, {
+    position:'absolute', left:'110px', width:'860px', top:px(620 + i*175), height:'150px',
+    borderRadius:'26px', background:C.panel, border:'2px solid '+C.lineSoft,
+    padding:'22px 30px', opacity:'0', filter:'grayscale(1)',
+  });
+  el('div', row, { fontSize:'36px', fontWeight:'700', color:C.mut }, d.name);
+  el('div', row, { fontSize:'22px', fontWeight:'600', color:C.faint, marginTop:'4px',
+    letterSpacing:'2px', textTransform:'uppercase' }, d.wk);
+  const tr = el('div', row, { height:'12px', borderRadius:'999px', background:C.sunken, marginTop:'16px', overflow:'hidden' });
+  el('div', tr, { height:'100%', width:d.pct+'%', borderRadius:'999px', background:C.faint });
+  return row;
+});
+
+/* ---- 2. THE TURN -------------------------------------------------------- */
+const turn = el('div', W, {
+  position:'absolute', left:'60px', right:'60px', top:'760px', textAlign:'center', opacity:'0',
+  fontSize:'96px', fontWeight:'800', letterSpacing:'-2px', lineHeight:'1.08',
+}, 'SAVED<br><span style="color:'+C.red+'">≠</span><br>DONE');
+
+/* ---- 3. THE STREAK GRID — 28 days, the app's real consistency window ---- */
+const gridWrap = el('div', W, { position:'absolute', left:'150px', right:'150px', top:'600px', opacity:'0' });
+el('div', gridWrap, { fontSize:'28px', fontWeight:'800', letterSpacing:'5px', color:C.gold,
+  textTransform:'uppercase', textAlign:'center', marginBottom:'26px' }, 'Last 28 days');
+const gridBox = el('div', gridWrap, { display:'flex', flexWrap:'wrap', gap:'16px', justifyContent:'center' });
+const DAYS = 28;
+// deterministic pattern: a believable 24/28 rather than a perfect month
+// staggered across columns — evenly spaced indices render as a straight stripe
+const REST = new Set([3, 8, 16, 23]);
+const cells = Array.from({length:DAYS}, (_,i) => el('div', gridBox, {
+  width:'88px', height:'88px', borderRadius:'20px',
+  background:C.sunken, border:'2px solid '+C.lineSoft, opacity:'0',
+}));
+const gridStat = el('div', gridWrap, { textAlign:'center', marginTop:'34px' });
+const gridPct = el('div', gridStat, { fontSize:'130px', fontWeight:'800', color:C.green,
+  letterSpacing:'-4px', lineHeight:'1', fontVariantNumeric:'tabular-nums',
+  textShadow:'0 0 70px '+rgba(C.green,0.7) }, '0%');
+el('div', gridStat, { fontSize:'32px', fontWeight:'800', letterSpacing:'6px', color:C.mut,
+  textTransform:'uppercase', marginTop:'10px' }, 'Consistency');
+
+/* ---- 4. PAYOFF ---------------------------------------------------------- */
+const payoff = el('div', W, {
+  position:'absolute', left:'60px', right:'60px', top:'820px', textAlign:'center', opacity:'0',
+  fontSize:'84px', fontWeight:'800', letterSpacing:'-1.5px', lineHeight:'1.12',
+}, 'You didn\'t get<br>motivated.<br><span style="color:'+C.gold+'">You got a score.</span>');
+const payRing = K.makeShockwave(W, rgba(C.green,0.9));
+const paySparks = K.makeSparks(W, 30, C.green, 5959);
+
+const endCard = K.makeEndCard(W, { tag:'Finish what you start.', cta:'Link in bio' });
+
+/* =============================================================== RENDER == */
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+  K.frame(t);
+
+  /* POV line + the graveyard stacking up */
+  const povOut = seg(t, 3.90, 4.30);
+  pov.style.opacity = String(seg(t,0.04,0.18) * (1 - povOut));
+  pov.style.transform = `scale(${lerp(1.25,1,E.slam(seg(t,0.04,0.62)))})`;
+  chroma(pov, lerp(14,0,E.outCubic(seg(t,0.04,0.40))));
+
+  deadRows.forEach((r,i) => {
+    const st = 1.10 + i*0.36;
+    const qq = E.slam(seg(t, st, st+0.42));
+    r.style.opacity = String(seg(t, st, st+0.12) * (1 - povOut));
+    r.style.transform = `translateX(${lerp(-620,0,qq)}px) rotate(${lerp(-4,0,qq)}deg)`;
+  });
+
+  /* SAVED ≠ DONE */
+  const tn = seg(t, 4.30, 4.85);
+  turn.style.opacity = String(seg(t,4.30,4.42) * (1 - seg(t,5.45,5.70)));
+  turn.style.transform = `scale(${lerp(2.0,1,E.slam(tn))})`;
+  chroma(turn, lerp(28,0,E.outCubic(seg(t,4.30,4.95))));
+
+  /* the 28-day grid fills in */
+  gridWrap.style.opacity = String(seg(t,5.60,5.90) * (1 - seg(t,12.10,12.40)));
+  let trained = 0;
+  cells.forEach((c,i) => {
+    const st = 5.90 + i*0.115;
+    const on = t >= st;
+    const rest = REST.has(i);
+    if (on && !rest) trained++;
+    const qq = E.slam(seg(t, st, st+0.30));
+    c.style.opacity = String(seg(t, st, st+0.10));
+    c.style.transform = `scale(${lerp(0.2,1,qq)})`;
+    if (on){
+      c.style.background = rest ? C.panel2 : rgba(C.green,0.75);
+      c.style.borderColor = rest ? C.lineSoft : C.green;
+      c.style.boxShadow = rest ? 'none' : '0 0 26px '+rgba(C.green,0.55);
+    }
+  });
+  gridPct.textContent = Math.round(trained/DAYS*100) + '%';
+
+  /* payoff */
+  const po = seg(t, 12.40, 12.95);
+  payoff.style.opacity = String(seg(t,12.40,12.55) * (1 - seg(t,13.80,14.00)));
+  payoff.style.transform = `scale(${lerp(1.35,1,E.slam(po))})`;
+  K.driveShockwave(payRing, seg(t,12.40,13.15), 7.0, 0, 900-960);
+  K.driveSparks(paySparks, seg(t,12.40,13.25), 0, 900-960);
+
+  if (t >= 14.00) endCard.drive(t - 14.00); else endCard.root.style.opacity = '0';
+};
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>

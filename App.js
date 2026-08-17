@@ -192,6 +192,42 @@ function AppInner() {
     workoutSession.restore().catch(() => {});
   }, []);
 
+  /* ------------------- local notifications with real stakes ----------------
+   * Check In prompts and the rest timer already fired at OS level. The two
+   * events people actually lose progress to did not: a streak about to break,
+   * and a duel about to close.
+   *
+   * Both are LOCAL schedules, so they need no server, arrive with the app shut,
+   * and ship over the air. (Genuine remote push would need a sender — the
+   * expo_push_token column exists and is populated, but nothing dispatches to
+   * it yet; that is an Edge Function, not a client change.)
+   * --------------------------------------------------------------------- */
+  const lastTrainedTs = useMemo(() => {
+    let max = 0;
+    for (const e of (data.lifts || [])) if ((e.t || 0) > max) max = e.t;
+    for (const e of (data.cardio || [])) if ((e.t || 0) > max) max = e.t;
+    return max || null;
+  }, [data.lifts, data.cardio]);
+
+  const activeDuel = useMemo(
+    () => (data.duels || []).find((duel) => duel.status === 'active') || null,
+    [data.duels],
+  );
+
+  useEffect(() => {
+    if (stage !== 'app') return;
+    notifications.scheduleStreakGuard({ streak: dv.streak, lastTrainedTs }).catch(() => {});
+  }, [stage, dv.streak, lastTrainedTs]);
+
+  useEffect(() => {
+    if (stage !== 'app') return;
+    if (!activeDuel) { notifications.cancelDuelEnding().catch(() => {}); return; }
+    notifications.scheduleDuelEnding({
+      endT: activeDuel.endT,
+      opponent: activeDuel.bot && activeDuel.bot.name,
+    }).catch(() => {});
+  }, [stage, activeDuel]);
+
   /* ---------------------------- social state ----------------------------- */
 
   const prefsApi = useCheckInPreferences(user);

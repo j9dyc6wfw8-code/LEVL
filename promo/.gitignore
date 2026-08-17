@@ -1,0 +1,11 @@
+node_modules/
+preview/
+out/
+
+# Rendered videos (~123 MB). Deliberately not committed: they are reproducible
+# byte-for-byte from the HTML in this folder via `npm run render:all`, and git
+# keeps binaries in history forever even after deletion.
+#
+# If you want them versioned, delete the line below and commit once — but
+# prefer Releases or object storage for files this size.
+*.mp4

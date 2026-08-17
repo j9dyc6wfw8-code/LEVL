@@ -1,0 +1,25 @@
+{
+  "name": "levl-promo-reel",
+  "version": "2.0.0",
+  "private": true,
+  "description": "LEVL Instagram Reels — ten deterministic HTML animations rendered to 60fps 1080x1920 MP4",
+  "scripts": {
+    "render": "node render.js",
+    "render:product": "SRC=reel.html OUT=out/LEVL-reel.mp4 node render.js",
+    "render:hype": "SRC=reel2.html OUT=out/LEVL-reel-hype.mp4 node render.js",
+    "render:xp": "SRC=concept-c-xp.html OUT=out/LEVL-concept-c-xp.mp4 node render.js",
+    "render:streak": "SRC=concept-d-streak.html OUT=out/LEVL-concept-d-streak.mp4 node render.js",
+    "render:rival": "SRC=concept-e-rival.html OUT=out/LEVL-concept-e-rival.mp4 node render.js",
+    "render:season": "SRC=concept-i-season.html OUT=out/LEVL-concept-i-season.mp4 node render.js",
+    "render:finish": "SRC=concept-j-finish.html OUT=out/LEVL-concept-j-finish.mp4 node render.js",
+    "render:choose": "SRC=concept-k-choose.html OUT=out/LEVL-concept-k-choose.mp4 node render.js",
+    "render:story": "SRC=concept-l-story.html OUT=out/LEVL-concept-l-story.mp4 node render.js",
+    "render:pack": "SRC=concept-m-pack.html OUT=out/LEVL-concept-m-pack.mp4 node render.js",
+    "render:all": "npm run render:product && npm run render:hype && npm run render:xp && npm run render:streak && npm run render:rival && npm run render:season && npm run render:finish && npm run render:choose && npm run render:story && npm run render:pack",
+    "preview": "PREVIEW=2.1,4.6,8.4,12.4,16.0,19.9,22.6,25.4,28.6 node render.js"
+  },
+  "dependencies": {
+    "ffmpeg-static": "^5.3.0",
+    "puppeteer": "^25.7.0"
+  }
+}

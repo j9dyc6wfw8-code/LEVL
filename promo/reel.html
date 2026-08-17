@@ -1,0 +1,1089 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — Reel</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1080px; height:1920px; overflow:hidden; background:#08090f; }
+  body {
+    font-family:-apple-system, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    color:#fff;
+  }
+  #stage { position:relative; width:1080px; height:1920px; overflow:hidden; background:#0e1016; }
+  .scene { position:absolute; inset:0; will-change:transform,opacity; }
+  .num { font-variant-numeric:tabular-nums; }
+  .lab { font-size:24px; font-weight:600; letter-spacing:5px; text-transform:uppercase; }
+  .abs { position:absolute; }
+  svg { display:block; }
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<script>
+/* ============================================================================
+   LEVL — promotional reel (1080x1920)
+
+   Every colour, icon path, tier, stat and string below is lifted from the
+   actual app source:
+     src/theme.js            -> C.*, RARITY_C, STAT_C, GRAD
+     src/engine/engine.js    -> TIERS, STAT_META, DUEL_TIERS, DUEL_DURATIONS
+     src/components/TabIcon  -> the SVG path data, verbatim
+     src/navigation/routes   -> TABS
+     app.json                -> Check In camera copy
+
+   Rendering is deterministic: nothing reads the clock. window.renderAt(t)
+   fully describes frame at time t, so the capture script can step exact frames.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- tokens -- */
+const C = {
+  sunken:'#090a0f', bg:'#0e1016', bgElev:'#141720', panel:'#181c27',
+  panel2:'#1f2431', panel3:'#272d3d', line:'#2c3344', lineSoft:'#212736',
+  text:'#ffffff', mut:'#a7b0c0', dim:'#6b7488', faint:'#464e60', ink:'#0e1016',
+  gold:'#ffc933', goldDeep:'#d99a1c',
+  green:'#2fe39b', red:'#ff5c6e', purp:'#a66bff', blue:'#3d9bff',
+  cyan:'#2fe0e0', orange:'#ff8a3d', pink:'#ff5fa2',
+};
+// engine.js -> TIERS
+const TIERS = [
+  { name:'Bronze',      min:0,    color:'#cd7f4a' },
+  { name:'Silver',      min:600,  color:'#c3ccdb' },
+  { name:'Gold',        min:1200, color:'#ffc933' },
+  { name:'Platinum',    min:1800, color:'#2fe0e0' },
+  { name:'Diamond',     min:2400, color:'#3d9bff' },
+  { name:'Champion',    min:3000, color:'#a66bff' },
+  { name:'Grandmaster', min:3600, color:'#ff4d6d' },
+];
+// engine.js -> STAT_META
+const STATS = [
+  { k:'STR', name:'Strength',   c:'#ff5c6e', v:0.86 },
+  { k:'PWR', name:'Power',      c:'#ff8a3d', v:0.72 },
+  { k:'END', name:'Endurance',  c:'#2fe39b', v:0.64 },
+  { k:'VIT', name:'Vitality',   c:'#3d9bff', v:0.79 },
+  { k:'MOB', name:'Mobility',   c:'#2fe0e0', v:0.55 },
+  { k:'DIS', name:'Discipline', c:'#a66bff', v:0.91 },
+];
+// theme.js -> RARITY_C
+const RARITY = [
+  { k:'common',    c:'#8e97a8', label:'Common'    },
+  { k:'rare',      c:'#3d9bff', label:'Rare'      },
+  { k:'epic',      c:'#a66bff', label:'Epic'      },
+  { k:'legendary', c:'#ff8a3d', label:'Legendary' },
+  { k:'mythic',    c:'#ff4d6d', label:'Mythic'    },
+];
+// TabIcon.js -> path data, verbatim
+const ICONS = {
+  train:   `<line x1="8" y1="12" x2="16" y2="12"/><rect x="3.5" y="9" width="3" height="6" rx="1"/><rect x="17.5" y="9" width="3" height="6" rx="1"/><line x1="2.5" y1="10.5" x2="2.5" y2="13.5"/><line x1="21.5" y1="10.5" x2="21.5" y2="13.5"/>`,
+  duel:    `<path d="M5 4 L14 13 L13 15 L11 16 L4 9 Z"/><path d="M19 4 L10 13 L11 15 L13 16 L20 9 Z"/><line x1="12" y1="14" x2="12" y2="20"/>`,
+  social:  `<rect x="3" y="6.5" width="18" height="13.5" rx="3"/><path d="M8.4 6.5 L9.7 4 H14.3 L15.6 6.5"/><circle cx="12" cy="13.2" r="3.8"/>`,
+  profile: `<path d="M12 3 L20 6 V11 C20 16 16.5 19.5 12 21 C7.5 19.5 4 16 4 11 V6 Z"/><path d="M12 8 L13 11 L16 11 L13.5 13 L14.5 16 L12 14 L9.5 16 L10.5 13 L8 11 L11 11 Z"/>`,
+  shop:    `<path d="M6 8 H18 L19 20 H5 Z"/><path d="M9 8 V6.5 A3 3 0 0 1 15 6.5 V8"/>`,
+  ranks:   `<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5 C8 7 8 17 12 20.5 C16 17 16 7 12 3.5"/><line x1="3.5" y1="12" x2="20.5" y2="12"/>`,
+  progress:`<line x1="4" y1="20" x2="20" y2="20"/><rect x="5.5" y="13" width="3" height="7" rx="0.8"/><rect x="10.5" y="9" width="3" height="11" rx="0.8"/><rect x="15.5" y="5" width="3" height="15" rx="0.8"/>`,
+  packs:   `<path d="M12 3 L20 7 V16 L12 21 L4 16 V7 Z"/><polyline points="4,7 12,11 20,7"/><line x1="12" y1="11" x2="12" y2="21"/><line x1="8" y1="5" x2="16" y2="9"/>`,
+};
+function icon(name, size, color, sw, fillActive) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}"
+    stroke-width="${sw||1.9}" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`;
+}
+// routes.js -> TABS
+const TABS = [
+  { key:'train',   label:'Train',   icon:'train'   },
+  { key:'compete', label:'Compete', icon:'duel'    },
+  { key:'social',  label:'Social',  icon:'social'  },
+  { key:'hunter',  label:'Hunter',  icon:'profile' },
+  { key:'forge',   label:'Forge',   icon:'shop'    },
+];
+// The LEVL app icon glyph, traced from assets/icon.png (viewBox 0 0 100 100)
+const L_PATH = 'M39.1,30.6 H49.8 V59.8 L70.3,51.3 V61.7 L49.8,69.3 H39.1 Z';
+
+/* ----------------------------------------------------------------- utils -- */
+const stage = document.getElementById('stage');
+const clamp01 = x => x < 0 ? 0 : x > 1 ? 1 : x;
+const lerp = (a,b,t) => a + (b-a)*t;
+// local progress of a sub-beat inside a scene
+const seg = (t,a,b) => clamp01((t-a)/(b-a));
+const E = {
+  linear: t=>t,
+  outCubic:  t=>1-Math.pow(1-t,3),
+  outQuart:  t=>1-Math.pow(1-t,4),
+  outQuint:  t=>1-Math.pow(1-t,5),
+  outExpo:   t=>t>=1?1:1-Math.pow(2,-10*t),
+  inCubic:   t=>t*t*t,
+  inQuart:   t=>t*t*t*t,
+  inOutCubic:t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2,
+  inOutQuart:t=>t<.5?8*t*t*t*t:1-Math.pow(-2*t+2,4)/2,
+  outBack:   t=>{const c1=1.70158,c3=c1+1;return 1+c3*Math.pow(t-1,3)+c1*Math.pow(t-1,2);},
+  // damped spring settle — the app's MOTION.bouncy, approximated
+  outSpring: t=>t>=1?1:1-Math.exp(-6.2*t)*Math.cos(7.6*t),
+};
+function el(tag, parent, css, html) {
+  const n = document.createElement(tag);
+  if (css) Object.assign(n.style, css);
+  if (html != null) n.innerHTML = html;
+  (parent||stage).appendChild(n);
+  return n;
+}
+function px(v){ return v+'px'; }
+function fmt(n){ return Math.round(n).toLocaleString('en-US'); }
+function mulberry32(a){ return function(){ a|=0; a=a+0x6D2B79F5|0; let t=Math.imul(a^a>>>15,1|a); t=t+Math.imul(t^t>>>7,61|t)^t; return ((t^t>>>14)>>>0)/4294967296; }; }
+// hex -> rgba
+function rgba(hex, a){
+  const h = hex.replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+/* ------------------------------------------------------------- timeline -- */
+const SCENES = [
+  { id:'logo',    t0:0.0,  t1:2.5,  flash:true  },
+  { id:'hook',    t0:2.5,  t1:5.0,  flash:true  },
+  { id:'train',   t0:5.0,  t1:9.6,  flash:false },
+  { id:'stats',   t0:9.6,  t1:13.2, flash:false },
+  { id:'rank',    t0:13.2, t1:16.9, flash:true  },
+  { id:'duel',    t0:16.9, t1:20.4, flash:true  },
+  { id:'checkin', t0:20.4, t1:23.4, flash:false },
+  { id:'forge',   t0:23.4, t1:26.0, flash:true  },
+  { id:'cta',     t0:26.0, t1:29.2, flash:true  },
+];
+const DURATION = SCENES[SCENES.length-1].t1;
+
+/* ================================================================ BUILD == */
+/* Everything is constructed once; renderAt() only mutates styles. */
+
+/* ---- persistent backdrop: charcoal + brand bloom + vignette ------------- */
+const bgBloom = el('div', stage, {
+  position:'absolute', inset:'-20%', pointerEvents:'none',
+  background:'radial-gradient(60% 45% at 50% 42%, rgba(255,201,51,0.16) 0%, rgba(255,201,51,0.04) 42%, rgba(0,0,0,0) 72%)',
+});
+const bgBloom2 = el('div', stage, {
+  position:'absolute', inset:'-20%', pointerEvents:'none', mixBlendMode:'screen',
+  background:'radial-gradient(45% 35% at 22% 78%, rgba(61,155,255,0.10) 0%, rgba(0,0,0,0) 70%)',
+});
+
+/* ---- scene roots -------------------------------------------------------- */
+const S = {};
+SCENES.forEach(sc => { S[sc.id] = el('div', stage, { position:'absolute', inset:'0', opacity:'0' }); S[sc.id].className='scene'; });
+
+/* ======================================================= SCENE 1 — LOGO == */
+{
+  const root = S.logo;
+  var logoWrap = el('div', root, {
+    position:'absolute', left:'50%', top:'820px', width:'420px', height:'420px',
+    marginLeft:'-210px', marginTop:'-210px',
+  });
+  // gold rounded-square plate (the app icon), scales in behind the glyph
+  var logoPlate = el('div', logoWrap, {
+    position:'absolute', inset:'0', borderRadius:'96px',
+    background:'linear-gradient(150deg,#ffe08a 0%,#ffc933 45%,#e5a51f 100%)',
+    boxShadow:'0 40px 120px rgba(255,201,51,0.35), 0 0 0 1px rgba(255,255,255,0.16) inset',
+    transformOrigin:'50% 50%',
+  });
+  // the glyph — drawn as a stroke first, then filled
+  var logoSvg = el('div', logoWrap, { position:'absolute', inset:'0' },
+    `<svg width="420" height="420" viewBox="0 0 100 100">
+       <path id="Lstroke" d="${L_PATH}" fill="none" stroke="#0e1016" stroke-width="1.6"
+             stroke-linejoin="round" stroke-linecap="round"/>
+       <path id="Lfill" d="${L_PATH}" fill="#0e1016"/>
+     </svg>`);
+  var Lstroke = logoSvg.querySelector('#Lstroke');
+  var Lfill   = logoSvg.querySelector('#Lfill');
+  var L_LEN   = 300; // generous dash length; exact value not critical
+  Lstroke.style.strokeDasharray = L_LEN;
+
+  // wordmark
+  var logoWord = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'1130px', textAlign:'center',
+    fontSize:'150px', fontWeight:'800', letterSpacing:'0px', color:'#fff',
+  }, 'LEVL');
+  var logoSub = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'1330px', textAlign:'center',
+    fontSize:'26px', fontWeight:'600', letterSpacing:'12px', color:C.dim, textTransform:'uppercase',
+  }, 'Lift · Rank · Repeat');
+  // sweeping shine across the plate
+  var logoShine = el('div', logoWrap, {
+    position:'absolute', inset:'0', borderRadius:'96px', overflow:'hidden', pointerEvents:'none',
+  }, `<div id="shineBar" style="position:absolute;top:-60%;left:0;width:120px;height:220%;
+        background:linear-gradient(90deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.55) 50%,rgba(255,255,255,0) 100%);
+        transform:rotate(18deg);"></div>`);
+  var shineBar = logoShine.querySelector('#shineBar');
+
+  // expanding ring pulse on impact
+  var logoRing = el('div', root, {
+    position:'absolute', left:'50%', top:'820px', width:'420px', height:'420px',
+    marginLeft:'-210px', marginTop:'-210px', borderRadius:'999px',
+    border:'3px solid '+rgba(C.gold,0.6),
+  });
+
+  S.logo.update = function(t){
+    // 0.00 stroke draws  | 0.55 fill + plate snap | 1.05 wordmark | 1.5 sub
+    const draw  = E.inOutCubic(seg(t,0.05,0.72));
+    Lstroke.style.strokeDashoffset = L_LEN*(1-draw);
+    Lstroke.style.opacity = seg(t,0.02,0.10) * (1 - seg(t,0.66,0.80));
+
+    const plate = E.outSpring(seg(t,0.6,1.5));
+    logoPlate.style.transform = `scale(${lerp(0.62,1,plate)})`;
+    logoPlate.style.opacity   = seg(t,0.6,0.74);
+    Lfill.style.opacity       = seg(t,0.62,0.78);
+    logoSvg.style.transform   = `scale(${lerp(1.14,1,E.outQuint(seg(t,0.6,1.35)))})`;
+
+    // shine sweeps once the plate lands
+    const sh = seg(t,0.95,1.75);
+    shineBar.style.transform = `rotate(18deg) translateX(${lerp(-200,620,E.inOutCubic(sh))}px)`;
+    logoShine.style.opacity = sh>0 && sh<1 ? 1 : 0;
+
+    // ring pulse
+    const rp = seg(t,0.62,1.35);
+    logoRing.style.opacity   = rp>0 ? (1-E.outCubic(rp))*0.85 : 0;
+    logoRing.style.transform = `scale(${lerp(0.85,1.85,E.outQuart(rp))})`;
+
+    // wordmark: letter-spacing collapse (classic, reads premium)
+    const w = E.outQuint(seg(t,1.02,1.95));
+    logoWord.style.opacity = seg(t,1.02,1.3);
+    logoWord.style.letterSpacing = px(lerp(64,10,w));
+    logoWord.style.transform = `translateY(${lerp(26,0,w)}px)`;
+
+    const sb = E.outCubic(seg(t,1.45,2.1));
+    logoSub.style.opacity = sb;
+    logoSub.style.transform = `translateY(${lerp(18,0,sb)}px)`;
+  };
+}
+
+/* ======================================================= SCENE 2 — HOOK == */
+{
+  const root = S.hook;
+  // three hard-cut lines of kinetic type
+  const LINES = [
+    { txt:'LIFTING WITHOUT',  y:700,  t:0.05, c:C.mut  },
+    { txt:'A SCOREBOARD',     y:840,  t:0.30, c:C.mut  },
+    { txt:'IS JUST',          y:1030, t:0.85, c:C.dim  },
+    { txt:'MOVING WEIGHT.',   y:1170, t:1.10, c:C.gold },
+  ];
+  var hookEls = LINES.map(L => {
+    const n = el('div', root, {
+      position:'absolute', left:'0', right:'0', top:px(L.y), textAlign:'center',
+      fontSize:'104px', fontWeight:'800', letterSpacing:'-3px', color:L.c,
+      transformOrigin:'50% 50%',
+    }, L.txt);
+    return { n, ...L };
+  });
+  // gold underline swipe beneath the payoff line
+  var hookRule = el('div', root, {
+    position:'absolute', left:'50%', top:'1300px', height:'8px', width:'560px',
+    marginLeft:'-280px', background:'linear-gradient(90deg,'+C.goldDeep+','+C.gold+')',
+    borderRadius:'999px', transformOrigin:'0% 50%',
+    boxShadow:'0 0 40px '+rgba(C.gold,0.5),
+  });
+  // masking bars that reveal each line
+  S.hook.update = function(t){
+    hookEls.forEach((L,i) => {
+      const p = E.outQuint(seg(t, L.t, L.t+0.5));
+      L.n.style.opacity = seg(t, L.t, L.t+0.16);
+      L.n.style.transform = `translateY(${lerp(46,0,p)}px) scale(${lerp(1.06,1,p)})`;
+      // subtle blur-in via text-shadow trick (cheap, no filter cost)
+      L.n.style.filter = `blur(${lerp(9,0,E.outCubic(seg(t,L.t,L.t+0.30)))}px)`;
+    });
+    const r = E.outExpo(seg(t,1.35,2.0));
+    hookRule.style.transform = `scaleX(${r})`;
+    hookRule.style.opacity = seg(t,1.35,1.45);
+  };
+}
+
+/* ------------------------------------------- shared: iPhone-style mockup --
+ * Instagram overlays its own chrome on a Reel: roughly the top 140px and the
+ * bottom 340px of a 1080x1920 frame. Everything that must be READ is composed
+ * inside y 220..1560, which is why the phone is scaled below 1:1.
+ */
+const PHONE_SCALE = 0.86;
+function makePhone(parent, opts){
+  opts = opts||{};
+  const W = 620, H = 1344;
+  const root = el('div', parent, {
+    position:'absolute', left:'50%', top:px(opts.top||960), width:px(W), height:px(H),
+    marginLeft:px(-W/2), marginTop:px(-H/2), transformOrigin:'50% 50%',
+  });
+  // outer titanium rail
+  const rail = el('div', root, {
+    position:'absolute', inset:'0', borderRadius:'78px',
+    background:'linear-gradient(150deg,#4a5265 0%,#242a37 30%,#3b4354 60%,#1d222c 100%)',
+    boxShadow:'0 60px 140px rgba(0,0,0,0.75), 0 0 0 1px rgba(255,255,255,0.06)',
+  });
+  const screen = el('div', root, {
+    position:'absolute', left:'13px', top:'13px', right:'13px', bottom:'13px',
+    borderRadius:'66px', overflow:'hidden', background:C.bg,
+  });
+  // dynamic island
+  el('div', root, {
+    position:'absolute', left:'50%', top:'40px', width:'132px', height:'38px',
+    marginLeft:'-66px', borderRadius:'999px', background:'#000', zIndex:'40',
+  });
+  // status bar
+  el('div', screen, {
+    position:'absolute', left:'44px', top:'42px', fontSize:'23px', fontWeight:'600', color:'#fff',
+    zIndex:'30',
+  }, '9:41');
+  el('div', screen, {
+    position:'absolute', right:'44px', top:'44px', display:'flex', gap:'7px', alignItems:'center', zIndex:'30',
+  }, `<svg width="26" height="18" viewBox="0 0 26 18" fill="#fff"><rect x="0" y="12" width="4" height="6" rx="1"/><rect x="6" y="8" width="4" height="10" rx="1"/><rect x="12" y="4" width="4" height="14" rx="1"/><rect x="18" y="0" width="4" height="18" rx="1"/></svg>
+       <svg width="30" height="16" viewBox="0 0 30 16" fill="none"><rect x="0.7" y="0.7" width="24" height="14.6" rx="4.4" stroke="#fff" stroke-opacity="0.5" stroke-width="1.4"/><rect x="2.6" y="2.6" width="19" height="10.8" rx="2.8" fill="#fff"/><path d="M27 5.4v5.2c1.5-.5 2-1.6 2-2.6s-.5-2.1-2-2.6z" fill="#fff" fill-opacity="0.5"/></svg>`);
+  return { root, screen, W, H };
+}
+function makeTabBar(screen, activeKey){
+  const bar = el('div', screen, {
+    position:'absolute', left:'0', right:'0', bottom:'0', height:'150px',
+    background:'rgba(14,16,22,0.86)', backdropFilter:'blur(30px)',
+    borderTop:'1px solid '+C.lineSoft, display:'flex', alignItems:'flex-start',
+    paddingTop:'18px', zIndex:'20',
+  });
+  const items = TABS.map(tb => {
+    const on = tb.key===activeKey;
+    const col = on ? C.gold : C.dim;
+    const cell = el('div', bar, {
+      flex:'1', display:'flex', flexDirection:'column', alignItems:'center', gap:'8px',
+    }, icon(tb.icon, 38, col, on?2.2:1.9) +
+       `<div style="font-size:17px;font-weight:${on?700:500};color:${col};letter-spacing:0.2px">${tb.label}</div>`);
+    return cell;
+  });
+  return { bar, items };
+}
+
+/* ====================================================== SCENE 3 — TRAIN == */
+{
+  const root = S.train;
+  var trPhone = makePhone(root, { top:800 });
+  const sc = trPhone.screen;
+
+  // ---- screen header
+  el('div', sc, {
+    position:'absolute', left:'44px', top:'118px', fontSize:'46px', fontWeight:'700', letterSpacing:'-1px',
+  }, 'Train');
+  el('div', sc, {
+    position:'absolute', right:'44px', top:'126px', display:'flex', alignItems:'center', gap:'10px',
+    padding:'10px 20px', borderRadius:'999px', background:rgba(C.gold,0.12),
+    border:'1px solid '+rgba(C.gold,0.45),
+  }, `<span style="font-size:22px">🔥</span><span style="font-size:22px;font-weight:700;color:${C.gold};font-variant-numeric:tabular-nums">24</span>`);
+
+  // ---- exercise card
+  var trCard = el('div', sc, {
+    position:'absolute', left:'34px', right:'34px', top:'212px',
+    background:C.panel, border:'1px solid '+C.line, borderRadius:'30px', padding:'30px',
+  });
+  el('div', trCard, { fontSize:'19px', fontWeight:'600', letterSpacing:'2.4px', color:C.dim, textTransform:'uppercase', marginBottom:'14px' }, 'Exercise');
+  el('div', trCard, { fontSize:'38px', fontWeight:'700', letterSpacing:'-0.8px', marginBottom:'12px' }, 'Barbell Bench Press');
+  el('div', trCard, { display:'flex', gap:'10px', alignItems:'center' },
+    `<span style="font-size:21px;color:${C.mut}">Chest</span>
+     <span style="width:5px;height:5px;border-radius:9px;background:${C.faint};display:inline-block"></span>
+     <span style="padding:5px 14px;border-radius:999px;background:${rgba('#ff5c6e',0.15)};border:1px solid ${rgba('#ff5c6e',0.5)};font-size:18px;font-weight:700;color:#ff5c6e">STR</span>
+     <span style="padding:5px 14px;border-radius:999px;background:${rgba('#ff8a3d',0.15)};border:1px solid ${rgba('#ff8a3d',0.5)};font-size:18px;font-weight:700;color:#ff8a3d">PWR</span>`);
+
+  // ---- weight / reps / rpe steppers
+  var trStats = el('div', sc, {
+    position:'absolute', left:'34px', right:'34px', top:'440px', display:'flex', gap:'18px',
+  });
+  const mkField = (label, val, unit) => {
+    const f = el('div', trStats, {
+      flex:'1', background:C.panel, border:'1px solid '+C.line, borderRadius:'26px',
+      padding:'22px 10px', textAlign:'center',
+    });
+    el('div', f, { fontSize:'18px', fontWeight:'600', letterSpacing:'2.2px', color:C.dim, textTransform:'uppercase', marginBottom:'10px' }, label);
+    const v = el('div', f, { fontSize:'52px', fontWeight:'700', fontVariantNumeric:'tabular-nums', letterSpacing:'-1.5px' }, val);
+    el('div', f, { fontSize:'18px', color:C.faint, marginTop:'4px' }, unit);
+    return v;
+  };
+  mkField('Weight','100','kg'); mkField('Reps','5','reps'); mkField('RPE','8','hard');
+
+  // ---- estimated 1RM readout (Brzycki, as used in the app)
+  var trE1 = el('div', sc, {
+    position:'absolute', left:'34px', right:'34px', top:'640px',
+    background:'linear-gradient(180deg,'+rgba(C.gold,0.10)+','+rgba(C.gold,0.03)+')',
+    border:'1px solid '+rgba(C.gold,0.30), borderRadius:'26px', padding:'24px 28px',
+    display:'flex', alignItems:'center', justifyContent:'space-between',
+  });
+  el('div', trE1, {}, `<div style="font-size:18px;font-weight:600;letter-spacing:2.2px;color:${C.dim};text-transform:uppercase">Estimated 1RM</div>
+                       <div style="font-size:19px;color:${C.faint};margin-top:6px">Brzycki formula</div>`);
+  var trE1Val = el('div', trE1, {
+    fontSize:'54px', fontWeight:'800', color:C.gold, fontVariantNumeric:'tabular-nums', letterSpacing:'-1.5px',
+  }, '0 kg');
+
+  // ---- log button
+  var trBtn = el('div', sc, {
+    position:'absolute', left:'34px', right:'34px', top:'790px', height:'104px',
+    borderRadius:'28px', background:'linear-gradient(180deg,#ffd45c,'+C.gold+')',
+    display:'flex', alignItems:'center', justifyContent:'center',
+    boxShadow:'0 16px 44px '+rgba(C.gold,0.35), transformOrigin:'50% 50%',
+  }, `<span style="font-size:26px;font-weight:800;letter-spacing:3px;color:${C.ink};text-transform:uppercase">Log Set</span>`);
+  // press ripple
+  var trRipple = el('div', sc, {
+    position:'absolute', left:'34px', right:'34px', top:'790px', height:'104px',
+    borderRadius:'28px', border:'3px solid '+rgba(C.gold,0.75), opacity:'0',
+  });
+
+  // ---- PR banner (real copy: 'NEW PERSONAL RECORD')
+  var trPR = el('div', sc, {
+    position:'absolute', left:'34px', right:'34px', top:'930px',
+    background:'linear-gradient(135deg,#ffe08a,'+C.gold+' 55%,'+C.goldDeep+')',
+    borderRadius:'28px', padding:'26px 30px', display:'flex', alignItems:'center', gap:'20px',
+    boxShadow:'0 20px 60px '+rgba(C.gold,0.40), opacity:'0', transformOrigin:'50% 50%',
+  }, `<svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="${C.ink}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${ICONS.profile}</svg>
+      <div><div style="font-size:27px;font-weight:800;letter-spacing:2px;color:${C.ink};text-transform:uppercase">New Personal Record</div>
+      <div style="font-size:20px;font-weight:600;color:${rgba('#0e1016',0.62)};margin-top:4px">Bench Press · +7.5 kg e1RM</div></div>`);
+
+  // ---- XP chips that fly up out of the button
+  var xpChips = [0,1,2].map(i => el('div', sc, {
+    position:'absolute', left:'50%', top:'800px', padding:'12px 26px', borderRadius:'999px',
+    background:rgba(C.green,0.16), border:'1px solid '+rgba(C.green,0.55),
+    fontSize:'28px', fontWeight:'800', color:C.green, whiteSpace:'nowrap',
+    fontVariantNumeric:'tabular-nums', opacity:'0',
+  }, ['+128 XP','+STR','+PWR'][i]));
+
+  makeTabBar(sc, 'train');
+
+  // ---- caption beside the phone
+  var trCap = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'1420px', textAlign:'center',
+  }, `<div style="font-size:64px;font-weight:800;letter-spacing:-1.6px">Log a set.</div>
+      <div style="font-size:31px;font-weight:500;color:${C.mut};margin-top:14px">Real 1RM science. Instant XP.</div>`);
+
+  S.train.update = function(t){
+    // phone settles in
+    const p = E.outQuint(seg(t,0.0,0.85));
+    trPhone.root.style.transform = `translateY(${lerp(90,0,p)}px) scale(${lerp(0.94,1,p)*PHONE_SCALE})`;
+    trPhone.root.style.opacity = seg(t,0.0,0.28);
+
+    // e1RM counts up: Brzycki, 100kg x 5 reps -> 112.5
+    const e1 = E.outExpo(seg(t,0.5,1.5));
+    trE1Val.textContent = (Math.round(lerp(0,112.5,e1)*2)/2).toFixed(1)+' kg';
+
+    // button press at 1.85
+    const press = seg(t,1.85,2.0), rel = seg(t,2.0,2.28);
+    const squash = press>0 ? lerp(1,0.955,E.outCubic(press)) * lerp(1,1,1) : 1;
+    trBtn.style.transform = `scale(${rel>0 ? lerp(0.955,1,E.outSpring(rel)) : squash})`;
+    const rip = seg(t,1.98,2.55);
+    trRipple.style.opacity = rip>0&&rip<1 ? (1-rip)*0.9 : 0;
+    trRipple.style.transform = `scale(${lerp(1,1.12,E.outCubic(rip))})`;
+
+    // XP chips fly
+    xpChips.forEach((n,i) => {
+      const st = 2.02 + i*0.11;
+      const q = seg(t, st, st+1.15);
+      const dx = [-10, -150, 130][i];
+      n.style.opacity = q>0 ? (seg(t,st,st+0.12) * (1-E.inCubic(seg(t,st+0.55,st+1.15)))) : 0;
+      n.style.transform = `translate(calc(-50% + ${dx*E.outCubic(q)}px), ${lerp(0,-230,E.outQuart(q))}px) scale(${lerp(0.7,1,E.outBack(clamp01(q*3)))})`;
+    });
+
+    // PR banner slams in
+    const pr = seg(t,2.35,3.0);
+    trPR.style.opacity = seg(t,2.35,2.48);
+    trPR.style.transform = `translateY(${lerp(40,0,E.outSpring(pr))}px) scale(${lerp(0.92,1,E.outSpring(pr))})`;
+
+    // caption
+    const cp = E.outQuint(seg(t,0.45,1.2));
+    trCap.style.opacity = seg(t,0.45,0.75);
+    trCap.style.transform = `translateY(${lerp(34,0,cp)}px)`;
+  };
+}
+
+/* ====================================================== SCENE 4 — STATS == */
+{
+  const root = S.stats;
+  const CX = 540, CY = 990, R = 318;
+  var radarSvg = el('div', root, { position:'absolute', left:'0', top:'0', width:'1080px', height:'1920px' },
+    `<svg width="1080" height="1920" viewBox="0 0 1080 1920">
+       <g id="grid"></g>
+       <polygon id="fillPoly" fill="${rgba(C.gold,0.22)}" stroke="${C.gold}" stroke-width="4.5" stroke-linejoin="round"/>
+       <g id="spokes"></g>
+       <g id="dots"></g>
+     </svg>`);
+  const grid = radarSvg.querySelector('#grid');
+  const spokes = radarSvg.querySelector('#spokes');
+  const fillPoly = radarSvg.querySelector('#fillPoly');
+  const dotsG = radarSvg.querySelector('#dots');
+  const NS = 'http://www.w3.org/2000/svg';
+  const ang = i => (-Math.PI/2) + i*(Math.PI*2/6);
+  const ptAt = (i,r) => [CX + Math.cos(ang(i))*r, CY + Math.sin(ang(i))*r];
+
+  // concentric hex rings
+  for (let ring=1; ring<=4; ring++){
+    const pts = [];
+    for (let i=0;i<6;i++){ const [x,y]=ptAt(i, R*ring/4); pts.push(x.toFixed(1)+','+y.toFixed(1)); }
+    const poly = document.createElementNS(NS,'polygon');
+    poly.setAttribute('points', pts.join(' '));
+    poly.setAttribute('fill','none');
+    poly.setAttribute('stroke', ring===4 ? C.line : C.lineSoft);
+    poly.setAttribute('stroke-width', ring===4 ? 2.5 : 1.6);
+    grid.appendChild(poly);
+  }
+  for (let i=0;i<6;i++){
+    const [x,y]=ptAt(i,R);
+    const ln = document.createElementNS(NS,'line');
+    ln.setAttribute('x1',CX); ln.setAttribute('y1',CY); ln.setAttribute('x2',x); ln.setAttribute('y2',y);
+    ln.setAttribute('stroke',C.lineSoft); ln.setAttribute('stroke-width',1.6);
+    spokes.appendChild(ln);
+  }
+  var statDots = STATS.map((st,i)=>{
+    const c = document.createElementNS(NS,'circle');
+    c.setAttribute('r', 11); c.setAttribute('fill', st.c);
+    c.setAttribute('stroke', C.bg); c.setAttribute('stroke-width', 4);
+    dotsG.appendChild(c); return c;
+  });
+  // labels + values around the hexagon
+  var statLabels = STATS.map((st,i)=>{
+    const [x,y] = ptAt(i, R+100);
+    const n = el('div', root, {
+      position:'absolute', left:px(x-110), top:px(y-52), width:'220px', textAlign:'center',
+    }, `<div style="font-size:40px;font-weight:800;letter-spacing:2px;color:${st.c}">${st.k}</div>
+        <div style="font-size:22px;font-weight:500;color:${C.dim};margin-top:2px">${st.name}</div>
+        <div class="valn" style="font-size:30px;font-weight:700;color:#fff;margin-top:6px;font-variant-numeric:tabular-nums">0</div>`);
+    return { n, val:n.querySelector('.valn'), st };
+  });
+  var statTitle = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'300px', textAlign:'center',
+  }, `<div style="font-size:24px;font-weight:600;letter-spacing:6px;color:${C.gold};text-transform:uppercase">Every set feeds a stat</div>
+      <div style="font-size:74px;font-weight:800;letter-spacing:-2px;margin-top:18px">Six ways to be strong</div>`);
+  var statFoot = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'1490px', textAlign:'center',
+    fontSize:'30px', fontWeight:'500', color:C.mut,
+  }, 'Bench builds STR. Sprints build END. Showing up builds DIS.');
+
+  S.stats.update = function(t){
+    const grow = E.outExpo(seg(t,0.25,1.6));
+    const pts = [];
+    STATS.forEach((st,i)=>{
+      const stagger = clamp01((grow*1.35) - i*0.045);
+      const r = R * st.v * E.outCubic(stagger);
+      const [x,y] = ptAt(i, Math.max(r, 2));
+      pts.push(x.toFixed(1)+','+y.toFixed(1));
+      statDots[i].setAttribute('cx',x); statDots[i].setAttribute('cy',y);
+      statDots[i].setAttribute('opacity', stagger>0.02?1:0);
+      const lp = seg(t, 0.4+i*0.075, 0.95+i*0.075);
+      statLabels[i].n.style.opacity = lp;
+      statLabels[i].n.style.transform = `scale(${lerp(0.86,1,E.outBack(lp))})`;
+      statLabels[i].val.textContent = Math.round(lerp(0, st.v*100, E.outExpo(seg(t,0.45+i*0.06, 1.7))));
+    });
+    fillPoly.setAttribute('points', pts.join(' '));
+    radarSvg.style.opacity = seg(t,0.1,0.35);
+    // slow, subtle rotation gives it life
+    radarSvg.style.transform = `rotate(${lerp(-7,0,E.outQuint(seg(t,0,2.2)))}deg)`;
+    radarSvg.style.transformOrigin = '540px 990px';
+
+    const ti = E.outQuint(seg(t,0.0,0.8));
+    statTitle.style.opacity = seg(t,0.0,0.3);
+    statTitle.style.transform = `translateY(${lerp(38,0,ti)}px)`;
+    const fo = E.outQuint(seg(t,1.5,2.2));
+    statFoot.style.opacity = seg(t,1.5,1.9);
+    statFoot.style.transform = `translateY(${lerp(28,0,fo)}px)`;
+  };
+}
+
+/* ======================================================= SCENE 5 — RANK == */
+{
+  const root = S.rank;
+  el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'320px', textAlign:'center',
+    fontSize:'24px', fontWeight:'600', letterSpacing:'6px', color:C.gold, textTransform:'uppercase',
+  }, 'Where you sit this season');
+  var rankHead = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'380px', textAlign:'center',
+    fontSize:'82px', fontWeight:'800', letterSpacing:'-2px',
+  }, 'A real ladder');
+
+  // horizontal strip of the seven tiers
+  const PLATE_W = 460, GAP = 44, STEP = PLATE_W+GAP;
+  var strip = el('div', root, {
+    position:'absolute', left:'50%', top:'760px', height:'420px', width:'0',
+  });
+  var plates = TIERS.map((tr,i)=>{
+    const n = el('div', strip, {
+      position:'absolute', left:px(i*STEP - PLATE_W/2), top:'0', width:px(PLATE_W), height:'420px',
+      borderRadius:'42px', background:'linear-gradient(180deg,'+rgba(tr.color,0.20)+','+rgba(tr.color,0.05)+')',
+      border:'2px solid '+rgba(tr.color,0.55), display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', gap:'22px',
+    }, `<div style="width:132px;height:132px;border-radius:999px;background:${rgba(tr.color,0.16)};
+          border:3px solid ${rgba(tr.color,0.7)};display:flex;align-items:center;justify-content:center">
+          <svg width="72" height="72" viewBox="0 0 24 24" fill="none" stroke="${tr.color}" stroke-width="1.9"
+               stroke-linecap="round" stroke-linejoin="round">${ICONS.profile}</svg></div>
+        <div style="font-size:44px;font-weight:800;letter-spacing:1px;color:${tr.color}">${tr.name.toUpperCase()}</div>
+        <div style="font-size:23px;font-weight:600;color:${C.dim};font-variant-numeric:tabular-nums">${fmt(tr.min)}+ FR</div>`);
+    return { n, tr };
+  });
+  // centre focus frame
+  var focusFrame = el('div', root, {
+    position:'absolute', left:'50%', top:'740px', width:px(PLATE_W+40), height:'460px',
+    marginLeft:px(-(PLATE_W+40)/2), borderRadius:'52px', border:'3px solid '+rgba(C.gold,0.0),
+  });
+  // edge fades so the strip bleeds out
+  el('div', root, { position:'absolute', left:'0', top:'740px', width:'250px', height:'460px',
+    background:'linear-gradient(90deg,'+C.bg+' 10%,rgba(14,16,22,0) 100%)', zIndex:'6' });
+  el('div', root, { position:'absolute', right:'0', top:'740px', width:'250px', height:'460px',
+    background:'linear-gradient(270deg,'+C.bg+' 10%,rgba(14,16,22,0) 100%)', zIndex:'6' });
+
+  // fitness rating counter + progress to next tier
+  var frWrap = el('div', root, {
+    position:'absolute', left:'170px', right:'170px', top:'1290px', textAlign:'center',
+  });
+  el('div', frWrap, { fontSize:'21px', fontWeight:'600', letterSpacing:'4px', color:C.dim, textTransform:'uppercase' }, 'Fitness Rating');
+  var frVal = el('div', frWrap, { fontSize:'104px', fontWeight:'800', letterSpacing:'-3px', fontVariantNumeric:'tabular-nums', marginTop:'6px' }, '0');
+  var frBarTrack = el('div', frWrap, {
+    height:'18px', borderRadius:'999px', background:C.sunken, overflow:'hidden', marginTop:'22px',
+    border:'1px solid '+C.lineSoft,
+  });
+  var frBar = el('div', frBarTrack, {
+    height:'100%', width:'0%', borderRadius:'999px',
+    background:'linear-gradient(90deg,'+C.goldDeep+','+C.gold+')',
+    boxShadow:'0 0 26px '+rgba(C.gold,0.6),
+  });
+  var frNext = el('div', frWrap, { fontSize:'26px', fontWeight:'600', color:C.mut, marginTop:'18px' }, '');
+
+  S.rank.update = function(t){
+    // slot-machine: rip through all seven, overshoot, settle on Gold (index 2)
+    const LAND = 2;
+    const spin = E.outQuart(seg(t,0.15,1.5));
+    const settle = E.outSpring(seg(t,1.5,2.6));
+    const overshoot = 5.35;                       // past Champion
+    const idx = spin<1 ? lerp(-1.4, overshoot, spin) : lerp(overshoot, LAND, settle);
+    strip.style.transform = `translateX(${-idx*STEP}px)`;
+
+    plates.forEach((p,i)=>{
+      const d = Math.abs(i - idx);
+      const near = clamp01(1 - d*0.85);
+      p.n.style.opacity = String(0.30 + near*0.70);
+      p.n.style.transform = `scale(${lerp(0.82, 1.0, near)})`;
+      p.n.style.boxShadow = near>0.6 ? `0 0 90px ${rgba(p.tr.color, 0.42*near)}` : 'none';
+      p.n.style.filter = `blur(${(1-near)*3.2}px)`;
+    });
+    // the landed tier gets a gold focus frame
+    const fr = seg(t,2.15,2.6);
+    focusFrame.style.borderColor = rgba(C.gold, fr*0.55);
+    focusFrame.style.boxShadow = `0 0 ${60*fr}px ${rgba(C.gold,0.25*fr)}`;
+
+    const head = E.outQuint(seg(t,0.0,0.7));
+    rankHead.style.opacity = seg(t,0.0,0.3);
+    rankHead.style.transform = `translateY(${lerp(34,0,head)}px)`;
+
+    // FR counts up to 1,480 (Gold: 1200-1799)
+    const fp = E.outExpo(seg(t,0.9,2.5));
+    const fv = lerp(0, 1480, fp);
+    frVal.textContent = fmt(fv);
+    frWrap.style.opacity = seg(t,0.7,1.1);
+    // progress inside the Gold band toward Platinum (1800)
+    const pct = clamp01((fv-1200)/(1800-1200))*100;
+    frBar.style.width = pct.toFixed(1)+'%';
+    frNext.innerHTML = `<span style="color:${C.gold};font-weight:700">${Math.max(0,Math.round(1800-fv))} FR</span> to Platinum`;
+    frNext.style.opacity = seg(t,1.6,2.1);
+  };
+}
+
+/* ======================================================= SCENE 6 — DUEL == */
+{
+  const root = S.duel;
+  el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'300px', textAlign:'center',
+    fontSize:'24px', fontWeight:'600', letterSpacing:'6px', color:C.gold, textTransform:'uppercase',
+  }, 'Duel a friend, or a challenger');
+  var duelHead = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'358px', textAlign:'center',
+    fontSize:'82px', fontWeight:'800', letterSpacing:'-2px',
+  }, 'Head to head');
+
+  // duration pills — engine.js DUEL_DURATIONS
+  var durWrap = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'500px', display:'flex',
+    justifyContent:'center', gap:'18px',
+  });
+  var durPills = [['1 Day','Sprint'],['3 Days','Short'],['7 Days','Full week']].map((d,i)=>{
+    const on = i===2;
+    return el('div', durWrap, {
+      padding:'16px 34px', borderRadius:'999px',
+      background: on ? rgba(C.gold,0.16) : C.panel,
+      border:'1px solid '+(on?rgba(C.gold,0.6):C.line), textAlign:'center',
+    }, `<div style="font-size:28px;font-weight:700;color:${on?C.gold:C.mut}">${d[0]}</div>
+        <div style="font-size:18px;color:${C.faint};margin-top:2px">${d[1]}</div>`);
+  });
+
+  // crossed swords centrepiece
+  var swords = el('div', root, {
+    position:'absolute', left:'50%', top:'930px', width:'170px', height:'170px', marginLeft:'-85px',
+    marginTop:'-85px', borderRadius:'999px', background:C.bg, border:'2px solid '+C.line,
+    display:'flex', alignItems:'center', justifyContent:'center', zIndex:'10',
+  }, icon('duel', 92, C.gold, 1.8));
+
+  // two combatant columns
+  function mkSide(side, name, colour, xLeft, mirror){
+    const w = el('div', root, {
+      position:'absolute', left:px(xLeft), top:'680px', width:'400px', textAlign:'center',
+    });
+    el('div', w, {
+      width:'150px', height:'150px', margin:'0 auto', borderRadius:'999px',
+      background:rgba(colour,0.14), border:'3px solid '+rgba(colour,0.6),
+      display:'flex', alignItems:'center', justifyContent:'center',
+      fontSize:'58px', fontWeight:'800', color:colour,
+    }, name.slice(0,1));
+    el('div', w, { fontSize:'34px', fontWeight:'700', marginTop:'18px' }, name);
+    el('div', w, { fontSize:'20px', fontWeight:'600', letterSpacing:'2px', color:C.dim, textTransform:'uppercase', marginTop:'4px' }, side);
+    // both bars fill TOWARD the swords in the middle, so the lead reads instantly
+    const track = el('div', w, {
+      height:'26px', borderRadius:'999px', background:C.sunken, overflow:'hidden',
+      marginTop:'26px', border:'1px solid '+C.lineSoft,
+      display:'flex', justifyContent: mirror ? 'flex-start' : 'flex-end',
+    });
+    const bar = el('div', track, {
+      height:'100%', width:'0%', borderRadius:'999px',
+      background:'linear-gradient(' + (mirror?'270deg,':'90deg,') + rgba(colour,0.65)+','+colour+')',
+      boxShadow:'0 0 26px '+rgba(colour,0.55),
+    });
+    const val = el('div', w, {
+      fontSize:'56px', fontWeight:'800', color:colour, fontVariantNumeric:'tabular-nums',
+      marginTop:'18px', letterSpacing:'-1.5px',
+    }, '0');
+    el('div', w, { fontSize:'20px', color:C.dim, letterSpacing:'2px', textTransform:'uppercase' }, 'XP this week');
+    return { w, bar, val };
+  }
+  var sideA = mkSide('You',   'Matteo', C.gold,  70, false);
+  var sideB = mkSide('Rival', 'Kai',    C.blue, 610, true);
+
+  // day counter — grounds the 7-day format and fills the gap before the payoff
+  var duelDay = el('div', root, {
+    position:'absolute', left:'50%', top:'1190px', marginLeft:'-200px', width:'400px',
+    textAlign:'center', fontSize:'25px', fontWeight:'700', letterSpacing:'5px',
+    color:C.dim, textTransform:'uppercase',
+  }, 'Day 7 of 7');
+
+  var duelWin = el('div', root, {
+    position:'absolute', left:'50%', top:'1270px', marginLeft:'-290px', width:'580px',
+    padding:'26px 0', textAlign:'center', borderRadius:'26px',
+    background:'linear-gradient(135deg,#ffe08a,'+C.gold+' 55%,'+C.goldDeep+')',
+    boxShadow:'0 24px 70px '+rgba(C.gold,0.42), opacity:'0', transformOrigin:'50% 50%',
+  }, `<div style="font-size:44px;font-weight:800;letter-spacing:8px;color:${C.ink}">VICTORY</div>
+      <div style="font-size:22px;font-weight:700;color:${rgba('#0e1016',0.6)};margin-top:6px;letter-spacing:1px">+500 XP · +250 FORGE COINS</div>`);
+
+  S.duel.update = function(t){
+    const head = E.outQuint(seg(t,0,0.7));
+    duelHead.style.opacity = seg(t,0,0.28);
+    duelHead.style.transform = `translateY(${lerp(34,0,head)}px)`;
+    durPills.forEach((p,i)=>{
+      const q = E.outBack(seg(t,0.25+i*0.08,0.8+i*0.08));
+      p.style.opacity = seg(t,0.25+i*0.08,0.5+i*0.08);
+      p.style.transform = `scale(${lerp(0.8,1,q)})`;
+    });
+    const sw = E.outSpring(seg(t,0.55,1.4));
+    swords.style.opacity = seg(t,0.55,0.75);
+    swords.style.transform = `scale(${lerp(0.5,1,sw)}) rotate(${lerp(-40,0,E.outQuint(seg(t,0.55,1.5)))}deg)`;
+
+    // both sides slide in from their own edge
+    const sa = E.outQuint(seg(t,0.45,1.25)), sb = E.outQuint(seg(t,0.52,1.32));
+    sideA.w.style.opacity = seg(t,0.45,0.72);
+    sideA.w.style.transform = `translateX(${lerp(-140,0,sa)}px)`;
+    sideB.w.style.opacity = seg(t,0.52,0.79);
+    sideB.w.style.transform = `translateX(${lerp(140,0,sb)}px)`;
+
+    // the race — you pull ahead late, which is the point of the beat
+    const race = E.outExpo(seg(t,1.1,2.7));
+    const you = lerp(0,4820,race);
+    const riv = lerp(0,4155,E.outExpo(seg(t,1.1,2.55)));
+    sideA.val.textContent = fmt(you); sideB.val.textContent = fmt(riv);
+    sideA.bar.style.width = (you/5200*100).toFixed(1)+'%';
+    sideB.bar.style.width = (riv/5200*100).toFixed(1)+'%';
+
+    duelDay.style.opacity = seg(t,2.2,2.6);
+
+    const wv = seg(t,2.55,3.2);
+    duelWin.style.opacity = seg(t,2.55,2.68);
+    duelWin.style.transform = `scale(${lerp(0.86,1,E.outSpring(wv))}) rotate(${lerp(-3,0,E.outSpring(wv))}deg)`;
+  };
+}
+
+/* ==================================================== SCENE 7 — CHECK IN = */
+{
+  const root = S.checkin;
+  var ciPhone = makePhone(root, { top:790 });
+  const sc = ciPhone.screen;
+
+  // Rear viewfinder. Rendered as a brand-coloured GRAPHIC, not a simulated
+  // photograph — a fake gym photo would read as a failed render, and there is no
+  // real footage to use here. Viewfinder furniture (thirds grid, corner
+  // brackets, a labelled aperture) is what makes the feature legible.
+  var ciRear = el('div', sc, {
+    position:'absolute', left:'0', right:'0', top:'0', bottom:'0',
+    background:'linear-gradient(168deg,#2a3346 0%,#1a2030 34%,#111621 70%,#0b0e15 100%)',
+    overflow:'hidden',
+  }, `
+    <div style="position:absolute;left:-18%;top:-16%;width:78%;height:132%;
+      background:linear-gradient(112deg,rgba(255,201,51,0.30),rgba(255,201,51,0) 62%);transform:rotate(-9deg)"></div>
+    <div style="position:absolute;right:-10%;top:-4%;width:60%;height:120%;
+      background:linear-gradient(202deg,rgba(61,155,255,0.24),rgba(61,155,255,0) 66%)"></div>
+    <div style="position:absolute;left:0;right:0;bottom:0;height:42%;
+      background:linear-gradient(180deg,rgba(0,0,0,0) 0%,rgba(0,0,0,0.5) 70%,rgba(0,0,0,0.72) 100%)"></div>
+    <!-- rule-of-thirds grid -->
+    <div style="position:absolute;left:33.33%;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.11)"></div>
+    <div style="position:absolute;left:66.66%;top:0;bottom:0;width:1px;background:rgba(255,255,255,0.11)"></div>
+    <div style="position:absolute;top:33.33%;left:0;right:0;height:1px;background:rgba(255,255,255,0.11)"></div>
+    <div style="position:absolute;top:66.66%;left:0;right:0;height:1px;background:rgba(255,255,255,0.11)"></div>
+    <!-- aperture + label, centred in the frame -->
+    <div style="position:absolute;left:0;right:0;top:47%;text-align:center;transform:translateY(-50%)">
+      <div style="opacity:0.30;display:flex;justify-content:center">${icon('social',150,'#ffffff',1.3)}</div>
+      <div style="margin-top:20px;font-size:21px;font-weight:700;letter-spacing:4px;color:rgba(255,255,255,0.62)">REAR · YOUR TRAINING</div>
+    </div>`);
+
+  // viewfinder corner brackets
+  var ciBrackets = el('div', sc, { position:'absolute', inset:'0', pointerEvents:'none' },
+    [['44px','300px','','','8px 0 0 0','left'],
+     ['','300px','44px','','0 8px 0 0','right'],
+     ['44px','','','360px','0 0 0 8px','left'],
+     ['','','44px','360px','0 0 8px 0','right']]
+    .map(b => `<div style="position:absolute;
+        ${b[0]?'left:'+b[0]+';':''}${b[1]?'top:'+b[1]+';':''}${b[2]?'right:'+b[2]+';':''}${b[3]?'bottom:'+b[3]+';':''}
+        width:58px;height:58px;border:4px solid rgba(255,255,255,0.55);border-radius:${b[4]};
+        ${b[1]?'border-bottom:none;':'border-top:none;'}
+        ${b[5]==='left'?'border-right:none;':'border-left:none;'}"></div>`).join(''));
+
+  // front-camera inset — the second half of the dual-camera Check In
+  var ciFront = el('div', sc, {
+    position:'absolute', right:'40px', top:'196px', width:'214px', height:'286px',
+    borderRadius:'32px', border:'3px solid rgba(255,255,255,0.45)', overflow:'hidden',
+    background:'linear-gradient(165deg,#3d4757 0%,#262e3d 45%,#141924 100%)',
+    boxShadow:'0 22px 60px rgba(0,0,0,0.7)', transformOrigin:'100% 0%',
+    display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'14px',
+  }, `<div style="position:absolute;inset:0;background:radial-gradient(58% 42% at 50% 30%,rgba(255,201,51,0.30),rgba(0,0,0,0) 74%)"></div>
+      <div style="opacity:0.62;position:relative">${icon('profile',62,'#ffffff',1.5)}</div>
+      <div style="position:relative;font-size:17px;font-weight:700;letter-spacing:2.4px;color:rgba(255,255,255,0.82)">FRONT · YOU</div>`);
+
+  var ciLabel = el('div', sc, {
+    position:'absolute', left:'40px', top:'126px', padding:'12px 22px', borderRadius:'999px',
+    background:'rgba(9,10,15,0.6)', border:'1px solid rgba(255,255,255,0.16)',
+    display:'flex', alignItems:'center', gap:'12px',
+  }, icon('social', 30, C.gold, 2) + `<span style="font-size:22px;font-weight:700;letter-spacing:1.4px">CHECK IN</span>`);
+
+  // shutter
+  var ciShutter = el('div', sc, {
+    position:'absolute', left:'50%', bottom:'210px', width:'138px', height:'138px', marginLeft:'-69px',
+    borderRadius:'999px', border:'6px solid rgba(255,255,255,0.9)',
+    display:'flex', alignItems:'center', justifyContent:'center', transformOrigin:'50% 50%',
+  }, `<div id="shInner" style="width:108px;height:108px;border-radius:999px;background:#fff"></div>`);
+  var shInner = ciShutter.querySelector('#shInner');
+  // white flash on capture
+  var ciFlash = el('div', sc, { position:'absolute', inset:'0', background:'#fff', opacity:'0', zIndex:'25' });
+
+  var ciCap = el('div', root, {
+    position:'absolute', left:'70px', right:'70px', top:'1400px', textAlign:'center',
+  }, `<div style="font-size:62px;font-weight:800;letter-spacing:-1.6px">Both cameras. One tap.</div>
+      <div style="font-size:29px;font-weight:500;color:${C.mut};margin-top:14px;line-height:1.4">
+        One photo of your training, and one of you — taken together.</div>`);
+
+  S.checkin.update = function(t){
+    const p = E.outQuint(seg(t,0,0.75));
+    ciPhone.root.style.opacity = seg(t,0,0.25);
+    ciPhone.root.style.transform = `translateY(${lerp(70,0,p)}px) scale(${lerp(0.95,1,p)*PHONE_SCALE})`;
+
+    const fp = E.outSpring(seg(t,0.45,1.3));
+    ciFront.style.opacity = seg(t,0.45,0.62);
+    ciFront.style.transform = `scale(${lerp(0.55,1,fp)})`;
+    ciLabel.style.opacity = seg(t,0.35,0.62);
+    // brackets snap inward, the way a viewfinder locks focus
+    const bk = E.outQuint(seg(t,0.28,0.95));
+    ciBrackets.style.opacity = seg(t,0.28,0.5);
+    ciBrackets.style.transform = `scale(${lerp(1.09,1,bk)})`;
+
+    // shutter press at 1.5
+    const press = seg(t,1.5,1.62), rel = seg(t,1.62,1.95);
+    shInner.style.transform = `scale(${rel>0 ? lerp(0.82,1,E.outSpring(rel)) : lerp(1,0.82,E.outCubic(press))})`;
+    const fl = seg(t,1.58,1.95);
+    ciFlash.style.opacity = fl>0&&fl<1 ? Math.pow(1-fl,2.2)*0.92 : 0;
+
+    const cp = E.outQuint(seg(t,0.5,1.25));
+    ciCap.style.opacity = seg(t,0.5,0.8);
+    ciCap.style.transform = `translateY(${lerp(30,0,cp)}px)`;
+  };
+}
+
+/* ====================================================== SCENE 8 — FORGE == */
+{
+  const root = S.forge;
+  el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'560px', textAlign:'center',
+    fontSize:'24px', fontWeight:'600', letterSpacing:'6px', color:C.gold, textTransform:'uppercase',
+  }, 'The Forge');
+  var fgHead = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'618px', textAlign:'center',
+    fontSize:'80px', fontWeight:'800', letterSpacing:'-2px',
+  }, 'Open packs. Earn drip.');
+
+  const CW = 186, CH = 262;
+  var fgCards = RARITY.map((r,i)=>{
+    const n = el('div', root, {
+      position:'absolute', left:px(540 - (RARITY.length*(CW+16))/2 + i*(CW+16) + 8), top:'800px',
+      width:px(CW), height:px(CH), borderRadius:'28px',
+      background:'linear-gradient(180deg,'+rgba(r.c,0.26)+','+rgba(r.c,0.06)+')',
+      border:'2px solid '+rgba(r.c,0.7), display:'flex', flexDirection:'column',
+      alignItems:'center', justifyContent:'center', gap:'16px',
+      transformOrigin:'50% 100%',
+    }, `${icon('packs', 68, r.c, 1.8)}
+        <div style="font-size:21px;font-weight:800;letter-spacing:1.6px;color:${r.c};text-transform:uppercase">${r.label}</div>`);
+    return { n, r };
+  });
+
+  var fgNote = el('div', root, {
+    position:'absolute', left:'110px', right:'110px', top:'1180px', textAlign:'center',
+  }, `<div style="font-size:36px;font-weight:700;color:#fff">Cosmetics only. Never rank.</div>
+      <div style="font-size:27px;font-weight:500;color:${C.mut};margin-top:14px;line-height:1.45">
+        Nothing you open can buy you a place on the ladder.</div>`);
+
+  S.forge.update = function(t){
+    const head = E.outQuint(seg(t,0,0.6));
+    fgHead.style.opacity = seg(t,0,0.26);
+    fgHead.style.transform = `translateY(${lerp(30,0,head)}px)`;
+    fgCards.forEach((c,i)=>{
+      const st = 0.28 + i*0.11;
+      const q = E.outSpring(seg(t, st, st+0.85));
+      c.n.style.opacity = seg(t, st, st+0.16);
+      const rot = lerp((i-2)*9, 0, E.outQuint(seg(t,st,st+1.0)));
+      c.n.style.transform = `translateY(${lerp(120,0,q)}px) rotate(${rot}deg) scale(${lerp(0.8,1,q)})`;
+      c.n.style.boxShadow = `0 24px 70px ${rgba(c.r.c, 0.34*clamp01(seg(t,st,st+0.6)))}`;
+    });
+    const np = E.outQuint(seg(t,1.15,1.9));
+    fgNote.style.opacity = seg(t,1.15,1.5);
+    fgNote.style.transform = `translateY(${lerp(28,0,np)}px)`;
+  };
+}
+
+/* ======================================================== SCENE 9 — CTA == */
+{
+  const root = S.cta;
+  var ctaIcon = el('div', root, {
+    position:'absolute', left:'50%', top:'640px', width:'240px', height:'240px', marginLeft:'-120px',
+    borderRadius:'56px', background:'linear-gradient(150deg,#ffe08a 0%,#ffc933 45%,#e5a51f 100%)',
+    boxShadow:'0 34px 100px '+rgba(C.gold,0.42), display:'flex', alignItems:'center', justifyContent:'center',
+    transformOrigin:'50% 50%',
+  }, `<svg width="240" height="240" viewBox="0 0 100 100"><path d="${L_PATH}" fill="#0e1016"/></svg>`);
+
+  var ctaWord = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'930px', textAlign:'center',
+    fontSize:'168px', fontWeight:'800', letterSpacing:'6px',
+  }, 'LEVL');
+
+  var ctaTag = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'1150px', textAlign:'center',
+    fontSize:'44px', fontWeight:'700', letterSpacing:'8px', color:C.gold, textTransform:'uppercase',
+  }, 'Train. Rank up.');
+
+  // feature ticker — all real, all from the source
+  var ctaFeats = el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'1268px', textAlign:'center',
+    fontSize:'27px', fontWeight:'500', color:C.mut, lineHeight:'1.7',
+  }, `126 exercises · 6 stats · 7 ranks · 1v1 duels<br>Dual-camera Check In · Apple Health`);
+
+  var ctaBtn = el('div', root, {
+    position:'absolute', left:'50%', top:'1420px', marginLeft:'-260px', width:'520px', height:'110px',
+    borderRadius:'999px', background:'linear-gradient(180deg,#ffd45c,'+C.gold+')',
+    display:'flex', alignItems:'center', justifyContent:'center',
+    boxShadow:'0 20px 60px '+rgba(C.gold,0.40), transformOrigin:'50% 50%',
+  }, `<span style="font-size:30px;font-weight:800;letter-spacing:3px;color:${C.ink};text-transform:uppercase">Link in bio</span>`);
+
+  el('div', root, {
+    position:'absolute', left:'0', right:'0', top:'1552px', textAlign:'center',
+    fontSize:'23px', fontWeight:'600', letterSpacing:'4px', color:C.dim, textTransform:'uppercase',
+  }, 'iOS · TestFlight');
+
+  S.cta.update = function(t){
+    const ip = E.outSpring(seg(t,0.05,0.95));
+    ctaIcon.style.opacity = seg(t,0.05,0.25);
+    ctaIcon.style.transform = `scale(${lerp(0.55,1,ip)}) rotate(${lerp(-14,0,E.outQuint(seg(t,0.05,1.1)))}deg)`;
+
+    const wp = E.outQuint(seg(t,0.35,1.25));
+    ctaWord.style.opacity = seg(t,0.35,0.6);
+    ctaWord.style.letterSpacing = px(lerp(56,8,wp));
+    ctaWord.style.transform = `translateY(${lerp(22,0,wp)}px)`;
+
+    const tp = E.outQuint(seg(t,0.7,1.45));
+    ctaTag.style.opacity = seg(t,0.7,1.0);
+    ctaTag.style.transform = `translateY(${lerp(24,0,tp)}px)`;
+
+    const fp = E.outQuint(seg(t,0.95,1.7));
+    ctaFeats.style.opacity = seg(t,0.95,1.3);
+    ctaFeats.style.transform = `translateY(${lerp(22,0,fp)}px)`;
+
+    // button breathes so the frame never goes fully static
+    const bp = E.outSpring(seg(t,1.25,2.1));
+    const breathe = 1 + Math.sin(Math.max(0,t-1.9)*3.1)*0.016;
+    ctaBtn.style.opacity = seg(t,1.25,1.5);
+    ctaBtn.style.transform = `scale(${lerp(0.85,1,bp)*breathe})`;
+  };
+}
+
+/* ----------------------------------------------- overlays: flash + grain -- */
+const flash = el('div', stage, {
+  position:'absolute', inset:'0', background:'#fff', opacity:'0', zIndex:'90', pointerEvents:'none',
+});
+const vignette = el('div', stage, {
+  position:'absolute', inset:'0', zIndex:'88', pointerEvents:'none',
+  background:'radial-gradient(78% 62% at 50% 46%, rgba(0,0,0,0) 40%, rgba(0,0,0,0.55) 100%)',
+});
+// grain: one 220x220 noise tile, offset per frame — cheap and film-like
+const grainTile = (function(){
+  const cv = document.createElement('canvas'); cv.width=220; cv.height=220;
+  const ctx = cv.getContext('2d'); const im = ctx.createImageData(220,220);
+  const rnd = mulberry32(20240816);
+  for (let i=0;i<im.data.length;i+=4){
+    const v = 128 + (rnd()-0.5)*118;
+    im.data[i]=im.data[i+1]=im.data[i+2]=v; im.data[i+3]=255;
+  }
+  ctx.putImageData(im,0,0); return cv.toDataURL();
+})();
+const grain = el('div', stage, {
+  position:'absolute', inset:'-220px', zIndex:'92', pointerEvents:'none',
+  backgroundImage:'url('+grainTile+')', backgroundRepeat:'repeat',
+  opacity:'0.055', mixBlendMode:'overlay',
+});
+// letterbox-safe guides are NOT rendered — content is composed inside the safe area.
+
+/* =============================================================== RENDER == */
+const CUTS = SCENES.filter(s=>s.flash).map(s=>s.t0).filter(x=>x>0);
+function flashAt(t){
+  let v = 0;
+  for (const c of CUTS){
+    const d = t - c;
+    if (d >= -0.02 && d < 0.16) v = Math.max(v, Math.pow(1 - clamp01((d+0.02)/0.18), 2.0) * 0.9);
+  }
+  return v;
+}
+
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+
+  SCENES.forEach(sc => {
+    const node = S[sc.id];
+    const inWin = t >= sc.t0 - 0.35 && t < sc.t1 + 0.02;
+    if (!inWin){ node.style.opacity = '0'; node.style.visibility='hidden'; return; }
+    node.style.visibility = 'visible';
+    const local = t - sc.t0;
+    const dur = sc.t1 - sc.t0;
+
+    // scene-level in/out
+    const inP  = E.outQuint(clamp01(local/0.42));
+    const outP = E.inCubic(clamp01((local - (dur-0.34))/0.34));
+    node.style.opacity = String(clamp01(inP) * (1-outP));
+    // gentle push-out on exit keeps cuts feeling edited, not faded
+    node.style.transform = `scale(${lerp(1, 1.045, outP)}) translateY(${lerp(0,-26,outP)}px)`;
+
+    if (node.update) node.update(local);
+  });
+
+  // ambient bloom drifts across the whole piece
+  const g = t/DURATION;
+  bgBloom.style.opacity = String(0.75 + Math.sin(g*Math.PI*2)*0.2);
+  bgBloom.style.transform = `translate(${Math.sin(g*4.1)*40}px, ${Math.cos(g*3.3)*54}px)`;
+  bgBloom2.style.transform = `translate(${Math.cos(g*3.7)*60}px, ${Math.sin(g*2.9)*40}px)`;
+
+  flash.style.opacity = String(flashAt(t));
+
+  const gr = mulberry32(Math.round(t*1000)+7);
+  grain.style.backgroundPosition = `${Math.floor(gr()*220)}px ${Math.floor(gr()*220)}px`;
+};
+
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>

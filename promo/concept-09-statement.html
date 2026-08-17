@@ -1,0 +1,206 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>LEVL — Statement</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1080px;height:1920px;overflow:hidden;background:#05060a}
+  body{font-family:-apple-system,"SF Pro Display","SF Pro Text",system-ui,sans-serif;-webkit-font-smoothing:antialiased;color:#fff}
+  #stage{position:relative;width:1080px;height:1920px;overflow:hidden;background:#0b0d13}
+  #world{position:absolute;inset:0;will-change:transform}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div id="stage"><div id="world"></div></div>
+<script src="levl-kit.js"></script>
+<script>
+/* ============================================================================
+   CONCEPT 09 — "STATEMENT"
+   Pivot: a banking transaction list -> LEVL's XP ledger.
+   The layout never changes. The debits become credits, the currency becomes XP,
+   and the balance stops dead at the real DAILY_XP_CAP of 4,000.
+
+   Turning an anti-feature (a cap) into the selling point: the cap is precisely
+   why the ladder can't be farmed.
+   ========================================================================== */
+const K = LEVLKit;
+const { C, E, el, seg, lerp, px, fmt, rgba, icon, chroma, clamp01 } = K;
+
+K.boot({ accent: C.green, grid:false });
+/* Silence between 4.40 and 5.60 so the first credit lands into stillness. */
+K.setImpacts([0.20, 1.30, 2.20, 3.10, 4.35, 5.60, 6.50, 7.40, 8.30, 10.20, 12.60],
+             [5.60, 10.20, 12.60]);
+const DURATION = 15.6;
+const W = K.world;
+
+const CAP = 4000;   // INTEGRITY.DAILY_XP_CAP
+
+/* ---- header: reads as a banking app ------------------------------------ */
+const head = el('div', W, {
+  position:'absolute', left:'0', right:'0', top:'250px', textAlign:'center', zIndex:'6',
+  paddingBottom:'26px', background:'linear-gradient(180deg,'+C.bg+' 68%,rgba(11,13,19,0) 100%)',
+});
+const headLbl = el('div', head, {
+  fontSize:'28px', fontWeight:'800', letterSpacing:'7px', color:C.dim, textTransform:'uppercase',
+}, 'Current account');
+const headBal = el('div', head, {
+  fontSize:'132px', fontWeight:'800', letterSpacing:'-4px', lineHeight:'1.1',
+  fontVariantNumeric:'tabular-nums', marginTop:'6px',
+}, '£2,481.09');
+const headSub = el('div', head, {
+  fontSize:'26px', fontWeight:'600', color:C.faint, marginTop:'4px',
+}, 'Available balance');
+
+/* ---- the ledger --------------------------------------------------------- */
+/* Generic merchants on purpose — naming real brands in a commercial ad implies
+   an association none of them have agreed to. The dread reads the same. */
+const DEBITS = [
+  ['Coffee',                '−£3.40',     'Today, 08:12'],
+  ['Travelcard',            '−£6.80',     'Today, 08:41'],
+  ['Rent — Standing order', '−£1,150.00', 'Yesterday'],
+  ['Late-night taxi',       '−£8.20',     'Yesterday'],
+  ['Streaming subscription','−£11.99',    '14 Aug'],
+];
+const CREDITS = [
+  ['Deadlift · 140 kg × 5', '+312 XP', 'Today, 19:04', 'STR'],
+  ['Barbell Row · 80 kg × 8', '+186 XP', 'Today, 19:19', 'STR'],
+  ['Bench Press · 100 kg × 5', '+128 XP', 'Today, 19:36', 'PWR'],
+  ['Intervals · 22 min', '+240 XP', 'Today, 20:02', 'END'],
+];
+
+const list = el('div', W, {
+  position:'absolute', left:'80px', right:'80px', top:'560px', willChange:'transform',
+});
+function mkRow(parent, title, amount, when, tag, credit){
+  const r = el('div', parent, {
+    display:'flex', alignItems:'center', gap:'22px', padding:'28px 30px',
+    borderRadius:'26px', background:C.panel, border:'2px solid '+C.lineSoft,
+    marginBottom:'18px', opacity:'0',
+  });
+  el('div', r, {
+    width:'62px', height:'62px', borderRadius:'18px', flexShrink:'0',
+    background: credit ? rgba(C.green,0.16) : C.panel2,
+    border:'2px solid '+(credit ? rgba(C.green,0.6) : C.line),
+    display:'flex', alignItems:'center', justifyContent:'center',
+    fontSize:'28px', fontWeight:'800', color:C.dim,
+  }, credit ? K.icon('train', 34, C.green, 2) : title.charAt(0));
+  const mid = el('div', r, { flex:'1' });
+  el('div', mid, { fontSize:'32px', fontWeight:'700' }, title);
+  el('div', mid, { fontSize:'24px', fontWeight:'600', color:C.faint, marginTop:'3px' }, when);
+  if (tag) el('div', r, {
+    padding:'6px 16px', borderRadius:'999px', fontSize:'20px', fontWeight:'800',
+    background:rgba(C.gold,0.14), border:'1px solid '+rgba(C.gold,0.5), color:C.gold,
+  }, tag);
+  el('div', r, {
+    fontSize:'38px', fontWeight:'800', fontVariantNumeric:'tabular-nums',
+    color: credit ? C.green : C.mut,
+  }, amount);
+  return r;
+}
+const debitRows  = DEBITS.map(d => mkRow(list, d[0], d[1], d[2], null, false));
+const creditRows = CREDITS.map(c => mkRow(list, c[0], c[1], c[2], c[3], true));
+
+/* ---- the cap ------------------------------------------------------------ */
+const capWrap = el('div', W, { position:'absolute', left:'110px', right:'110px', top:'1180px', opacity:'0' });
+const capTrack = el('div', capWrap, {
+  height:'32px', borderRadius:'999px', background:C.sunken, border:'2px solid '+C.line, overflow:'hidden',
+});
+const capBar = el('div', capTrack, {
+  height:'100%', width:'0%', borderRadius:'999px',
+  background:'linear-gradient(90deg,'+C.goldDeep+','+C.gold+')', boxShadow:'0 0 36px '+rgba(C.gold,0.8),
+});
+const capLbl = el('div', capWrap, {
+  textAlign:'center', marginTop:'20px', fontSize:'34px', fontWeight:'800',
+  fontVariantNumeric:'tabular-nums', color:C.gold,
+}, '0 / 4,000 XP');
+
+const capHit = el('div', W, {
+  position:'absolute', left:'70px', right:'70px', top:'1290px', textAlign:'center', opacity:'0',
+}, `<div style="font-size:58px;font-weight:800;letter-spacing:3px;color:${C.red}">DAILY LIMIT REACHED</div>
+    <div style="font-size:30px;font-weight:600;color:${C.mut};margin-top:16px;line-height:1.4">
+      No more XP today. However hard you go.</div>`);
+
+const closer = el('div', W, {
+  position:'absolute', left:'70px', right:'70px', top:'820px', textAlign:'center', opacity:'0',
+  fontSize:'72px', fontWeight:'800', letterSpacing:'-1.5px', lineHeight:'1.18',
+}, 'Even the currency<br><span style="color:'+C.gold+'">has integrity.</span>');
+
+const ring = K.makeShockwave(W, rgba(C.red,0.9));
+const endCard = K.makeEndCard(W, { tag:'You can\'t farm a ladder.', cta:'Link in bio' });
+
+/* =============================================================== RENDER == */
+window.renderAt = function(t){
+  t = Math.max(0, Math.min(DURATION - 0.0001, t));
+  K.frame(t);
+
+  /* ---- debits appear, thumb-scrolling down ------------------------------- */
+  debitRows.forEach((r,i) => {
+    const st = 0.25 + i*0.42;
+    const q = E.outQuart(seg(t, st, st+0.34));
+    r.style.opacity = String(seg(t, st, st+0.16));
+    r.style.transform = `translateY(${lerp(48,0,q)}px)`;
+  });
+  /* ---- credits arrive after the pivot ------------------------------------ */
+  creditRows.forEach((r,i) => {
+    const st = 5.60 + i*0.90;
+    const q = E.slam(seg(t, st, st+0.44));
+    r.style.opacity = String(seg(t, st, st+0.12));
+    r.style.transform = `translateX(${lerp(-90,0,q)}px) scale(${lerp(0.94,1,q)})`;
+  });
+
+  /* the list scrolls up as rows accumulate, then clears for the payoff */
+  const scroll = lerp(0, -560, E.inOutCubic(clamp01(seg(t, 4.10, 9.60))));
+  list.style.transform = `translateY(${scroll}px)`;
+  list.style.opacity = String(1 - seg(t, 11.90, 12.30));
+
+  /* ---- the header flips from sterling to XP ------------------------------ */
+  const flip = seg(t, 5.60, 6.20);
+  if (flip < 0.5){
+    // sterling, ticking DOWN — the familiar dread
+    const spent = lerp(2481.09, 2300.70, E.outQuart(clamp01(seg(t, 0.4, 4.35))));
+    headLbl.textContent = 'Current account';
+    headBal.textContent = '£' + spent.toFixed(2);
+    headBal.style.color = '#fff';
+    headSub.textContent = 'Available balance';
+  } else {
+    // XP, ticking UP
+    let xp = 0;
+    CREDITS.forEach((c,i) => { if (t >= 5.60 + i*0.90) xp += parseInt(c[1].replace(/\D/g,''),10); });
+    const lastI = CREDITS.map((_,i)=>i).filter(i => t >= 5.60 + i*0.90).pop();
+    const lastT = lastI === undefined ? 0 : 5.60 + lastI*0.90;
+    const prev = lastI === undefined ? 0 : CREDITS.slice(0,lastI).reduce((a,c)=>a+parseInt(c[1].replace(/\D/g,''),10),0);
+    let shown = lastI === undefined ? 0 : lerp(prev, xp, E.outQuart(seg(t, lastT, lastT+0.55)));
+    // the ledger runs at 3,134 before today's session; the cap bites at 10.20
+    const base = 3134;
+    shown = Math.min(base + shown, CAP);
+    headLbl.textContent = 'XP today';
+    headBal.textContent = fmt(shown);
+    headBal.style.color = shown >= CAP ? C.red : C.green;
+    headSub.textContent = shown >= CAP ? 'Daily cap reached' : 'Earned today';
+    capBar.style.width = (shown/CAP*100).toFixed(2)+'%';
+    capLbl.textContent = fmt(shown) + ' / ' + fmt(CAP) + ' XP';
+    capLbl.style.color = shown >= CAP ? C.red : C.gold;
+  }
+  head.style.opacity = String(seg(t,0.05,0.35) * (1 - seg(t, 11.90, 12.30)));
+  chroma(headBal, flip > 0 && flip < 1 ? 26*(1 - Math.abs(flip-0.5)*2) : 0);
+
+  capWrap.style.opacity = String(seg(t, 6.10, 6.55) * (1 - seg(t, 11.90, 12.30)));
+
+  /* ---- the cap bites ----------------------------------------------------- */
+  capHit.style.opacity = String(seg(t, 10.20, 10.60) * (1 - seg(t, 11.90, 12.30)));
+  capHit.style.transform = `scale(${lerp(1.25,1,E.slam(seg(t,10.20,10.80)))})`;
+  K.driveShockwave(ring, seg(t, 10.20, 10.95), 6.6, 0, 1290-960);
+
+  closer.style.opacity = String(seg(t, 12.30, 12.75) * (1 - seg(t, 13.95, 14.20)));
+  closer.style.transform = `scale(${lerp(1.2,1,E.slam(seg(t,12.30,12.90)))})`;
+
+  if (t >= 14.20) endCard.drive(t - 14.20); else endCard.root.style.opacity = '0';
+};
+window.DURATION = DURATION;
+window.renderAt(0);
+window.READY = true;
+</script>
+</body>
+</html>
