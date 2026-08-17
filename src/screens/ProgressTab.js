@@ -9,7 +9,10 @@ import { View, Text, Pressable, ScrollView } from 'react-native';
 import { C, s, MONO } from '../theme';
 import { Card, Lbl, Chip, LineChart, BarChart, EmptyState, CountUp, ScreenHeader } from '../components/ui';
 import { dayKeyOf, fmtShort, DAY, EXERCISES } from '../engine/engine';
-import { CalcView } from './TrainTab';
+// EntryEditor lives in TrainTab beside the effort scale it shares. The import
+// direction is deliberate: ProgressTab already depended on TrainTab for the
+// calculator, so nothing new is introduced and there is no import cycle.
+import { CalcView, EntryEditor } from './TrainTab';
 import { projectStrength } from '../engine/projection';
 
 /* ------------------------------- model ---------------------------------- */
@@ -93,7 +96,7 @@ const RANGES = [['30', '30d', 30], ['90', '90d', 90], ['all', 'All', 3650]];
 
 /* ------------------------------- screen ---------------------------------- */
 
-export default function ProgressTab({ data, dv, onDelete }) {
+export default function ProgressTab({ data, dv, onDelete, onEdit }) {
   const now = Date.now();
   const unit = data.unit;
   const [seg, setSeg] = useState('overview');
@@ -145,7 +148,7 @@ export default function ProgressTab({ data, dv, onDelete }) {
       {seg === 'volume' && (
         <VolumeView data={data} dv={dv} now={now} sinceT={sinceT} range={range} setRange={setRange} />
       )}
-      {seg === 'history' && <HistoryView data={data} unit={unit} onDelete={onDelete} />}
+      {seg === 'history' && <HistoryView data={data} unit={unit} onDelete={onDelete} onEdit={onEdit} />}
       {seg === 'tools' && <CalcView data={data} dv={dv} />}
     </View>
   );
@@ -474,9 +477,13 @@ function VolumeView({ data, dv, now, sinceT, range, setRange }) {
 
 /* ------------------------------- history --------------------------------- */
 
-function HistoryView({ data, unit, onDelete }) {
+function HistoryView({ data, unit, onDelete, onEdit }) {
   const [filter, setFilter] = useState('all');
   const [limit, setLimit] = useState(25);
+  // The id of the entry being edited, not the entry itself: the save is the
+  // source of truth, so the sheet always reflects what was actually stored
+  // rather than a copy that goes stale the moment the edit commits.
+  const [editingId, setEditingId] = useState(null);
 
   const all = useMemo(() => ([
     ...data.lifts.map((l) => ({ ...l, kind: 'lift' })),
@@ -504,32 +511,44 @@ function HistoryView({ data, unit, onDelete }) {
           <Lbl style={{ marginBottom: 0 }}>History</Lbl>
           <Text style={{ fontSize: 10.5, color: C.dim, fontVariant: ['tabular-nums'] }}>{filtered.length} entries</Text>
         </View>
+        {filtered.length > 0 ? (
+          <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 6, marginBottom: 2 }}>
+            Tap any entry to correct or delete it.
+          </Text>
+        ) : null}
         {filtered.length === 0 ? (
           <Text style={{ fontSize: 12.5, color: C.dim, marginTop: 12 }}>Nothing matches this filter yet.</Text>
         ) : (
           <View>
+            {/* The whole row opens the editor. It used to end in a bare ✕ that
+                deleted instantly on a single tap, with no confirmation and no
+                way to CORRECT a set — the only repair for a typo was to destroy
+                the entry and log it again at the wrong time. */}
             {filtered.slice(0, limit).map((h) => (
-              <View key={h.id} style={[s.between, { paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: C.line }]}>
+              <Pressable
+                key={h.id}
+                onPress={() => setEditingId(h.id)}
+                accessibilityRole="button"
+                accessibilityLabel={'Edit ' + (h.ex || h.name) + ', ' + fmtShort(h.t)}
+                style={[s.between, { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: C.line }]}>
                 <View style={{ flex: 1 }}>
                   <View style={s.row}>
-                    {h.kind === 'cardio' ? <View style={{ width: 6, height: 6, borderRadius: 4, backgroundColor: C.red, marginRight: 7 }} /> : null}
+                    {h.kind === 'cardio' ? <View style={{ width: 6, height: 6, borderRadius: 4, backgroundColor: C.green, marginRight: 7 }} /> : null}
                     <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.text }} numberOfLines={1}>{h.ex || h.name}</Text>
                     {h.pr ? <Text style={{ fontSize: 9.5, color: C.gold, marginLeft: 6, fontWeight: '800' }}>PR</Text> : null}
                     {h.flagged ? <Text style={{ fontSize: 9.5, color: C.red, marginLeft: 6, fontWeight: '800' }}>CAPPED</Text> : null}
                   </View>
                   <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 2, fontVariant: ['tabular-nums'] }}>
                     {h.kind === 'cardio'
-                      ? h.mins + ' min' + (h.dist ? ' · ' + h.dist + ' km' : '') + ' · ' + fmtShort(h.t)
+                      ? h.mins + ' min' + (h.dist ? ' · ' + h.dist + ' km' : '') + (h.intensity ? ' · ' + h.intensity : '') + ' · ' + fmtShort(h.t)
                       : h.w + ' ' + unit + ' × ' + h.r + (h.e1rm ? ' · e1RM ' + h.e1rm : '') + ' · ' + fmtShort(h.t)}
                   </Text>
                 </View>
                 <View style={[s.row, { alignItems: 'center' }]}>
-                  <Text style={{ fontSize: 11.5, color: C.gold, fontVariant: ['tabular-nums'], marginRight: 10 }}>+{h.xp || 0}</Text>
-                  <Pressable onPress={() => onDelete(h.id)} hitSlop={8} style={{ padding: 4 }}>
-                    <Text style={{ fontSize: 15, color: C.dim }}>✕</Text>
-                  </Pressable>
+                  <Text style={{ fontSize: 11.5, color: C.gold, fontVariant: ['tabular-nums'], marginRight: 9 }}>+{h.xp || 0}</Text>
+                  <Text style={{ fontSize: 17, color: C.faint, fontWeight: '600' }}>›</Text>
                 </View>
-              </View>
+              </Pressable>
             ))}
             {filtered.length > limit ? (
               <Pressable onPress={() => setLimit((v) => v + 25)} hitSlop={8} style={{ alignItems: 'center', paddingTop: 14 }}>
@@ -541,6 +560,16 @@ function HistoryView({ data, unit, onDelete }) {
           </View>
         )}
       </Card>
+
+      {editingId ? (
+        <EntryEditor
+          entry={all.find((h) => h.id === editingId)}
+          unit={unit}
+          onSave={(patch) => { if (onEdit) onEdit(editingId, patch); setEditingId(null); }}
+          onDelete={() => { if (onDelete) onDelete(editingId); setEditingId(null); }}
+          onClose={() => setEditingId(null)}
+        />
+      ) : null}
     </View>
   );
 }

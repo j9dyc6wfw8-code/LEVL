@@ -373,7 +373,7 @@ function EmptyFeed({ scope, onCheckIn, onFindFriends, onExplore, onLearnMore }) 
       }}>
         {isFriends
           ? 'Add friends, or post today’s Check In and start it off.'
-          : 'Public Check Ins from other LEVL hunters will appear here.'}
+          : 'Public Check Ins from other LEVL players will appear here.'}
       </Text>
 
       <View style={{ marginTop: SPACING.xxl, alignSelf: 'stretch', paddingHorizontal: SPACING.md }}>

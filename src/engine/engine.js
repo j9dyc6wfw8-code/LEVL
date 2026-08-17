@@ -466,7 +466,7 @@ const socialXPPreview = (verified) =>
 
 /* ------------------------- pure state transitions ------------------------ */
 const DEFAULT_DATA = {
-  v: 3, name: 'Hunter', unit: 'kg', xp: 0,
+  v: 3, name: 'Player', unit: 'kg', xp: 0,
   // physical profile — used for realistic-lift validation and stat context.
   bodyweight: 0, heightCm: 0, age: 0, sex: '', activity: '', experience: '',
   profileComplete: false,
@@ -500,7 +500,18 @@ function grant(nd, alloc) {
   for (const k of Object.keys(alloc)) nd.stats[k] = (nd.stats[k] || 0) + alloc[k];
 }
 
-function applyLift(d, t, exName, w, r, rpe) {
+/* `opts` exists for ONE caller: editEntryPure below, which rebuilds an entry
+ * that has already been logged once.
+ *
+ *   noBonus    — the first-session-of-the-day bonus was granted when the entry
+ *                was originally logged and is NOT refunded when it is removed,
+ *                so re-granting it on every edit would mint XP out of nothing.
+ *   noMaterial — likewise for PR material drops. Without this, nudging a weight
+ *                back and forth between two values farms Steel indefinitely.
+ *
+ * Both default to off, so normal logging is completely unchanged.
+ */
+function applyLift(d, t, exName, w, r, rpe, opts) {
   const ex = EXERCISES.find((e) => e.n === exName) || { p: 'STR', s: null };
   let prev = 0;
   for (const l of d.lifts) if (l.ex === exName && l.e1rm > prev) prev = l.e1rm;
@@ -521,24 +532,26 @@ function applyLift(d, t, exName, w, r, rpe) {
   // Personal records drop forge materials — the crafting economy is fed by real
   // training, never by spending. A PR is the only reliable source of Steel.
   let matDrop = null;
-  if (isPR && !flagged) {
+  if (isPR && !flagged && !(opts && opts.noMaterial)) {
     const roll = ((t % 100) / 100);
     const mid = roll < 0.72 ? 'mat_ore' : roll < 0.95 ? 'mat_steel' : 'mat_ember';
     nd.materials[mid] = (nd.materials[mid] || 0) + 1;
     matDrop = mid;
   }
   let bonus = 0;
-  if (firstToday) {
+  if (firstToday && !(opts && opts.noBonus)) {
     const streak = calcStreak([...d.lifts, ...d.cardio], t);
     const disB = 20 + Math.min(streak, 15) * 2;
     grant(nd, { DIS: disB, VIT: 10 });
     bonus = disB + 10;
   }
   nd.xp = d.xp + xp + bonus;
-  return { nd, meta: { xp, bonus, isPR, e1, prev, capped: flagged, matDrop } };
+  // `id` is returned so the screen that just logged this set can offer to edit
+  // or delete it without having to go hunting through the save for it.
+  return { nd, meta: { id: entry.id, xp, bonus, isPR, e1, prev, capped: flagged, matDrop } };
 }
 
-function applyCardio(d, t, typeName, mins, dist, intensityKey) {
+function applyCardio(d, t, typeName, mins, dist, intensityKey, opts) {
   const ct = CARDIO_TYPES.find((c) => c.n === typeName) || CARDIO_TYPES[0];
   const inten = INTENSITIES.find((i) => i.k === intensityKey) || INTENSITIES[1];
   const rawXp = cardioXPCalc(mins, inten.mult);
@@ -552,14 +565,14 @@ function applyCardio(d, t, typeName, mins, dist, intensityKey) {
   const nd = { ...d, lifts: [...d.lifts], cardio: [...d.cardio, entry], stats: { ...d.stats } };
   grant(nd, alloc);
   let bonus = 0;
-  if (firstToday) {
+  if (firstToday && !(opts && opts.noBonus)) {
     const streak = calcStreak([...d.lifts, ...d.cardio], t);
     const disB = 20 + Math.min(streak, 15) * 2;
     grant(nd, { DIS: disB, VIT: 10 });
     bonus = disB + 10;
   }
   nd.xp = d.xp + xp + bonus;
-  return { nd, meta: { xp, bonus, capped: flagged } };
+  return { nd, meta: { id: entry.id, xp, bonus, capped: flagged } };
 }
 
 function removeEntryPure(d, id) {
@@ -572,6 +585,64 @@ function removeEntryPure(d, id) {
   };
   for (const k of Object.keys(e.alloc || {})) nd.stats[k] = Math.max(0, (nd.stats[k] || 0) - e.alloc[k]);
   return { nd, meta: e };
+}
+
+/* A cardio entry stores its intensity as the LABEL ('Moderate'), because that is
+ * what history displays. Re-applying one needs the key back. */
+const intensityKeyOf = (v) => {
+  const row = INTENSITIES.find((i) => i.k === v || i.label === v);
+  return row ? row.k : 'moderate';
+};
+
+/* ---------------------------------------------------------------------------
+ * Editing an entry that is already logged.
+ *
+ * People mistype sets — 100 instead of 10, reps in the weight box — and until
+ * now the only repair was to delete and re-log, which moved the set's timestamp
+ * to now and so moved it into the wrong session and the wrong day.
+ *
+ * An edit is therefore a REBUILD, not a patch: remove the entry, then apply the
+ * corrected values at its ORIGINAL timestamp through the very same code that
+ * created it. That is what keeps the save internally consistent — XP, the stat
+ * allocation, the daily cap, the PR test and the session id are all re-derived
+ * rather than hand-adjusted, so stats can never drift away from the entries
+ * that produced them.
+ *
+ * The two things NOT re-derived are the first-session bonus and PR material
+ * drops (see applyLift's `opts`): neither is refunded when an entry is removed,
+ * so re-granting them would make editing a source of free XP and free materials.
+ * ------------------------------------------------------------------------ */
+function editEntryPure(d, id, patch) {
+  const p = patch || {};
+  const isCardio = (d.cardio || []).some((x) => x.id === id);
+  const existing = [...(d.lifts || []), ...(d.cardio || [])].find((x) => x.id === id);
+  if (!existing) return { nd: d, meta: null };
+
+  const { nd: cleaned } = removeEntryPure(d, id);
+  const t = existing.t;
+  const pick = (next, fallback) => (next == null || next === '' ? fallback : next);
+
+  if (isCardio) {
+    const res = applyCardio(
+      cleaned, t,
+      pick(p.ex, existing.ex),
+      Math.max(0, parseFloat(pick(p.mins, existing.mins)) || 0),
+      Math.max(0, parseFloat(pick(p.dist, existing.dist || 0)) || 0),
+      intensityKeyOf(pick(p.intensity, existing.intensity)),
+      { noBonus: true },
+    );
+    return { nd: res.nd, meta: { ...res.meta, kind: 'cardio', edited: true } };
+  }
+
+  const res = applyLift(
+    cleaned, t,
+    pick(p.ex, existing.ex),
+    Math.max(0, parseFloat(pick(p.w, existing.w)) || 0),
+    Math.max(1, parseInt(pick(p.r, existing.r), 10) || 1),
+    Math.max(6, Math.min(10, parseInt(pick(p.rpe, existing.rpe), 10) || 8)),
+    { noBonus: true, noMaterial: true },
+  );
+  return { nd: res.nd, meta: { ...res.meta, kind: 'lift', edited: true } };
 }
 
 /* ------------------------------ derivations ------------------------------ */
@@ -1368,6 +1439,8 @@ export {
   applyLift,
   applyCardio,
   removeEntryPure,
+  editEntryPure,
+  intensityKeyOf,
   computeDerived,
   buildDemoData,
   SKINS,

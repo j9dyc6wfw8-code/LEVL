@@ -3,17 +3,22 @@
 //
 // "This is who my training is building."
 //
-// Hunter is one of the five destinations now, and it answers a different
-// question from Train. Train is about the work; Hunter is about what the work
+// Player is one of the five destinations now, and it answers a different
+// question from Train. Train is about the work; Player is about what the work
 // has produced — the character, the level, the rank, the six stats, the titles,
 // the consistency.
+//
+// The tab is LABELLED "Player" but the file, the route key and the components
+// are still named Hunter. That is deliberate: the key travels inside every
+// levl:// deep link, widget payload and stored notification, so renaming it
+// would break links already out in the world for no user-visible gain.
 //
 // It is assembled from what used to live in the "You" tab, minus everything
 // that was really settings (units, account, data management), which moved to
 // the profile sheet reachable from the header. Nothing was dropped: the split
 // is by PURPOSE — your character here, your preferences there.
 //
-// It deliberately does not become a spreadsheet. The visual Hunter stays the
+// It deliberately does not become a spreadsheet. The visual character stays the
 // centre of the screen, deep training analytics live behind one tap from Train,
 // and Apple Health appears as quiet context rather than another scoreboard.
 // ============================================================================
@@ -66,7 +71,7 @@ export default function HunterTab({
 
   return (
     <View>
-      <ScreenHeader title="Hunter" hint="What your training has built" />
+      <ScreenHeader title="Player" hint="What your training has built" />
 
       {empty ? (
         <Card style={{ backgroundColor: C.goldSoft, borderWidth: 1, borderColor: C.gold }}>
@@ -171,7 +176,7 @@ export default function HunterTab({
               photo streak is showing up socially, not training. */}
           <Text style={{ ...T.caption, color: C.faint, marginTop: 10, lineHeight: 16 }}>
             Your Check In streak is social consistency. Your {dv.streak}-session
-            training streak is the one that builds this Hunter.
+            training streak is the one that builds this player.
           </Text>
           {goArchive ? (
             <Pressable
@@ -195,7 +200,7 @@ export default function HunterTab({
 
       {/* ---- the character ------------------------------------------------- */}
       <Card>
-        <Lbl>The Hunter</Lbl>
+        <Lbl>Your Character</Lbl>
         <HunterStage
           statLevels={dv.statLevels}
           avatar={data.avatar || DEFAULT_DATA.avatar}

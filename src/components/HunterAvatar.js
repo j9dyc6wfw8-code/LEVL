@@ -74,7 +74,7 @@ export function HunterIdentity({ profile, size = 36, showTitle, right }) {
       <View style={{ marginLeft: 10, flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Text style={{ fontSize: 15, fontWeight: '600', color: C.text }} numberOfLines={1}>
-            {profile.displayName || profile.display_name || profile.username || 'Hunter'}
+            {profile.displayName || profile.display_name || profile.username || 'Player'}
           </Text>
           {profile.level ? (
             <Text style={{

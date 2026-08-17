@@ -195,7 +195,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
       auth.users[em] = {
         ...(auth.users[em] || {}),
         email: em,
-        name: (auth.users[em] && auth.users[em].name) || name || 'Hunter',
+        name: (auth.users[em] && auth.users[em].name) || name || 'Player',
         cloud: true,
         createdAt: (auth.users[em] && auth.users[em].createdAt) || Date.now(),
       };
@@ -216,7 +216,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
     if (data && data.session) {
       const em = (data.session.user && data.session.user.email) || 'apple-user';
       const name = (data.session.user && data.session.user.user_metadata
-        && data.session.user.user_metadata.full_name) || 'Hunter';
+        && data.session.user.user_metadata.full_name) || 'Player';
       await rememberUser(em, name);
       onAuthed(em, name, false);
     }
@@ -259,7 +259,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
           const auth = await loadAuth();
           const salt = makeSalt();
           const hash = await sha256Hex(salt + ':' + pw);
-          auth.users[em] = { email: em, salt, hash, name: name.trim() || 'Hunter', createdAt: Date.now(), cloud: true };
+          auth.users[em] = { email: em, salt, hash, name: name.trim() || 'Player', createdAt: Date.now(), cloud: true };
           auth.lastUser = em;
           await saveAuth(auth);
           onAuthed(em, auth.users[em].name, true);
@@ -274,7 +274,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
             return;
           }
           const auth = await loadAuth();
-          const existingName = (auth.users[em] && auth.users[em].name) || name.trim() || 'Hunter';
+          const existingName = (auth.users[em] && auth.users[em].name) || name.trim() || 'Player';
           auth.lastUser = em;
           await saveAuth(auth);
           onAuthed(em, existingName, !auth.users[em]);
@@ -296,7 +296,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
         if (pw !== pw2) { setErr('Passwords do not match.'); setBusy(false); return; }
         const salt = makeSalt();
         const hash = await sha256Hex(salt + ':' + pw);
-        auth.users[em] = { email: em, salt, hash, name: name.trim() || 'Hunter', createdAt: Date.now() };
+        auth.users[em] = { email: em, salt, hash, name: name.trim() || 'Player', createdAt: Date.now() };
         auth.lastUser = em;
         await saveAuth(auth);
         onAuthed(em, auth.users[em].name, true);
@@ -335,7 +335,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
     setBusy(false);
     if (u.error) { setErr(readableAuthError(u.error.message)); return; }
     setResetSent(false); setResetCode(''); setResetPw('');
-    const name = email.split('@')[0] || 'Hunter';
+    const name = email.split('@')[0] || 'Player';
     await rememberUser(em, name);
     onAuthed(em, name, false);
   };
@@ -384,7 +384,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
             ))}
           </View>
           {mode === 'signup' && (
-            <AuthField label="Hunter name" value={name} onChangeText={setName} placeholder="Optional" />
+            <AuthField label="Player name" value={name} onChangeText={setName} placeholder="Optional" />
           )}
           <AuthField label="Email" value={email} onChangeText={setEmail}
             placeholder="you@example.com" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" />
@@ -453,7 +453,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
               </Pressable>
             </View>
           ) : null}
-          <Pressable onPress={() => onAuthed(null, 'Hunter', false)} hitSlop={8}
+          <Pressable onPress={() => onAuthed(null, 'Player', false)} hitSlop={8}
             accessibilityRole="button" accessibilityLabel="Continue as guest"
             style={{ alignItems: 'center', marginTop: 26, paddingVertical: 8 }}>
             <Text style={{ fontSize: 12.5, color: C.mut, fontWeight: '700' }}>Continue as guest</Text>
@@ -524,9 +524,12 @@ export function PhysicalProfileForm({ data, onSave, onCancel, embedded }) {
   if (embedded) return body;
   return (
     <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }}>
+      {/* The LEVL mark, not a ▲. This screen is the FIRST thing a new account
+          sees after signing in, and it was still drawing the pre-rebrand ASCEND
+          arrow — so the old brand flashed up mid sign-in. */}
       <View style={{ alignItems: 'center', marginBottom: 18 }}>
-        <Text style={{ fontSize: 30, color: C.gold }}>▲</Text>
-        <Text style={{ fontSize: 16, color: C.text, marginTop: 6, fontWeight: '800' }}>Build your Hunter profile</Text>
+        <LevlMark size={44} />
+        <Text style={{ fontSize: 16, color: C.text, marginTop: 10, fontWeight: '800' }}>Build your player profile</Text>
         <Text style={{ fontSize: 15, color: C.mut, marginTop: 6, textAlign: 'center', fontWeight: '700' }}>
           Three details keep your lift checks accurate.
         </Text>

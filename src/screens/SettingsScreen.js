@@ -123,7 +123,7 @@ export default function SettingsScreen({
             <TextInput
               value={nameDraft}
               onChangeText={setNameDraft}
-              onEndEditing={() => rename(nameDraft.trim() || 'Hunter')}
+              onEndEditing={() => rename(nameDraft.trim() || 'Player')}
               maxLength={18}
               accessibilityLabel="Display name"
               style={{ ...T.title3, color: C.text, paddingVertical: 2 }}

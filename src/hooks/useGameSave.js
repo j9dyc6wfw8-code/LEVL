@@ -18,7 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import {
   DEFAULT_DATA, computeDerived, buildDemoData, applyLift, applyCardio,
-  removeEntryPure, validateLift, validateCardio, levelFromXP,
+  removeEntryPure, editEntryPure, validateLift, validateCardio, levelFromXP,
   coinBalance, xpBalance, RARITY, createDuel, duelYouTotal, duelBotFullTotal,
   applyPassReward, FORGE_PASS, passKey, passClaimable, PASS_PREMIUM_COST,
   AUTH_KEY, SAVE_PREFIX, emailKeyOf, openPack, applyPackReward, convertUnits,
@@ -317,6 +317,47 @@ export function useGameSave({ toast, onLevelUp, stage }) {
     if (removed) toast('Entry removed — its XP was refunded', 'mut');
   }, [commit, toast]);
 
+  /* ------------------------------ editing -------------------------------
+   * A mistyped set (100 kg instead of 10) used to be repairable only by
+   * deleting and re-logging, which stamped it with the current time and so
+   * moved it into the wrong session — and the wrong day, if you noticed the
+   * mistake the next morning.
+   *
+   * editEntryPure rebuilds the entry in place at its original timestamp. The
+   * validation below runs against the save with the entry ALREADY removed, for
+   * two reasons: the rest-gap and set-count limits must not count the set being
+   * corrected against itself, and the daily XP cap has to see the room the old
+   * value was occupying.
+   * ------------------------------------------------------------------- */
+  const editEntry = useCallback((id, patch) => {
+    const all = [...(data.lifts || []), ...(data.cardio || [])];
+    const entry = all.find((x) => x.id === id);
+    if (!entry) { toast('That entry no longer exists', 'error'); return null; }
+    const isCardio = (data.cardio || []).some((x) => x.id === id);
+    const p = patch || {};
+    const val = (next, fallback) => (next == null || next === '' ? fallback : next);
+    const { nd: without } = removeEntryPure(data, id);
+
+    const check = isCardio
+      ? validateCardio(without, parseFloat(val(p.mins, entry.mins)) || 0, entry.t)
+      : validateLift(
+          without,
+          val(p.ex, entry.ex),
+          parseFloat(val(p.w, entry.w)) || 0,
+          parseInt(val(p.r, entry.r), 10) || 0,
+          parseInt(val(p.rpe, entry.rpe), 10) || 8,
+          entry.t,
+          // The minimum-rest guard exists to stop someone spamming the log
+          // button. It has no meaning for a set that was already logged.
+          { batch: true },
+        );
+    if (!check.ok) { toast(check.reason, 'error'); return null; }
+
+    const meta = commit((d) => editEntryPure(d, id, p));
+    if (meta) toast('Entry updated', 'green');
+    return meta;
+  }, [data, commit, toast]);
+
   /* -------------------------- social XP hook ---------------------------- */
 
   // The ONLY route by which Check In XP enters the save. The amount is decided
@@ -588,10 +629,10 @@ export function useGameSave({ toast, onLevelUp, stage }) {
     setUser(email);
     if (email) await stSet(LAST_USER_KEY, email);
     let nd;
-    if (isNew) nd = mergeSave({ name: name || 'Hunter' });
+    if (isNew) nd = mergeSave({ name: name || 'Player' });
     else {
       const raw = await stGet(saveKeyFor(email));
-      nd = mergeSave(raw ? JSON.parse(raw) : { name: name || 'Hunter' });
+      nd = mergeSave(raw ? JSON.parse(raw) : { name: name || 'Player' });
     }
     // IDENTITY GUARD: only pull from the cloud if the live Supabase session
     // actually belongs to THIS email. On a fast account switch the previous
@@ -647,7 +688,7 @@ export function useGameSave({ toast, onLevelUp, stage }) {
     data, setData, dv,
     persist, commit, saveKeyFor,
     // training
-    addLift, addLiftBatch, addCardio, deleteEntry,
+    addLift, addLiftBatch, addCardio, deleteEntry, editEntry,
     saveWorkoutDay, deleteWorkoutDay,
     // social
     applySocialXP,

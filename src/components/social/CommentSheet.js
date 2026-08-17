@@ -166,7 +166,7 @@ export default function CommentSheet({
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
                   <Text style={{ ...T.footnote, fontWeight: '600', color: C.text }} numberOfLines={1}>
-                    {(c.author && (c.author.display_name || c.author.username)) || 'Hunter'}
+                    {(c.author && (c.author.display_name || c.author.username)) || 'Player'}
                   </Text>
                   <Text style={{ ...T.caption, ...T.numeric, color: C.faint, marginLeft: 7 }}>
                     {c.pending ? 'Sending…' : relativeTime(c.createdAtMs)}

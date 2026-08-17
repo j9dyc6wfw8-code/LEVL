@@ -963,7 +963,7 @@ export default function ShopTab({ data, dv, buy, equip, forge, claimTier, claimA
 
   return (
     <View>
-      <ScreenHeader title="Forge" hint="Change how your hunter looks" />
+      <ScreenHeader title="Forge" hint="Change how your player looks" />
       {/* Packs entry — Packs merged into Forge (research: 5 tabs, not 7). A bold
           banner keeps them one tap away and visually loud when you have some. */}
       <Pressable onPress={goPacks} style={{

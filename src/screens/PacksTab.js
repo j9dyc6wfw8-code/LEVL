@@ -1,6 +1,6 @@
 // LEVL React Native — Packs: earn packs, open them with a premium reveal.
-import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, Pressable, Animated, Easing, ScrollView } from 'react-native';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { View, Text, Pressable, Animated, Easing, ScrollView, AccessibilityInfo } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
@@ -15,150 +15,516 @@ const rarityTheme = (key) => RARITY_THEME[key] || RARITY_THEME.common;
 const haptic = (type) => { try { Haptics.notificationAsync(type); } catch (e) {} };
 const hapticImpact = (style) => { try { Haptics.impactAsync(style); } catch (e) {} };
 
-/* --------------------------- particle burst ----------------------------- */
-function Particles({ color, run }) {
-  const parts = useRef([...Array(14)].map(() => new Animated.Value(0))).current;
-  useEffect(() => {
-    if (!run) return;
-    Animated.stagger(18, parts.map((p) => Animated.timing(p, {
-      toValue: 1, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true,
-    }))).start();
-  }, [run, parts]);
-  if (!run) return null;
-  return (
-    <View pointerEvents="none" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, alignItems: 'center', justifyContent: 'center' }}>
-      {parts.map((p, i) => {
-        const ang = (i / parts.length) * Math.PI * 2;
-        const dist = 120 + (i % 3) * 40;
-        const tx = p.interpolate({ inputRange: [0, 1], outputRange: [0, Math.cos(ang) * dist] });
-        const ty = p.interpolate({ inputRange: [0, 1], outputRange: [0, Math.sin(ang) * dist] });
-        const op = p.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] });
-        const sc = p.interpolate({ inputRange: [0, 1], outputRange: [1, 0.3] });
-        return (
-          <Animated.View key={i} style={{ position: 'absolute', opacity: op, transform: [{ translateX: tx }, { translateY: ty }, { scale: sc }] }}>
-            <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: color }} />
-          </Animated.View>
-        );
-      })}
-    </View>
-  );
-}
+/* ============================ THE PACK OPENING ============================
+ *
+ * WHAT WAS WRONG WITH THE OLD ONE
+ *
+ * 1. It spoiled its own ending. The light rays and the radial glow were drawn in
+ *    the REWARD's rarity colour from the very first frame — so an orange screen
+ *    announced "legendary" a second and a half before the card turned over. The
+ *    entire point of a reveal is that you do not know yet.
+ * 2. The anticipation was a translate jitter: the pack slid left-right 8pt in a
+ *    straight line. Jitter reads as a bug. Anticipation is built by things
+ *    moving INWARD — energy gathering — not by shaking a box.
+ * 3. It could not be skipped, and it ran the same 2 seconds on the fiftieth pack
+ *    as on the first.
+ * 4. Its three `Animated.loop`s were never stopped, so they kept running after
+ *    the overlay closed.
+ *
+ * HOW THIS ONE IS BUILT
+ *
+ * Four beats, each with one job:
+ *
+ *   ENTER   the pack falls in and settles          — brand gold only, no tell
+ *   CHARGE  motes converge, rings collapse inward,
+ *           the pack breathes and strains          — still no tell
+ *   BURST   white bloom, the pack splits apart     — the moment colour arrives
+ *   REVEAL  rays, card flip, specular sheen, name  — rarity, finally
+ *
+ * Every animation is transform/opacity on the native driver, so none of it
+ * touches the JS thread once started. Rarity scales the reveal rather than
+ * changing it: a legendary gets more rays, a brighter bloom, a second sheen pass
+ * and heavier haptics — the choreography stays identical, which is what keeps it
+ * feeling like one considered thing rather than four different animations.
+ *
+ * Tapping during the build-up skips to the reveal, and Reduce Motion skips the
+ * theatre entirely.
+ * ====================================================================== */
 
-/* ----------------------------- light rays ------------------------------- */
-function LightRays({ color, spin }) {
+const CARD_W = 208, CARD_H = 264;
+const PACK_W = 152, PACK_H = 194;
+
+// How many rays, and how hard the bloom hits, per rarity.
+const REVEAL_WEIGHT = {
+  common:    { rays: 10, bloom: 0.34, sheens: 1 },
+  rare:      { rays: 14, bloom: 0.46, sheens: 1 },
+  epic:      { rays: 18, bloom: 0.58, sheens: 2 },
+  legendary: { rays: 24, bloom: 0.72, sheens: 2 },
+  mythic:    { rays: 24, bloom: 0.78, sheens: 2 },
+};
+
+/* Rays as ONE spinning SVG. Twenty-four separate Animated views would each need
+ * their own transform; a single rotating parent costs one. */
+function LightRays({ color, spin, count, opacity }) {
   const rot = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   return (
-    <Animated.View pointerEvents="none" style={{ position: 'absolute', transform: [{ rotate: rot }] }}>
-      <Svg width={320} height={320} viewBox="0 0 320 320">
-        {[...Array(12)].map((_, i) => {
-          const a = (i / 12) * Math.PI * 2;
-          return <Polygon key={i} points={`160,160 ${160 + Math.cos(a - 0.05) * 200},${160 + Math.sin(a - 0.05) * 200} ${160 + Math.cos(a + 0.05) * 200},${160 + Math.sin(a + 0.05) * 200}`} fill={color} opacity={0.08} />;
+    <Animated.View pointerEvents="none" style={{ position: 'absolute', opacity, transform: [{ rotate: rot }] }}>
+      <Svg width={340} height={340} viewBox="0 0 340 340">
+        {[...Array(count)].map((_, i) => {
+          const a = (i / count) * Math.PI * 2;
+          // Alternating widths so the fan reads as light rather than as a pie.
+          const w = i % 2 ? 0.035 : 0.011;
+          return (
+            <Polygon
+              key={i}
+              points={`170,170 ${170 + Math.cos(a - w) * 230},${170 + Math.sin(a - w) * 230} ${170 + Math.cos(a + w) * 230},${170 + Math.sin(a + w) * 230}`}
+              fill={color}
+              opacity={i % 2 ? 0.075 : 0.13}
+            />
+          );
         })}
       </Svg>
     </Animated.View>
   );
 }
 
-/* ------------------------- pack opening overlay ------------------------- */
+/* Motes. `dir` is 'in' during the charge (they fall toward the pack, which is
+ * what makes the pack feel like it is about to give) and 'out' at the burst. */
+function Motes({ color, values, dir, size }) {
+  // The wrapper fills the overlay and centres, so a mote's translate is measured
+  // from the middle of the screen rather than from a zero-sized corner.
+  return (
+    <View pointerEvents="none" style={{
+      position: 'absolute', top: 0, bottom: 0, left: 0, right: 0,
+      alignItems: 'center', justifyContent: 'center',
+    }}>
+      {values.map((v, i) => {
+        const ang = (i / values.length) * Math.PI * 2 + (i % 3) * 0.31;
+        const far = 130 + (i % 4) * 34;
+        const from = dir === 'in' ? far : 0;
+        const to = dir === 'in' ? 14 : far + 40;
+        const tx = v.interpolate({ inputRange: [0, 1], outputRange: [Math.cos(ang) * from, Math.cos(ang) * to] });
+        const ty = v.interpolate({ inputRange: [0, 1], outputRange: [Math.sin(ang) * from, Math.sin(ang) * to] });
+        const op = dir === 'in'
+          ? v.interpolate({ inputRange: [0, 0.25, 0.85, 1], outputRange: [0, 0.9, 0.75, 0] })
+          : v.interpolate({ inputRange: [0, 0.6, 1], outputRange: [1, 0.8, 0] });
+        const sc = dir === 'in'
+          ? v.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.15] })
+          : v.interpolate({ inputRange: [0, 1], outputRange: [1.15, 0.3] });
+        const d = size || 5;
+        return (
+          <Animated.View key={i} pointerEvents="none" style={{
+            position: 'absolute', width: d, height: d, borderRadius: d / 2,
+            backgroundColor: color, opacity: op,
+            transform: [{ translateX: tx }, { translateY: ty }, { scale: sc }],
+          }} />
+        );
+      })}
+    </View>
+  );
+}
+
+/* The pack face. Rendered by the two clipped halves at the burst, so it has to
+ * be one stable subtree that can be drawn twice identically. */
+function PackFace({ packKey, pack }) {
+  return (
+    <LinearGradient
+      colors={[alpha(pack.color, 0.95), C.bgElev]}
+      start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
+      style={{
+        width: PACK_W, height: PACK_H, borderRadius: 18,
+        alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1.5, borderColor: alpha(pack.color, 0.9),
+      }}>
+      {/* rim light along the top edge — the detail that stops it reading flat */}
+      <View pointerEvents="none" style={{
+        position: 'absolute', top: 1, left: 12, right: 12, height: 1,
+        backgroundColor: 'rgba(255,255,255,0.35)',
+      }} />
+      <PackGlyph packKey={packKey} size={82} color="#ffffff" strokeWidth={1.3} />
+      <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13, marginTop: 10, letterSpacing: 1.4 }}>
+        {pack.name.toUpperCase()}
+      </Text>
+    </LinearGradient>
+  );
+}
+
 function PackOpening({ packKey, reward, onDone }) {
-  const [phase, setPhase] = useState('build'); // build | flash | reveal
   const pack = packTypeByKey(packKey);
   const rar = rarityTheme(reward.rarity);
+  const weight = REVEAL_WEIGHT[reward.rarity] || REVEAL_WEIGHT.common;
+  const [phase, setPhase] = useState('enter');    // enter | charge | burst | reveal
 
-  const scale = useRef(new Animated.Value(0.3)).current;
-  const shake = useRef(new Animated.Value(0)).current;
-  const glow = useRef(new Animated.Value(0)).current;
-  const spin = useRef(new Animated.Value(0)).current;
-  const flash = useRef(new Animated.Value(0)).current;
-  const cardFlip = useRef(new Animated.Value(0)).current;
-  const cardRise = useRef(new Animated.Value(0)).current;
+  /* ---- drivers ---- */
+  const scrim = useRef(new Animated.Value(0)).current;      // backdrop fade
+  const drop = useRef(new Animated.Value(0)).current;       // pack entrance
+  const breathe = useRef(new Animated.Value(0)).current;    // idle pulse
+  const strain = useRef(new Animated.Value(0)).current;     // build-up tension
+  const ringA = useRef(new Animated.Value(0)).current;      // collapsing rings
+  const ringB = useRef(new Animated.Value(0)).current;
+  const bloom = useRef(new Animated.Value(0)).current;      // white flash
+  const halo = useRef(new Animated.Value(0)).current;       // rarity glow behind card
+  const split = useRef(new Animated.Value(0)).current;      // pack halves parting
+  const rise = useRef(new Animated.Value(0)).current;       // card rise + flip
+  const sheen = useRef(new Animated.Value(0)).current;      // specular sweep
+  const raysSpin = useRef(new Animated.Value(0)).current;
+  const raysIn = useRef(new Animated.Value(0)).current;
+  const outro = useRef(new Animated.Value(0)).current;      // label + button
+  const inMotes = useRef([...Array(14)].map(() => new Animated.Value(0))).current;
+  const outMotes = useRef([...Array(18)].map(() => new Animated.Value(0))).current;
 
-  useEffect(() => {
-    // continuous ray spin + glow pulse during build-up
-    Animated.loop(Animated.timing(spin, { toValue: 1, duration: 8000, easing: Easing.linear, useNativeDriver: true })).start();
-    Animated.loop(Animated.sequence([
-      Animated.timing(glow, { toValue: 1, duration: 700, useNativeDriver: true }),
-      Animated.timing(glow, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+  // Everything started gets registered here and stopped on unmount. The old
+  // version leaked three infinite loops per pack opened.
+  const running = useRef([]);
+  // The build-up loops are tracked separately so the reveal can stop them. They
+  // are infinite by design, and a skipped build-up must not leave fourteen mote
+  // loops spinning behind the card for as long as the overlay is open.
+  const charging = useRef([]);
+  const timers = useRef([]);
+  const done = useRef(false);
+  const track = (a) => { running.current.push(a); return a; };
+  const trackCharge = (a) => { charging.current.push(a); running.current.push(a); return a; };
+  const later = (fn, ms) => { timers.current.push(setTimeout(fn, ms)); };
+  const stopCharge = () => {
+    charging.current.forEach((a) => { try { a.stop(); } catch (e) {} });
+    charging.current = [];
+  };
+
+  /* ---- the reveal, as its own function so a skip can jump straight to it --- */
+  const revealNow = useCallback((instant) => {
+    if (done.current) return;
+    done.current = true;
+    stopCharge();
+    setPhase('reveal');
+    haptic(reward.rarity === 'legendary' || reward.rarity === 'epic'
+      ? Haptics.NotificationFeedbackType.Success
+      : Haptics.NotificationFeedbackType.Warning);
+
+    if (instant) {
+      // Reduce Motion, or an impatient tap: land on the finished frame.
+      bloom.setValue(0);
+      split.setValue(1);
+      rise.setValue(1);
+      raysIn.setValue(1);
+      halo.setValue(1);
+      outro.setValue(1);
+      return;
+    }
+
+    track(Animated.loop(Animated.timing(raysSpin, {
+      toValue: 1, duration: 26000, easing: Easing.linear, useNativeDriver: true,
+    }))).start();
+
+    track(Animated.parallel([
+      // the pack tears open
+      Animated.timing(split, { toValue: 1, duration: 520, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      // white bloom in, then straight out
+      Animated.sequence([
+        Animated.timing(bloom, { toValue: 1, duration: 90, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(bloom, { toValue: 0, duration: 460, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+      ]),
+      // rarity colour arrives HERE and not one frame earlier
+      Animated.timing(halo, { toValue: 1, duration: 620, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(raysIn, { toValue: 1, delay: 120, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
+      // the card, on a spring so it settles rather than stopping dead
+      Animated.sequence([
+        Animated.delay(150),
+        Animated.spring(rise, { toValue: 1, friction: 8, tension: 62, useNativeDriver: true }),
+      ]),
+      // outward burst of motes
+      Animated.sequence([
+        Animated.delay(60),
+        Animated.stagger(16, outMotes.map((m) => Animated.timing(m, {
+          toValue: 1, duration: 820, easing: Easing.out(Easing.quad), useNativeDriver: true,
+        }))),
+      ]),
+      // label and Collect last, so the card is read first
+      Animated.timing(outro, { toValue: 1, delay: 480, duration: 420, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
     ])).start();
 
-    // sequence: pack zooms in, shakes with rising intensity, flash, reveal
-    hapticImpact(Haptics.ImpactFeedbackStyle.Medium);
-    Animated.sequence([
-      Animated.spring(scale, { toValue: 1, friction: 5, useNativeDriver: true }),
-      Animated.delay(250),
-      // building shake
-      Animated.timing(shake, { toValue: 1, duration: 1100, easing: Easing.in(Easing.quad), useNativeDriver: true }),
-    ]).start(() => {
-      hapticImpact(Haptics.ImpactFeedbackStyle.Heavy);
-      // flash
-      setPhase('flash');
-      Animated.sequence([
-        Animated.timing(flash, { toValue: 1, duration: 120, useNativeDriver: true }),
-        Animated.timing(flash, { toValue: 0, duration: 380, useNativeDriver: true }),
-      ]).start();
-      setTimeout(() => {
-        setPhase('reveal');
-        haptic(reward.rarity === 'legendary' ? Haptics.NotificationFeedbackType.Success
-          : reward.rarity === 'epic' ? Haptics.NotificationFeedbackType.Success
-          : Haptics.NotificationFeedbackType.Warning);
-        Animated.parallel([
-          Animated.spring(cardRise, { toValue: 1, friction: 6, useNativeDriver: true }),
-          Animated.timing(cardFlip, { toValue: 1, duration: 500, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-        ]).start();
-      }, 200);
-    });
+    // Specular sweep across the card face, once it is facing us.
+    later(() => {
+      const pass = () => Animated.sequence([
+        Animated.timing(sheen, { toValue: 1, duration: 780, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(sheen, { toValue: 0, duration: 0, useNativeDriver: true }),
+      ]);
+      const passes = [pass()];
+      if (weight.sheens > 1) passes.push(Animated.delay(420), pass());
+      track(Animated.sequence(passes)).start();
+    }, 480);
+
+    if (reward.rarity === 'legendary' || reward.rarity === 'epic') {
+      later(() => hapticImpact(Haptics.ImpactFeedbackStyle.Heavy), 160);
+    }
+  }, [reward.rarity, weight.sheens, bloom, split, rise, raysIn, raysSpin, halo, outro, sheen, outMotes]);
+
+  /* ---- the timeline ---- */
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      // Somebody who has asked the OS for less motion should not be handed a
+      // 2-second cinematic every time they open a pack.
+      let reduced = false;
+      try { reduced = await AccessibilityInfo.isReduceMotionEnabled(); } catch (e) {}
+      if (!alive) return;
+
+      if (reduced) { scrim.setValue(1); revealNow(true); return; }
+
+      hapticImpact(Haptics.ImpactFeedbackStyle.Light);
+
+      // ENTER — scrim up, pack drops in and settles.
+      track(Animated.timing(scrim, { toValue: 1, duration: 220, useNativeDriver: true })).start();
+      track(Animated.spring(drop, { toValue: 1, friction: 7, tension: 70, useNativeDriver: true })).start();
+
+      later(() => {
+        if (!alive || done.current) return;
+        setPhase('charge');
+
+        // CHARGE — the pack breathes, strain builds, motes and rings converge.
+        trackCharge(Animated.loop(Animated.sequence([
+          Animated.timing(breathe, { toValue: 1, duration: 520, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+          Animated.timing(breathe, { toValue: 0, duration: 520, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        ]))).start();
+
+        track(Animated.timing(strain, {
+          toValue: 1, duration: 1150, easing: Easing.in(Easing.quad), useNativeDriver: true,
+        })).start();
+
+        trackCharge(Animated.stagger(70, inMotes.map((m) => Animated.loop(
+          Animated.timing(m, { toValue: 1, duration: 900, easing: Easing.in(Easing.quad), useNativeDriver: true }),
+        )))).start();
+
+        const ring = (v, delay) => Animated.loop(Animated.sequence([
+          Animated.delay(delay),
+          Animated.timing(v, { toValue: 1, duration: 900, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+          Animated.timing(v, { toValue: 0, duration: 0, useNativeDriver: true }),
+        ]));
+        trackCharge(ring(ringA, 0)).start();
+        trackCharge(ring(ringB, 450)).start();
+
+        // Three ticks, accelerating — the audible-feeling part of anticipation.
+        later(() => hapticImpact(Haptics.ImpactFeedbackStyle.Light), 260);
+        later(() => hapticImpact(Haptics.ImpactFeedbackStyle.Medium), 700);
+        later(() => hapticImpact(Haptics.ImpactFeedbackStyle.Medium), 980);
+
+        // BURST
+        later(() => {
+          if (!alive || done.current) return;
+          setPhase('burst');
+          hapticImpact(Haptics.ImpactFeedbackStyle.Heavy);
+          revealNow(false);
+        }, 1180);
+      }, 360);
+    })();
+
+    return () => {
+      alive = false;
+      running.current.forEach((a) => { try { a.stop(); } catch (e) {} });
+      running.current = [];
+      timers.current.forEach((t) => clearTimeout(t));
+      timers.current = [];
+    };
+    // The timeline is fixed at mount by design — it must not restart because a
+    // parent re-rendered mid-reveal.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const shakeX = shake.interpolate({ inputRange: [0, 0.25, 0.5, 0.75, 1], outputRange: [0, -8, 8, -8, 8] });
-  const glowOpacity = glow.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.85] });
-  const flipRot = cardFlip.interpolate({ inputRange: [0, 1], outputRange: ['90deg', '0deg'] });
-  const riseY = cardRise.interpolate({ inputRange: [0, 1], outputRange: [40, 0] });
+  /* ---- derived transforms ---- */
+  const dropY = drop.interpolate({ inputRange: [0, 1], outputRange: [-120, 0] });
+  const dropScale = drop.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1] });
+  const breatheScale = breathe.interpolate({ inputRange: [0, 1], outputRange: [1, 1.035] });
+  // Strain is a ROTATION wobble, not a slide: it looks like something inside is
+  // trying to get out, where a translate just looks like a dropped frame.
+  const strainRot = strain.interpolate({
+    inputRange: [0, 0.35, 0.55, 0.72, 0.85, 0.94, 1],
+    outputRange: ['0deg', '-0.7deg', '1deg', '-1.6deg', '2deg', '-2.6deg', '2.6deg'],
+  });
+  const strainScale = strain.interpolate({ inputRange: [0, 0.8, 1], outputRange: [1, 1.04, 1.09] });
+
+  const topHalfY = split.interpolate({ inputRange: [0, 1], outputRange: [0, -190] });
+  const botHalfY = split.interpolate({ inputRange: [0, 1], outputRange: [0, 190] });
+  const halfFade = split.interpolate({ inputRange: [0, 0.45, 1], outputRange: [1, 0.55, 0] });
+  const topHalfRot = split.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '-13deg'] });
+  const botHalfRot = split.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '11deg'] });
+
+  const cardY = rise.interpolate({ inputRange: [0, 1], outputRange: [54, 0] });
+  const cardFlip = rise.interpolate({ inputRange: [0, 1], outputRange: ['74deg', '0deg'] });
+  const cardScale = rise.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] });
+  const sheenX = sheen.interpolate({ inputRange: [0, 1], outputRange: [-CARD_W * 1.1, CARD_W * 1.25] });
+
+  const bloomScale = bloom.interpolate({ inputRange: [0, 1], outputRange: [0.25, 3.2] });
+  const haloScale = halo.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] });
+  const haloOpacity = halo.interpolate({ inputRange: [0, 1], outputRange: [0, weight.bloom] });
+
+  const isReveal = phase === 'reveal';
+  const isCoinLike = reward.kind === 'coins' || reward.kind === 'xp';
+  const kindLabel = isCoinLike
+    ? (reward.kind === 'xp' ? 'Experience' : 'Coins')
+    : reward.kind === 'material' ? 'Forge Material'
+    : reward.kind === 'cosmetic' ? 'Cosmetic'
+    : reward.kind === 'title' ? 'Title' : 'Profile Border';
 
   return (
-    <View style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(4,5,9,0.97)', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-      <LightRays color={rar.color} spin={spin} />
-      <Particles color={rar.color} run={phase === 'reveal'} />
+    <Animated.View style={{
+      position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, zIndex: 100,
+      backgroundColor: 'rgba(4,5,9,0.975)', opacity: scrim,
+      alignItems: 'center', justifyContent: 'center',
+    }}>
+      {/* Tapping the backdrop skips the build-up. After the reveal it does
+          nothing — collecting is an explicit button, because it changes data. */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={isReveal ? 'Reward revealed' : 'Skip the opening animation'}
+        onPress={() => { if (!isReveal) revealNow(true); }}
+        style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0 }}
+      />
 
-      {/* radial glow */}
-      <Animated.View pointerEvents="none" style={{ position: 'absolute', width: 300, height: 300, borderRadius: 150, backgroundColor: rar.color, opacity: phase === 'reveal' ? glowOpacity : glow.interpolate({ inputRange: [0, 1], outputRange: [0.08, 0.2] }) }} />
+      {/* ---------- rarity layers: nothing here is visible before the burst -- */}
+      {isReveal ? (
+        <>
+          <LightRays color={rar.color} spin={raysSpin} count={weight.rays} opacity={raysIn} />
+          <Animated.View pointerEvents="none" style={{
+            position: 'absolute', width: 330, height: 330, borderRadius: 165,
+            backgroundColor: rar.color, opacity: haloOpacity,
+            transform: [{ scale: haloScale }],
+          }} />
+          <Motes color={rar.color} values={outMotes} dir="out" size={6} />
+        </>
+      ) : null}
 
-      {phase !== 'reveal' && (
-        <Animated.View style={{ transform: [{ scale }, { translateX: shakeX }] }}>
-          <LinearGradient colors={[pack.color, C.bgElev]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={{ width: 150, height: 190, borderRadius: 16, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: pack.color }}>
-            <PackGlyph packKey={packKey} size={84} color="#ffffff" strokeWidth={1.3} />
-            <Text style={{ color: '#fff', fontWeight: '800', fontSize: 14, marginTop: 8, letterSpacing: 1 }}>{pack.name.toUpperCase()}</Text>
-          </LinearGradient>
+      {/* ---------- build-up: brand gold only, so the ending stays secret ---- */}
+      {!isReveal ? (
+        <>
+          <Animated.View pointerEvents="none" style={{
+            position: 'absolute', width: 260, height: 260, borderRadius: 130,
+            backgroundColor: C.gold,
+            opacity: breathe.interpolate({ inputRange: [0, 1], outputRange: [0.07, 0.15] }),
+            transform: [{ scale: breatheScale }],
+          }} />
+          {phase === 'charge' ? (
+            <>
+              <Motes color={C.gold} values={inMotes} dir="in" size={5} />
+              {[ringA, ringB].map((v, i) => (
+                <Animated.View key={i} pointerEvents="none" style={{
+                  position: 'absolute', width: 250, height: 250, borderRadius: 125,
+                  borderWidth: 1.5, borderColor: alpha(C.gold, 0.5),
+                  opacity: v.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 0.55, 0] }),
+                  transform: [{ scale: v.interpolate({ inputRange: [0, 1], outputRange: [1.5, 0.62] }) }],
+                }} />
+              ))}
+            </>
+          ) : null}
+        </>
+      ) : null}
+
+      {/* ---------- the pack ------------------------------------------------ */}
+      {!isReveal ? (
+        <Animated.View style={{
+          transform: [{ translateY: dropY }, { scale: Animated.multiply(dropScale, Animated.multiply(breatheScale, strainScale)) }, { rotate: strainRot }],
+        }}>
+          <PackFace packKey={packKey} pack={pack} />
         </Animated.View>
+      ) : (
+        /* At the burst the same pack is drawn as two clipped halves that part.
+           Clipping is what sells a tear: each half shows only its own slice of
+           the identical face. */
+        <View pointerEvents="none" style={{ position: 'absolute', width: PACK_W, height: PACK_H }}>
+          <Animated.View style={{
+            height: PACK_H / 2, overflow: 'hidden', opacity: halfFade,
+            transform: [{ translateY: topHalfY }, { rotate: topHalfRot }],
+          }}>
+            <PackFace packKey={packKey} pack={pack} />
+          </Animated.View>
+          <Animated.View style={{
+            height: PACK_H / 2, overflow: 'hidden', opacity: halfFade,
+            transform: [{ translateY: botHalfY }, { rotate: botHalfRot }],
+          }}>
+            <View style={{ marginTop: -PACK_H / 2 }}>
+              <PackFace packKey={packKey} pack={pack} />
+            </View>
+          </Animated.View>
+        </View>
       )}
 
-      {/* white flash */}
-      <Animated.View pointerEvents="none" style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: '#fff', opacity: flash }} />
+      {/* ---------- the white bloom, over everything ------------------------ */}
+      <Animated.View pointerEvents="none" style={{
+        position: 'absolute', width: 200, height: 200, borderRadius: 100,
+        backgroundColor: '#fff',
+        opacity: bloom.interpolate({ inputRange: [0, 1], outputRange: [0, 0.92] }),
+        transform: [{ scale: bloomScale }],
+      }} />
 
-      {phase === 'reveal' && (
-        <Animated.View style={{ alignItems: 'center', transform: [{ translateY: riseY }, { rotateY: flipRot }] }}>
-          <Text style={{ color: rar.color, fontWeight: '800', fontSize: 16, letterSpacing: 3, textTransform: 'uppercase', marginBottom: 12 }}>{rar.name}</Text>
-          <LinearGradient colors={rar.grad} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={{ width: 200, height: 250, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: rar.color, shadowColor: rar.color, shadowOpacity: 0.8, shadowRadius: 24, shadowOffset: { width: 0, height: 0 } }}>
-            <RewardGlyph reward={reward} size={104} color="#ffffff" strokeWidth={1.25} />
-            {(reward.kind === 'coins' || reward.kind === 'xp') ? (
-              <CountUp value={reward.amount} suffix=" COINS" style={{ color: '#fff', fontWeight: '800', fontSize: 28, marginTop: 10, fontVariant: ['tabular-nums'] }} />
-            ) : (
-              <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16, marginTop: 10, textAlign: 'center', paddingHorizontal: 12 }}>{reward.name}</Text>
-            )}
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, marginTop: 6, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1 }}>
-              {(reward.kind === 'coins' || reward.kind === 'xp') ? 'Coins'
-                : reward.kind === 'material' ? 'Forge Material'
-                : reward.kind === 'cosmetic' ? 'Cosmetic'
-                : reward.kind === 'title' ? 'Title' : 'Profile Border'}
-            </Text>
-          </LinearGradient>
-          <View style={{ marginTop: 24, width: 200 }}>
+      {/* ---------- the reward ---------------------------------------------- */}
+      {isReveal ? (
+        <View style={{ alignItems: 'center' }}>
+          <Animated.Text style={{
+            color: rar.color, fontWeight: '800', fontSize: 13, letterSpacing: 4,
+            textTransform: 'uppercase', marginBottom: 14, opacity: outro,
+            transform: [{ translateY: outro.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
+          }}>
+            {rar.name}
+          </Animated.Text>
+
+          <Animated.View style={{
+            opacity: rise,
+            transform: [{ perspective: 900 }, { translateY: cardY }, { rotateY: cardFlip }, { scale: cardScale }],
+          }}>
+            <LinearGradient
+              colors={rar.grad} start={{ x: 0.1, y: 0 }} end={{ x: 0.9, y: 1 }}
+              style={{
+                width: CARD_W, height: CARD_H, borderRadius: 22,
+                alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                borderWidth: 1.5, borderColor: rar.color,
+                shadowColor: rar.color, shadowOpacity: 0.75, shadowRadius: 26, shadowOffset: { width: 0, height: 0 },
+              }}>
+              {/* inner frame — a hairline inset reads as a printed card */}
+              <View pointerEvents="none" style={{
+                position: 'absolute', top: 7, left: 7, right: 7, bottom: 7,
+                borderRadius: 16, borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)',
+              }} />
+              <RewardGlyph reward={reward} size={100} color="#ffffff" strokeWidth={1.25} />
+              {isCoinLike ? (
+                <CountUp
+                  value={reward.amount}
+                  suffix={reward.kind === 'xp' ? ' XP' : ' COINS'}
+                  style={{ color: '#fff', fontWeight: '800', fontSize: 26, marginTop: 10, fontVariant: ['tabular-nums'] }}
+                />
+              ) : (
+                <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16, marginTop: 10, textAlign: 'center', paddingHorizontal: 14 }}>
+                  {reward.name}
+                </Text>
+              )}
+              <Text style={{
+                color: 'rgba(255,255,255,0.72)', fontSize: 11, marginTop: 7,
+                fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.4,
+              }}>
+                {kindLabel}
+              </Text>
+
+              {/* specular sweep — one bright band travelling across the face */}
+              <Animated.View pointerEvents="none" style={{
+                position: 'absolute', top: -CARD_H * 0.3, bottom: -CARD_H * 0.3, width: 78,
+                transform: [{ translateX: sheenX }, { rotate: '18deg' }],
+              }}>
+                <LinearGradient
+                  colors={['rgba(255,255,255,0)', 'rgba(255,255,255,0.42)', 'rgba(255,255,255,0)']}
+                  start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+                  style={{ flex: 1 }}
+                />
+              </Animated.View>
+            </LinearGradient>
+          </Animated.View>
+
+          <Animated.View style={{
+            marginTop: 26, width: CARD_W, opacity: outro,
+            transform: [{ translateY: outro.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }],
+          }}>
             <GoldBtn onPress={onDone}>Collect</GoldBtn>
-          </View>
-        </Animated.View>
-      )}
-    </View>
+          </Animated.View>
+        </View>
+      ) : null}
+    </Animated.View>
   );
 }
 
@@ -302,7 +668,7 @@ export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack })
           ))}
         </View>
         <Text style={{ fontSize: 14, color: C.mut, marginTop: 11, fontWeight: '700' }}>
-          Equip titles and borders in Hunter. Packs are cosmetic only.
+          Equip titles and borders in Player. Packs are cosmetic only.
         </Text>
         <ChunkyBtn onPress={() => setCatalogueOpen(true)} tone="slate" style={{ marginTop: 12 }}>
           BROWSE CATALOGUE

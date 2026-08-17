@@ -1,7 +1,7 @@
 // LEVL React Native — Train hub (Log Lift · Cardio · Calculator)
 import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
-import { C, s, MONO } from '../theme';
+import { C, s, MONO, alpha } from '../theme';
 import { Card, Lbl, Chip, PBar, NumField, GoldBtn, GreenBtn, FadeIn, CountUp, Sheet, ScreenHeader } from '../components/ui';
 import MuscleIcon from '../components/MuscleIcon';
 import { exerciseInfo } from '../engine/exerciseInfo';
@@ -9,7 +9,10 @@ import { todaysSessions, formatVolume } from '../engine/session';
 import {
   EXERCISES, CATEGORIES, CARDIO_TYPES, INTENSITIES, STAT_META, INTEGRITY,
   weightForReps, pctForReps, roundLoad, dayKeyOf,
-  loadNote,
+  loadNote, fmtShort, intensityKeyOf,
+  // The engine's own cardio XP formula. Imported rather than re-implemented, so
+  // the number the composer previews can never drift from the number awarded.
+  cardioXPCalc,
 } from '../engine/engine';
 
 // Each muscle group gets an icon + colour, so the exercise list reads visually
@@ -33,6 +36,32 @@ const CAT_REGION = {};
 REGIONS.forEach((r) => r.cats.forEach((c) => { CAT_REGION[c] = r; }));
 const catMeta = (c) => CAT_REGION[c] || REGIONS[0];
 
+/* --------------------- Workout Day exercise shape ------------------------
+ * A saved Workout Day stores its exercises as OBJECTS — { n, c, p, s } — built
+ * by the DayBuilder. The run-a-day UI treated them as plain strings, so the
+ * progress chips rendered an object straight into a <Text>. React Native throws
+ * on that ("Objects are not valid as a React child"), which is why tapping a
+ * Workout Day crashed the screen rather than starting the day.
+ *
+ * Both shapes are handled here because the very first saves stored bare names,
+ * and those days are still sitting in people's saves.
+ */
+const exName = (e) => (typeof e === 'string' ? e : (e && e.n) || '');
+
+// Resolve to a COMPLETE exercise record. The library is authoritative: a stored
+// copy can be missing `p`, and STAT_META[undefined].color throws just as hard.
+const resolveEx = (e) => {
+  const n = exName(e);
+  if (!n) return null;
+  const known = EXERCISES.find((x) => x.n === n);
+  if (known) return known;
+  const src = (e && typeof e === 'object') ? e : {};
+  return { n, c: src.c || 'Chest', p: src.p || 'STR', s: src.s || null };
+};
+
+// Every exercise in a day, normalised and with anything unreadable dropped.
+const dayExercises = (day) => ((day && day.exercises) || []).map(resolveEx).filter(Boolean);
+
 /* ------------------------------- Log Lift -------------------------------- */
 // Effort scale. Values are unchanged (6–10) because XP is derived from them —
 // only the presentation changes, from a number nobody outside the gym knows to
@@ -45,7 +74,7 @@ const EFFORT = [
   { v: 10, label: 'Maximal',   hint: 'Nothing left — could not do another rep.' },
 ];
 
-function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDeleteDay, session }) {
+function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDeleteDay, session, onEditEntry, onDeleteEntry }) {
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState('All');
   // Selection and in-progress entry live in TrainTab so switching to the
@@ -62,6 +91,9 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
   const [infoOpen, setInfoOpen] = useState(false);
   // Arms the two-tap confirm on END, so a single mistap can't discard a day.
   const [endArmed, setEndArmed] = useState(false);
+  // Opens the editor on the set that was just logged — the moment you are most
+  // likely to notice you typed 100 instead of 10.
+  const [fixOpen, setFixOpen] = useState(false);
   const unit = data.unit;
   const days = workoutDays || [];
   const totalLogged = (data.lifts || []).length + (data.cardio || []).length;
@@ -86,9 +118,12 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
   const resetEntry = () => { setW(''); setR(''); setRpe(8); setLast(null); };
 
   const startDay = (day) => {
-    if (!day.exercises || !day.exercises.length) return;
-    setDayMode({ day, idx: 0, done: [] });
-    setSel(day.exercises[0]);
+    const listed = dayExercises(day);
+    if (!listed.length) return;
+    // Normalised ONCE, on the way in, so every reader below can rely on a full
+    // exercise record rather than re-deriving it and getting it wrong.
+    setDayMode({ day: { ...day, exercises: listed }, idx: 0, done: [] });
+    setSel(listed[0]);
     resetEntry();
     setEndArmed(false);
   };
@@ -288,9 +323,9 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                   <View key={d.id} style={{ width: 190, backgroundColor: C.panel2, borderRadius: 14, borderWidth: 1, borderColor: C.line, marginRight: 10, overflow: 'hidden' }}>
                     <Pressable onPress={() => startDay(d)} style={{ padding: 13, minHeight: 108 }}>
                       <Text style={{ fontSize: 17, fontWeight: '800', color: C.text }} numberOfLines={1}>{d.name}</Text>
-                      <Text style={{ fontSize: 11, color: C.cyan, fontWeight: '800', marginTop: 3, fontVariant: ['tabular-nums'] }}>{d.exercises.length} EXERCISES</Text>
+                      <Text style={{ fontSize: 11, color: C.cyan, fontWeight: '800', marginTop: 3, fontVariant: ['tabular-nums'] }}>{(d.exercises || []).length} EXERCISES</Text>
                       <Text style={{ fontSize: 12, color: C.mut, marginTop: 7, lineHeight: 17 }} numberOfLines={2}>
-                        {d.exercises.map((e) => e.n).join(' · ')}
+                        {(d.exercises || []).map(exName).filter(Boolean).join(' · ')}
                       </Text>
                     </Pressable>
                     <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.line }}>
@@ -338,7 +373,8 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
               showsHorizontalScrollIndicator={false}
               style={{ marginTop: 12, marginHorizontal: -2 }}
               contentContainerStyle={{ paddingHorizontal: 2 }}>
-              {list.map((name, i) => {
+              {list.map((item, i) => {
+                const name = exName(item);
                 const isDone = done.includes(i);
                 const isNow = i === dayMode.idx;
                 return (
@@ -544,9 +580,48 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
             </View>
           )}
           {last.bonus > 0 && <Text style={{ fontSize: 12, color: C.purp, marginTop: 8 }}>First session today: +{last.bonus} XP → Discipline & Vitality</Text>}
+
+          {/* Correct it now, while you are still standing at the rack. Anything
+              older is edited from Progress → History. */}
+          {last.id && onEditEntry ? (
+            <Pressable
+              onPress={() => setFixOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit or delete the set you just logged"
+              hitSlop={6}
+              style={{
+                marginTop: 12, minHeight: 40, borderRadius: 11,
+                alignItems: 'center', justifyContent: 'center',
+                backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
+              }}>
+              <Text style={{ fontSize: 12.5, fontWeight: '700', color: C.mut }}>
+                Wrong numbers? Edit or delete this set
+              </Text>
+            </Pressable>
+          ) : null}
         </Card>
         </FadeIn>
       )}
+
+      {fixOpen && last && last.id ? (
+        <EntryEditor
+          entry={(data.lifts || []).find((l) => l.id === last.id)}
+          unit={unit}
+          onSave={(patch) => {
+            if (onEditEntry) onEditEntry(last.id, patch);
+            // The rebuilt entry gets a new id, so the old confirmation card no
+            // longer points at anything. Clearing it is honest.
+            setFixOpen(false);
+            setLast(null);
+          }}
+          onDelete={() => {
+            if (onDeleteEntry) onDeleteEntry(last.id);
+            setFixOpen(false);
+            setLast(null);
+          }}
+          onClose={() => setFixOpen(false)}
+        />
+      ) : null}
 
       <Sheet visible={pickerOpen} title="Choose Exercise" onClose={() => setPickerOpen(false)}>
         <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
@@ -607,87 +682,538 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
   );
 }
 
-/* -------------------------------- Cardio --------------------------------- */
-// Cardio types split into sections. Anything without a group is general cardio.
-const CARDIO_GROUPS = [
-  { title: 'Cardio · builds END · VIT', items: CARDIO_TYPES.filter((c) => !c.g) },
-  { title: 'Martial Arts · builds END · PWR', items: CARDIO_TYPES.filter((c) => c.g === 'Martial Arts') },
-  { title: 'Mobility & Recovery · builds MOB · VIT', items: CARDIO_TYPES.filter((c) => c.g === 'Recovery') },
-].filter((g) => g.items.length);
+/* ================================= Cardio =================================
+ * WHAT WAS WRONG
+ * The old screen printed all 29 activities at once as three grids of small
+ * two-column tiles — about 400pt of near-identical boxes before you reached a
+ * single input. Then it asked for Duration and Distance side by side (km for
+ * "Muay Thai (Clinch)"), offered Intensity as four unexplained words, and told
+ * you nothing about what any of it was worth.
+ *
+ * WHAT THIS IS
+ * The same data, in the shape of the decision. You pick a DISCIPLINE (three
+ * options, not twenty-nine), then an ACTIVITY from a proper native-feeling list,
+ * and only then does the session composer appear. Every number the app is about
+ * to award is shown before you commit to it — the XP each intensity is worth at
+ * the duration you typed, the pace your distance implies, and the week you are
+ * building. Nothing is hidden and nothing is decorative.
+ * ====================================================================== */
 
-function CardioView({ data, onLog }) {
+// Three disciplines. Grouping by what the work IS beats grouping by stat: END is
+// the primary stat for 24 of the 29 activities, so a stat-first split would put
+// yoga next to sprint intervals.
+const CARDIO_FAMILIES = [
+  {
+    key: 'cardio', label: 'Cardio', tint: C.green,
+    blurb: 'Steady state, intervals and conditioning',
+    items: CARDIO_TYPES.filter((c) => !c.g),
+  },
+  {
+    key: 'martial', label: 'Martial Arts', tint: C.orange,
+    blurb: 'Striking, grappling and fight conditioning',
+    items: CARDIO_TYPES.filter((c) => c.g === 'Martial Arts'),
+  },
+  {
+    key: 'recovery', label: 'Mobility', tint: C.cyan,
+    blurb: 'Flexibility, movement quality and recovery',
+    items: CARDIO_TYPES.filter((c) => c.g === 'Recovery'),
+  },
+].filter((f) => f.items.length);
+
+const familyOf = (ct) => {
+  if (!ct) return CARDIO_FAMILIES[0];
+  const key = ct.g === 'Martial Arts' ? 'martial' : ct.g === 'Recovery' ? 'recovery' : 'cardio';
+  return CARDIO_FAMILIES.find((f) => f.key === key) || CARDIO_FAMILIES[0];
+};
+
+/* Distance only belongs to activities that COVER distance. Asking for km after
+ * a clinch round or a foam-rolling session is the kind of detail that makes an
+ * app feel like it was never used by anyone who trains. */
+const PACE_MODES = {
+  'Run (Zone 2)':     'perKm',
+  'Sprint Intervals': 'perKm',
+  'Incline Walk':     'perKm',
+  Hiking:             'perKm',
+  'Stair Climber':    'perKm',
+  'Rowing Machine':   'per500',
+  Swimming:           'per100',
+  Cycling:            'speed',
+  'Assault Bike':     'speed',
+};
+const tracksDistance = (ct) => !!(ct && PACE_MODES[ct.n]);
+
+// The derived number that a person who does this activity actually quotes.
+function paceFor(ct, mins, km) {
+  if (!tracksDistance(ct) || !(mins > 0) || !(km > 0)) return null;
+  const mode = PACE_MODES[ct.n];
+  if (mode === 'speed') return (km / (mins / 60)).toFixed(1) + ' km/h';
+  const unitKm = mode === 'per500' ? 0.5 : mode === 'per100' ? 0.1 : 1;
+  const perUnit = (mins / km) * unitKm;
+  const mm = Math.floor(perUnit);
+  const ss = Math.round((perUnit - mm) * 60);
+  const label = mode === 'per500' ? ' /500m' : mode === 'per100' ? ' /100m' : ' /km';
+  return mm + ':' + String(Math.min(59, ss)).padStart(2, '0') + label;
+}
+
+/* Intensity, explained. The stored keys and multipliers are untouched — XP
+ * depends on them — but "Moderate" on its own is not an instruction. Each row
+ * now says what that effort FEELS like, which is the only way somebody can pick
+ * the honest one. */
+const INTENSITY_NOTE = {
+  light:    'Easy throughout — you could hold a conversation.',
+  moderate: 'Working — short sentences only.',
+  hard:     'Hard — breathing heavily, a few words at most.',
+  max:      'All out — race pace or flat-out intervals.',
+};
+const INTENSITY_TINT = { light: C.cyan, moderate: C.green, hard: C.orange, max: C.red };
+
+// One-tap presets. Covers the overwhelming majority of real sessions; anything
+// else is typed.
+const MIN_PRESETS = [10, 15, 20, 30, 45, 60];
+
+const DAY_MS = 86400000;
+
+function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
+  const [family, setFamily] = useState(CARDIO_FAMILIES[0].key);
   const [type, setType] = useState(null);
   const [mins, setMins] = useState('');
   const [dist, setDist] = useState('');
   const [inten, setInten] = useState('moderate');
   const [last, setLast] = useState(null);
+  const [fixOpen, setFixOpen] = useState(false);
+
+  const fam = CARDIO_FAMILIES.find((f) => f.key === family) || CARDIO_FAMILIES[0];
+  const minsN = parseFloat(mins) || 0;
+  const distN = parseFloat(dist) || 0;
+
+  /* ---- the last seven days, as context rather than as a scoreboard ----
+   * Cardio is the one thing in the app people do "some of" — the useful
+   * question is whether this week has any in it, not a lifetime total. */
+  const week = useMemo(() => {
+    const now = Date.now();
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+    const startT = start.getTime() - 6 * DAY_MS;
+    const perDay = [0, 0, 0, 0, 0, 0, 0];
+    let mins7 = 0, sessions = 0;
+    (data.cardio || []).forEach((c) => {
+      if (!c || c.t < startT) return;
+      const i = Math.min(6, Math.max(0, Math.floor((c.t - startT) / DAY_MS)));
+      perDay[i] += c.mins || 0;
+      mins7 += c.mins || 0;
+      sessions += 1;
+    });
+    return { perDay, mins7, sessions, peak: Math.max(1, ...perDay) };
+  }, [data.cardio]);
+
+  // The activities this person actually uses, newest first. Four is enough to
+  // cover a routine without becoming a second full list.
+  const recent = useMemo(() => {
+    const seen = [];
+    [...(data.cardio || [])].sort((a, b) => b.t - a.t).forEach((c) => {
+      if (seen.length >= 4 || seen.some((x) => x.n === c.ex)) return;
+      const ct = CARDIO_TYPES.find((x) => x.n === c.ex);
+      if (ct) seen.push(ct);
+    });
+    return seen;
+  }, [data.cardio]);
+
+  const pickType = (ct) => {
+    setType(ct);
+    setFamily(familyOf(ct).key);
+    if (!tracksDistance(ct)) setDist('');
+    setLast(null);
+  };
+
+  // Exactly what the engine will award, before the daily cap is applied — so the
+  // four intensity rows can each show their own consequence.
+  const xpAt = (multKey) => {
+    const row = INTENSITIES.find((i) => i.k === multKey);
+    if (!row || minsN <= 0) return 0;
+    return cardioXPCalc(minsN, row.mult);
+  };
+
+  const pace = paceFor(type, minsN, distN);
+  const ready = !!type && minsN > 0;
 
   const log = () => {
-    const m = parseFloat(mins) || 0;
-    if (!type || m <= 0) return;
-    const meta = onLog(type.n, m, parseFloat(dist) || 0, inten);
-    if (meta) setLast({ ...meta, name: type.n });
+    if (!ready) return;
+    const meta = onLog(type.n, minsN, tracksDistance(type) ? distN : 0, inten);
+    if (meta) {
+      setLast({
+        ...meta, name: type.n, emoji: type.e, mins: minsN,
+        dist: tracksDistance(type) ? distN : 0, inten, seq: Date.now(),
+      });
+      setMins(''); setDist('');
+    }
   };
 
   return (
     <View>
-      {/* grouped into sections so Martial Arts is a real destination rather
-          than a dozen entries buried in a long cardio grid */}
-      {CARDIO_GROUPS.map((g) => (
-        <Card key={g.title}>
-          <Lbl>{g.title}</Lbl>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
-            {g.items.map((ct) => {
-              const on = type && type.n === ct.n;
+      <ScreenHeader title="Log cardio" hint={type ? null : 'Pick what you did'} />
+
+      {/* ---- the week so far ------------------------------------------------
+       * Seven thin bars and two numbers. It answers "have I done any of this
+       * lately" in one glance and costs a third of the height of a card. */}
+      {week.sessions > 0 ? (
+        <Card style={{ paddingVertical: 14 }}>
+          <View style={[s.between, { alignItems: 'flex-end' }]}>
+            <View>
+              <Lbl style={{ marginBottom: 4 }}>Last 7 days</Lbl>
+              <Text style={{ fontSize: 21, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'], letterSpacing: -0.4 }}>
+                {Math.round(week.mins7)}
+                <Text style={{ fontSize: 13, color: C.mut, fontWeight: '700' }}> min</Text>
+              </Text>
+            </View>
+            {/* the bars, oldest → today */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: 34 }}>
+              {week.perDay.map((m, i) => {
+                const isToday = i === 6;
+                return (
+                  <View key={i} style={{
+                    width: 7, marginLeft: i ? 5 : 0,
+                    height: Math.max(3, (m / week.peak) * 34),
+                    borderRadius: 3.5,
+                    backgroundColor: m > 0 ? (isToday ? C.gold : C.green) : C.panel2,
+                  }} />
+                );
+              })}
+            </View>
+            <Text style={{ fontSize: 12, color: C.dim, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+              {week.sessions} session{week.sessions === 1 ? '' : 's'}
+            </Text>
+          </View>
+        </Card>
+      ) : null}
+
+      {/* ---- straight back to what you already do -------------------------- */}
+      {recent.length > 0 && !type ? (
+        <View style={{ marginBottom: 14 }}>
+          <Lbl>Again</Lbl>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -2 }} contentContainerStyle={{ paddingHorizontal: 2 }}>
+            {recent.map((ct) => {
+              const tint = familyOf(ct).tint;
               return (
-                <Pressable key={ct.n} onPress={() => setType(ct)}
-                  accessibilityRole="button" accessibilityLabel={ct.n}
-                  style={{ width: '48.5%', padding: 10, borderRadius: 10, marginBottom: 8, backgroundColor: on ? C.goldSoft : C.panel2, borderWidth: 1, borderColor: on ? C.gold : C.line }}>
-                  <Text style={{ fontSize: 16 }}>{ct.e}</Text>
-                  <Text style={{ fontSize: 12, fontWeight: '700', marginTop: 3, color: on ? C.gold : C.text }}>{ct.n}</Text>
-                  <Text style={{ fontSize: 10, fontWeight: '700', marginTop: 2, color: STAT_META[ct.p].color, fontVariant: ['tabular-nums'] }}>
-                    {ct.p}{ct.s ? ' +' + ct.s : ''}
+                <Pressable key={ct.n} onPress={() => pickType(ct)}
+                  accessibilityRole="button" accessibilityLabel={'Log ' + ct.n}
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', minHeight: 44,
+                    paddingHorizontal: 13, borderRadius: 999, marginRight: 8,
+                    backgroundColor: C.panel2, borderWidth: 1, borderColor: alpha(tint, 0.45),
+                  }}>
+                  <Text style={{ fontSize: 15, marginRight: 8 }}>{ct.e}</Text>
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: C.text }} numberOfLines={1}>{ct.n}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      ) : null}
+
+      {/* ---- discipline ----------------------------------------------------
+       * The same segmented control the Train hub uses at the top of the screen,
+       * so the two read as one system. */}
+      {!type ? (
+        <View>
+          <View style={{
+            flexDirection: 'row', backgroundColor: C.sunken, borderWidth: 1,
+            borderColor: C.lineSoft, borderRadius: 12, padding: 3,
+          }}>
+            {CARDIO_FAMILIES.map((f) => {
+              const on = f.key === family;
+              return (
+                <Pressable key={f.key} onPress={() => setFamily(f.key)}
+                  accessibilityRole="tab" accessibilityState={{ selected: on }}
+                  accessibilityLabel={f.label + ', ' + f.items.length + ' activities'}
+                  style={{
+                    flex: 1, minHeight: 42, borderRadius: 10, alignItems: 'center',
+                    justifyContent: 'center', backgroundColor: on ? f.tint : 'transparent',
+                  }}>
+                  <Text style={{ fontSize: 12.5, fontWeight: on ? '800' : '600', color: on ? C.ink : C.mut }}>
+                    {f.label}
+                  </Text>
+                  <Text style={{
+                    fontSize: 9.5, fontWeight: '700', marginTop: 1,
+                    color: on ? alpha(C.ink, 0.6) : C.faint, fontVariant: ['tabular-nums'],
+                  }}>
+                    {f.items.length}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
-        </Card>
-      ))}
+          <Text style={{ fontSize: 12.5, color: C.dim, marginTop: 9, marginBottom: 12, lineHeight: 17 }}>
+            {fam.blurb}
+          </Text>
 
-      {type && (
-        <Card>
-          <Text style={{ fontSize: 16, fontWeight: '800', color: C.text, marginBottom: 12 }}>{type.e} {type.n}</Text>
-          <View style={s.row}>
-            <NumField label="Duration" value={mins} onChange={setMins} suffix="min" />
-            <View style={{ width: 10 }} />
-            <NumField label="Distance (opt.)" value={dist} onChange={setDist} suffix="km" />
-          </View>
-          <View style={{ marginTop: 12 }}>
-            <Lbl>Intensity</Lbl>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-              {INTENSITIES.map((i) => <Chip key={i.k} active={inten === i.k} onPress={() => setInten(i.k)}>{i.label}</Chip>)}
+          {/* ---- activities, as a list rather than a tile grid ------------
+           * A row can carry the name, both stats and a proper 44pt target
+           * without truncating anything. "Muay Thai (Bag / Pads)" simply does
+           * not fit in a half-width tile. */}
+          <Card style={{ padding: 0, overflow: 'hidden' }}>
+            {fam.items.map((ct, i) => (
+              <Pressable key={ct.n} onPress={() => pickType(ct)}
+                accessibilityRole="button"
+                accessibilityLabel={ct.n + ', builds ' + STAT_META[ct.p].name + (ct.s ? ' and ' + STAT_META[ct.s].name : '')}
+                style={{
+                  flexDirection: 'row', alignItems: 'center', minHeight: 62,
+                  paddingHorizontal: 14, paddingVertical: 10,
+                  borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderTopColor: C.line,
+                }}>
+                <View style={{
+                  width: 42, height: 42, borderRadius: 12, marginRight: 13,
+                  alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: alpha(fam.tint, 0.12),
+                  borderWidth: 1, borderColor: alpha(fam.tint, 0.3),
+                }}>
+                  <Text style={{ fontSize: 19 }}>{ct.e}</Text>
+                </View>
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: C.text, letterSpacing: -0.2 }} numberOfLines={1}>
+                    {ct.n}
+                  </Text>
+                  <View style={[s.row, { marginTop: 3 }]}>
+                    <Text style={{ fontSize: 11.5, fontWeight: '700', color: STAT_META[ct.p].color }}>
+                      {STAT_META[ct.p].name}
+                    </Text>
+                    {ct.s ? (
+                      <>
+                        <Text style={{ fontSize: 11.5, color: C.faint, marginHorizontal: 5 }}>+</Text>
+                        <Text style={{ fontSize: 11.5, fontWeight: '700', color: STAT_META[ct.s].color }}>
+                          {STAT_META[ct.s].name}
+                        </Text>
+                      </>
+                    ) : null}
+                  </View>
+                </View>
+                <Text style={{ fontSize: 19, color: C.faint, fontWeight: '600' }}>›</Text>
+              </Pressable>
+            ))}
+          </Card>
+        </View>
+      ) : (
+        /* ---------------------------- composer ---------------------------- */
+        <View>
+          {/* what you picked, and the way back out */}
+          <Card style={{ borderWidth: 1, borderColor: alpha(familyOf(type).tint, 0.5) }}>
+            <View style={[s.between, { alignItems: 'center' }]}>
+              <View style={[s.row, { flex: 1 }]}>
+                <View style={{
+                  width: 46, height: 46, borderRadius: 13, marginRight: 13,
+                  alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: alpha(familyOf(type).tint, 0.14),
+                  borderWidth: 1, borderColor: alpha(familyOf(type).tint, 0.34),
+                }}>
+                  <Text style={{ fontSize: 21 }}>{type.e}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 16.5, fontWeight: '800', color: C.text, letterSpacing: -0.3 }} numberOfLines={2}>
+                    {type.n}
+                  </Text>
+                  <Text style={{ fontSize: 11.5, fontWeight: '700', color: C.dim, marginTop: 2 }}>
+                    {STAT_META[type.p].name}{type.s ? ' · ' + STAT_META[type.s].name : ''}
+                  </Text>
+                </View>
+              </View>
+              <Pressable onPress={() => { setType(null); setLast(null); }} hitSlop={8}
+                accessibilityRole="button" accessibilityLabel="Choose a different activity"
+                style={s.smallGhost}>
+                <Text style={{ color: C.mut, fontSize: 12 }}>Change</Text>
+              </Pressable>
             </View>
-          </View>
-          <GreenBtn onPress={log} style={{ marginTop: 14 }}>Log Session</GreenBtn>
-        </Card>
+
+            {/* ---- duration ---- */}
+            <View style={{ marginTop: 16 }}>
+              <Lbl>How long?</Lbl>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}
+                style={{ marginHorizontal: -2, marginBottom: 10 }}
+                contentContainerStyle={{ paddingHorizontal: 2 }}>
+                {MIN_PRESETS.map((m) => {
+                  const on = minsN === m;
+                  return (
+                    <Pressable key={m} onPress={() => setMins(String(m))}
+                      accessibilityRole="button" accessibilityLabel={m + ' minutes'}
+                      accessibilityState={{ selected: on }}
+                      style={{
+                        minWidth: 56, minHeight: 44, alignItems: 'center', justifyContent: 'center',
+                        paddingHorizontal: 12, borderRadius: 11, marginRight: 7,
+                        backgroundColor: on ? C.gold : C.panel2,
+                        borderWidth: 1, borderColor: on ? C.gold : C.line,
+                      }}>
+                      <Text style={{
+                        fontSize: 14, fontWeight: '800', fontVariant: ['tabular-nums'],
+                        color: on ? C.ink : C.text,
+                      }}>{m}</Text>
+                      <Text style={{ fontSize: 9, fontWeight: '700', color: on ? alpha(C.ink, 0.6) : C.dim }}>MIN</Text>
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+              <View style={s.row}>
+                <NumField label="Exact minutes" value={mins} onChange={setMins} suffix="min" />
+                {tracksDistance(type) ? (
+                  <>
+                    <View style={{ width: 10 }} />
+                    <NumField label="Distance (optional)" value={dist} onChange={setDist} suffix="km" />
+                  </>
+                ) : null}
+              </View>
+              {pace ? (
+                <Text style={{ fontSize: 12.5, color: C.cyan, fontWeight: '700', marginTop: 8, fontVariant: ['tabular-nums'] }}>
+                  That is {pace}
+                </Text>
+              ) : null}
+            </View>
+          </Card>
+
+          {/* ---- intensity, with its price on it ----------------------------
+           * Four rows instead of four chips. Each states the effort in words
+           * anyone can self-assess, and — once a duration exists — exactly what
+           * it is worth, so the choice is informed rather than a guess. */}
+          <Card>
+            <View style={s.between}>
+              <Lbl style={{ marginBottom: 0 }}>How hard was it?</Lbl>
+              {minsN > 0 ? (
+                <Text style={{ fontSize: 10.5, color: C.dim, fontWeight: '700' }}>XP AT {Math.round(minsN)} MIN</Text>
+              ) : null}
+            </View>
+            <View style={{ marginTop: 10 }}>
+              {INTENSITIES.map((it, i) => {
+                const on = inten === it.k;
+                const tint = INTENSITY_TINT[it.k] || C.green;
+                return (
+                  <Pressable key={it.k} onPress={() => setInten(it.k)}
+                    accessibilityRole="button" accessibilityState={{ selected: on }}
+                    accessibilityLabel={it.label + '. ' + (INTENSITY_NOTE[it.k] || '')}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', minHeight: 56,
+                      paddingHorizontal: 12, paddingVertical: 9, borderRadius: 12,
+                      marginTop: i ? 7 : 0,
+                      backgroundColor: on ? alpha(tint, 0.12) : C.panel2,
+                      borderWidth: 1, borderColor: on ? tint : C.line,
+                    }}>
+                    {/* the rail: a filled block reads as "selected" without a tick */}
+                    <View style={{
+                      width: 4, alignSelf: 'stretch', borderRadius: 2, marginRight: 12,
+                      backgroundColor: on ? tint : C.line,
+                    }} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 14.5, fontWeight: '800', color: on ? tint : C.text }}>
+                        {it.label}
+                      </Text>
+                      <Text style={{ fontSize: 11.5, color: on ? C.mut : C.dim, marginTop: 2, lineHeight: 16 }}>
+                        {INTENSITY_NOTE[it.k] || ''}
+                      </Text>
+                    </View>
+                    {minsN > 0 ? (
+                      <Text style={{
+                        fontSize: 13, fontWeight: '800', marginLeft: 10,
+                        fontVariant: ['tabular-nums'], color: on ? tint : C.dim,
+                      }}>
+                        +{xpAt(it.k)}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </Card>
+
+          {/* ---- commit ---- */}
+          <Card>
+            <View style={[s.between, { alignItems: 'flex-end' }]}>
+              <View style={{ flex: 1, paddingRight: 12 }}>
+                <Lbl style={{ marginBottom: 4 }}>Ready to log</Lbl>
+                <Text style={{ fontSize: 14, color: ready ? C.text : C.dim, fontWeight: '700', fontVariant: ['tabular-nums'], lineHeight: 19 }}>
+                  {ready
+                    ? [
+                        type.n,
+                        Math.round(minsN) + ' min',
+                        (INTENSITIES.find((i) => i.k === inten) || {}).label,
+                        distN > 0 && tracksDistance(type) ? distN + ' km' : null,
+                      ].filter(Boolean).join(' · ')
+                    : 'Enter how long it lasted.'}
+                </Text>
+              </View>
+              {ready ? (
+                <Text style={{ fontSize: 24, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'], letterSpacing: -0.5 }}>
+                  +{xpAt(inten)}
+                  <Text style={{ fontSize: 12, color: C.mut, fontWeight: '700' }}> XP</Text>
+                </Text>
+              ) : null}
+            </View>
+            <GreenBtn onPress={log} style={{ marginTop: 14 }}>
+              {ready ? 'Log ' + Math.round(minsN) + ' min session' : 'Log session'}
+            </GreenBtn>
+            <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 9, lineHeight: 16 }}>
+              XP is an estimate — the daily cap still applies. Edit or delete any
+              session afterwards from Progress → History.
+            </Text>
+          </Card>
+        </View>
       )}
 
-      {last && (
-        <Card style={{ borderColor: C.green }}>
-          <View style={s.between}>
-            <Text style={{ fontSize: 14, fontWeight: '800', color: C.green }}>Logged — {last.name}</Text>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: C.gold, fontVariant: ['tabular-nums'] }}>+{last.xp + (last.bonus || 0)} XP</Text>
-          </View>
-          {last.bonus > 0 && <Text style={{ fontSize: 12, color: C.purp, marginTop: 6 }}>First session today: +{last.bonus} XP → Discipline & Vitality</Text>}
-        </Card>
-      )}
+      {/* ---- confirmation -------------------------------------------------- */}
+      {last ? (
+        <FadeIn key={last.seq}>
+          <Card style={{ borderWidth: 1, borderColor: C.green }}>
+            <View style={s.between}>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: C.green }}>
+                Session logged
+              </Text>
+              <CountUp value={last.xp + (last.bonus || 0)} prefix="+" suffix=" XP" duration={600}
+                style={{ fontSize: 14, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'] }} />
+            </View>
+            <Text style={{ fontSize: 13, color: C.mut, marginTop: 7, fontVariant: ['tabular-nums'] }}>
+              {last.emoji} {[
+                last.name,
+                Math.round(last.mins) + ' min',
+                (INTENSITIES.find((i) => i.k === last.inten) || {}).label,
+                last.dist > 0 ? last.dist + ' km' : null,
+              ].filter(Boolean).join(' · ')}
+            </Text>
+            {last.bonus > 0 ? (
+              <Text style={{ fontSize: 12, color: C.purp, marginTop: 8 }}>
+                First session today: +{last.bonus} XP → Discipline &amp; Vitality
+              </Text>
+            ) : null}
+            {last.id && onEditEntry ? (
+              <Pressable
+                onPress={() => setFixOpen(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Edit or delete the session you just logged"
+                hitSlop={6}
+                style={{
+                  marginTop: 12, minHeight: 40, borderRadius: 11,
+                  alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
+                }}>
+                <Text style={{ fontSize: 12.5, fontWeight: '700', color: C.mut }}>
+                  Wrong numbers? Edit or delete this session
+                </Text>
+              </Pressable>
+            ) : null}
+          </Card>
+        </FadeIn>
+      ) : null}
 
-      <Card>
-        <Text style={{ fontSize: 15, color: C.text, fontWeight: '700', lineHeight: 21 }}>
-          Easy builds endurance. Intervals build power. Recovery counts.
-        </Text>
-      </Card>
+      {fixOpen && last && last.id ? (
+        <EntryEditor
+          entry={(data.cardio || []).find((c) => c.id === last.id)}
+          unit={data.unit}
+          onSave={(patch) => {
+            if (onEditEntry) onEditEntry(last.id, patch);
+            setFixOpen(false);
+            setLast(null);
+          }}
+          onDelete={() => {
+            if (onDeleteEntry) onDeleteEntry(last.id);
+            setFixOpen(false);
+            setLast(null);
+          }}
+          onClose={() => setFixOpen(false)}
+        />
+      ) : null}
     </View>
   );
 }
@@ -1046,7 +1572,7 @@ function Stepper({ label, onPress }) {
 }
 
 /* ------------------------------- Train hub ------------------------------- */
-export default function TrainTab({ data, dv, onLift, onLiftBatch, onCardio, onSaveDay, onDeleteDay, onOpenAnalytics }) {
+export default function TrainTab({ data, dv, onLift, onLiftBatch, onCardio, onSaveDay, onDeleteDay, onEditEntry, onDeleteEntry, onOpenAnalytics }) {
   const [seg, setSeg] = useState('lift');
   // Kept at this level so it survives Log Lift → Calculator → Log Lift.
   const [sel, setSel] = useState(null);
@@ -1087,8 +1613,16 @@ export default function TrainTab({ data, dv, onLift, onLiftBatch, onCardio, onSa
         )}
       </Card>
 
-      {seg === 'lift' && <LogView data={data} dv={dv} onLog={onLift} onLogBatch={onLiftBatch} workoutDays={data.workoutDays} onSaveDay={onSaveDay} onDeleteDay={onDeleteDay} session={session} />}
-      {seg === 'cardio' && <CardioView data={data} onLog={onCardio} />}
+      {seg === 'lift' && (
+        <LogView
+          data={data} dv={dv} onLog={onLift} onLogBatch={onLiftBatch}
+          workoutDays={data.workoutDays} onSaveDay={onSaveDay} onDeleteDay={onDeleteDay}
+          session={session} onEditEntry={onEditEntry} onDeleteEntry={onDeleteEntry}
+        />
+      )}
+      {seg === 'cardio' && (
+        <CardioView data={data} onLog={onCardio} onEditEntry={onEditEntry} onDeleteEntry={onDeleteEntry} />
+      )}
 
       {/* ---- today, and the way through to the numbers -------------------
        * Train answers three questions: what am I training, what do I do next,
@@ -1170,7 +1704,10 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
   const { height } = useWindowDimensions();
   const isEdit = !!(initial && initial.id);
   const [name, setName] = useState(initial ? initial.name : '');
-  const [chosen, setChosen] = useState(initial ? initial.exercises : []);
+  // Normalised on load for the same reason the runner does it: a legacy day of
+  // bare exercise names would otherwise produce chips with no label and a
+  // "SELECTED" set full of undefined.
+  const [chosen, setChosen] = useState(() => dayExercises(initial));
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState('All');
 
@@ -1185,7 +1722,10 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
 
   const save = () => {
     if (!name.trim() || !chosen.length) return;
-    onSave({ id: initial && initial.id, name: name.trim(), exercises: chosen });
+    // Stored lean — just what the runner needs. Keeping the full library record
+    // would bloat every save and go stale the moment an exercise is retuned.
+    const exercises = chosen.map((e) => ({ n: e.n, c: e.c, p: e.p, s: e.s || null }));
+    onSave({ id: initial && initial.id, name: name.trim(), exercises });
     onClose();
   };
 
@@ -1361,6 +1901,135 @@ function ExerciseInfoSheet({ ex, meta, onClose }) {
           </View>
         ) : null}
       </View>
+    </Sheet>
+  );
+}
+
+/* ========================= edit a logged entry ============================
+ * People get sets wrong: 100 instead of 10, reps typed into the weight box, an
+ * intensity picked in a hurry. Until now the only repair was to DELETE and
+ * re-log — which stamped the set with the current time, so a mistake spotted
+ * the next morning moved the set to the wrong day, the wrong session and out of
+ * whatever duel window it belonged to.
+ *
+ * One sheet serves both kinds of entry, because the decision is the same shape:
+ * fix the numbers, or remove it.
+ *
+ * Two things it deliberately does NOT change:
+ *   · the exercise — swapping that makes it a different set, not a correction
+ *   · the timestamp — it is what anchors the entry to its session, its day, its
+ *     streak and any duel it falls inside
+ *
+ * It lives here rather than in ProgressTab so it can share the EFFORT scale
+ * above, and so the Train screen can offer the same editor on the set you have
+ * just this second logged.
+ * ====================================================================== */
+export function EntryEditor({ entry, unit, onSave, onDelete, onClose }) {
+  const isCardio = !!entry && entry.kind === 'cardio';
+  const [w, setW] = useState(entry && entry.w != null ? String(entry.w) : '');
+  const [r, setR] = useState(entry && entry.r != null ? String(entry.r) : '');
+  const [rpe, setRpe] = useState((entry && entry.rpe) || 8);
+  const [mins, setMins] = useState(entry && entry.mins != null ? String(entry.mins) : '');
+  const [dist, setDist] = useState(entry && entry.dist ? String(entry.dist) : '');
+  const [inten, setInten] = useState(intensityKeyOf(entry && entry.intensity));
+  // Deleting takes two taps. This sheet is reached BY tapping, so a single
+  // destructive tap is exactly the mistap that needs designing out.
+  const [armed, setArmed] = useState(false);
+
+  if (!entry) return null;
+
+  const valid = isCardio ? (parseFloat(mins) || 0) > 0 : (parseInt(r, 10) || 0) >= 1;
+
+  const save = () => {
+    if (!valid) return;
+    onSave(isCardio
+      ? { mins: parseFloat(mins) || 0, dist: parseFloat(dist) || 0, intensity: inten }
+      : { w: parseFloat(w) || 0, r: parseInt(r, 10) || 1, rpe });
+  };
+
+  return (
+    <Sheet visible title={entry.ex || 'Edit entry'} onClose={onClose}>
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18 }}
+        keyboardShouldPersistTaps="handled">
+        <Text style={{ fontSize: 12, color: C.dim, marginBottom: 14, fontVariant: ['tabular-nums'] }}>
+          Logged {fmtShort(entry.t)} · was worth {entry.xp || 0} XP
+        </Text>
+
+        {isCardio ? (
+          <View>
+            <View style={s.row}>
+              <NumField label="Minutes" value={mins} onChange={setMins} suffix="min" />
+              <View style={{ width: 10 }} />
+              <NumField label="Distance" value={dist} onChange={setDist} suffix="km" />
+            </View>
+            <View style={{ marginTop: 14 }}>
+              <Lbl>Intensity</Lbl>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+                {INTENSITIES.map((i) => (
+                  <Chip key={i.k} active={inten === i.k} onPress={() => setInten(i.k)}>{i.label}</Chip>
+                ))}
+              </View>
+            </View>
+          </View>
+        ) : (
+          <View>
+            <View style={s.row}>
+              <NumField label="Weight" value={w} onChange={setW} suffix={unit} />
+              <View style={{ width: 10 }} />
+              <NumField label="Reps" value={r} onChange={setR} suffix="reps" />
+            </View>
+            <View style={{ marginTop: 14 }}>
+              <Lbl>How hard was that set?</Lbl>
+              <View style={s.row}>
+                {EFFORT.map((e, i) => (
+                  <Pressable key={e.v} onPress={() => setRpe(e.v)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: rpe === e.v }}
+                    accessibilityLabel={e.label + ', effort ' + e.v + ' of 10'}
+                    style={{
+                      flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center',
+                      marginRight: i < EFFORT.length - 1 ? 5 : 0,
+                      backgroundColor: rpe === e.v ? C.goldSoft : C.panel2,
+                      borderWidth: 1, borderColor: rpe === e.v ? C.gold : C.line,
+                    }}>
+                    <Text style={{ fontWeight: '800', fontSize: 11, color: rpe === e.v ? C.gold : C.mut }}>{e.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          </View>
+        )}
+
+        <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 14, lineHeight: 16 }}>
+          Saving re-scores this entry at its original time — XP and stats are
+          recalculated, never stacked on top of the old values.
+        </Text>
+
+        <GoldBtn onPress={save} disabled={!valid} style={{ marginTop: 14 }}>
+          Save changes
+        </GoldBtn>
+
+        <Pressable
+          onPress={() => { if (armed) onDelete(); else setArmed(true); }}
+          accessibilityRole="button"
+          accessibilityLabel={armed ? 'Confirm delete entry' : 'Delete entry'}
+          style={{
+            minHeight: 46, marginTop: 10, borderRadius: 12,
+            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: armed ? alpha(C.red, 0.14) : 'transparent',
+            borderWidth: 1, borderColor: armed ? C.red : C.line,
+          }}>
+          <Text style={{ fontSize: 13, fontWeight: '800', color: armed ? C.red : C.mut }}>
+            {armed ? 'Tap again to delete' : 'Delete this entry'}
+          </Text>
+        </Pressable>
+        {armed ? (
+          <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 8, textAlign: 'center' }}>
+            Its XP and stat gains are refunded.
+          </Text>
+        ) : null}
+      </ScrollView>
     </Sheet>
   );
 }

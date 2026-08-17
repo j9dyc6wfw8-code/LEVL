@@ -16,7 +16,10 @@ export const TABS = [
   { key: 'train',   label: 'Train',   icon: 'train'   },
   { key: 'compete', label: 'Compete', icon: 'duel'    },
   { key: 'social',  label: 'Social',  icon: 'social'  },
-  { key: 'hunter',  label: 'Hunter',  icon: 'profile' },
+  // The LABEL is what people read; the KEY is what deep links, widgets and
+  // saved notification payloads already contain. Renaming the label to "Player"
+  // must not rename the key, or every levl://hunter link ever emitted breaks.
+  { key: 'hunter',  label: 'Player',  icon: 'profile' },
   { key: 'forge',   label: 'Forge',   icon: 'shop'    },
 ];
 export const TAB_KEYS = TABS.map((t) => t.key);
@@ -49,7 +52,7 @@ export const COMPETE_VIEWS = ['duels', 'friends', 'ranks', 'leaderboard'];
  * Understood:
  *   levl://train                      levl://compete/duels
  *   levl://social                     levl://compete/ranks
- *   levl://hunter                     levl://compete/leaderboard
+ *   levl://player (or hunter)         levl://compete/leaderboard
  *   levl://forge                      levl://forge/packs
  *   levl://check-in                   levl://check-in/{id}
  *   levl://comments/{checkInId}       levl://profile/{userId}
@@ -89,6 +92,9 @@ export function parseRoute(url) {
     case 'social':
       return { tab: 'social' };
 
+    // 'player' is the current name for this destination; 'hunter' is the key it
+    // still travels under, and links using either word resolve to it.
+    case 'player':
     case 'hunter':
       return { tab: 'hunter' };
 

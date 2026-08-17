@@ -150,7 +150,7 @@ function AppInner() {
             repaired.users = repaired.users || {};
             repaired.users[signedInAs] = {
               ...(repaired.users[signedInAs] || {}),
-              email: signedInAs, name: (repaired.users[signedInAs] || {}).name || 'Hunter',
+              email: signedInAs, name: (repaired.users[signedInAs] || {}).name || 'Player',
               cloud: true, createdAt: Date.now(),
             };
             repaired.lastUser = signedInAs;
@@ -689,6 +689,8 @@ function AppInner() {
                 onCardio={game.addCardio}
                 onSaveDay={game.saveWorkoutDay}
                 onDeleteDay={game.deleteWorkoutDay}
+                onEditEntry={game.editEntry}
+                onDeleteEntry={game.deleteEntry}
                 onOpenAnalytics={() => router.pushModal(MODALS.ANALYTICS)}
               />
             ) : null}
@@ -925,7 +927,7 @@ function ModalHost({
     case MODALS.ANALYTICS:
       return (
         <ModalShell title="Training analytics" onClose={close}>
-          <ProgressTab data={data} dv={dv} onDelete={game.deleteEntry} />
+          <ProgressTab data={data} dv={dv} onDelete={game.deleteEntry} onEdit={game.editEntry} />
         </ModalShell>
       );
 

@@ -61,7 +61,7 @@ export function toProfileRow(userId, data, dv) {
   const best = bestLiftFrom(data);
   return {
     id: userId,
-    display_name: data.name || 'Hunter',
+    display_name: data.name || 'Player',
     avatar: data.avatar || {},
     // `character` is jsonb and already synced, so the six stat levels ride along
     // inside it — no new column, no migration. Friends' profiles can now show a

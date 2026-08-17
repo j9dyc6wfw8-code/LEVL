@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { C, s } from '../theme';
-import { Card, GoldBtn } from '../components/ui';
+import { Card, GoldBtn, LevlMark } from '../components/ui';
 import { setNewPassword } from '../services/supabase/authService';
 
 export default function SetNewPasswordScreen({ onDone, onCancel }) {
@@ -29,8 +29,9 @@ export default function SetNewPasswordScreen({ onDone, onCancel }) {
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }}>
         <View style={{ alignItems: 'center', marginBottom: 22 }}>
-          <Text style={{ fontSize: 34, color: C.gold }}>▲</Text>
-          <Text style={{ fontSize: 18, color: C.gold, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', marginTop: 4 }}>
+          {/* The mark, not the pre-rebrand ▲. */}
+          <LevlMark size={46} />
+          <Text style={{ fontSize: 18, color: C.gold, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase', marginTop: 10 }}>
             New password
           </Text>
           <Text style={{ fontSize: 15, color: C.mut, fontWeight: '700', marginTop: 8, textAlign: 'center', lineHeight: 21 }}>

@@ -265,7 +265,7 @@ export async function getCheckInDetail(id) {
       data: normaliseFeedRow({
         ...row,
         username: profile.username || null,
-        display_name: profile.display_name || 'Hunter',
+        display_name: profile.display_name || 'Player',
         avatar: profile.avatar || {},
         character: profile.character || {},
         level: profile.level || 1,
@@ -448,7 +448,7 @@ export function normaliseFeedRow(row) {
     author: {
       id: row.user_id,
       username: row.username,
-      displayName: row.display_name || row.username || 'Hunter',
+      displayName: row.display_name || row.username || 'Player',
       avatar: row.avatar || {},
       character: row.character || {},
       level: row.level || 1,

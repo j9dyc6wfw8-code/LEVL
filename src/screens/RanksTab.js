@@ -165,7 +165,7 @@ export default function RanksTab({
         <View style={[s.between, { marginBottom: 4 }]}>
           <Lbl style={{ marginBottom: 0 }}>Practice ladder</Lbl>
           <Text style={{ ...T.caption2, color: C.dim, ...T.numeric }}>
-            {field.length} hunters
+            {field.length} players
           </Text>
         </View>
         <Text style={{ ...T.caption2, color: C.faint, marginBottom: 8 }}>
@@ -189,7 +189,7 @@ export default function RanksTab({
             onPress={() => setShown((v) => v + 25)}
             hitSlop={8}
             accessibilityRole="button"
-            accessibilityLabel="Show more hunters"
+            accessibilityLabel="Show more players"
             style={{ alignItems: 'center', paddingTop: 14 }}>
             <Text style={{ ...T.footnote, color: C.gold, fontWeight: '800' }}>Show 25 more</Text>
           </Pressable>
