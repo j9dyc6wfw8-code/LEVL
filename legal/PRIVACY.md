@@ -8,7 +8,7 @@ written to be read, not to be survived.
 ## Who we are
 
 LEVL is an iOS training app. The data controller is the LEVL developer. For any
-privacy question, or to exercise any right below, contact **support@levl.app**.
+privacy question, or to exercise any right below, contact **Levlup18@gmail.com**.
 
 ## What we collect
 

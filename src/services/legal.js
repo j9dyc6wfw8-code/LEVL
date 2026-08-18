@@ -16,9 +16,18 @@
 
 export const TERMS_VERSION = '2026-08-18';
 
-export const PRIVACY_URL = 'https://levl.app/privacy';
-export const TERMS_URL = 'https://levl.app/terms';
-export const SUPPORT_EMAIL = 'support@levl.app';
+/* These point at the published copies of /docs/privacy.html and /docs/terms.html.
+ *
+ * They previously pointed at levl.app, which is NOT ours — the domain is listed
+ * for sale on Atom.com, and /privacy and /terms both returned 404. A privacy
+ * policy URL that lands on a for-sale page is an immediate App Store rejection,
+ * so these had to become links that resolve before anything else.
+ *
+ * Moving to your own domain later is a one-line change here plus a build: host
+ * the two files in /docs and swap these two constants. */
+export const PRIVACY_URL = 'https://claude.ai/code/artifact/cb1a58e5-a578-4213-9992-acc108869397';
+export const TERMS_URL = 'https://claude.ai/code/artifact/99ef57a5-aead-486e-9d4b-7fa8906b3dee';
+export const SUPPORT_EMAIL = 'Levlup18@gmail.com';
 
 // True when this user has never accepted, or accepted a version older than the
 // current one. Profiles that have not loaded yet return false, so the app never
