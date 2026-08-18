@@ -224,3 +224,29 @@ export async function cachedUserId() {
   // not hydrated yet.
   return currentUserId();
 }
+
+/* ---------------------------------------------------------------------------
+ * Account deletion (App Store Guideline 5.1.1(v)).
+ *
+ * The work happens in one Postgres function, delete_own_account(), which takes
+ * no arguments and acts only on auth.uid() — there is deliberately no way to
+ * point it at somebody else's account. It removes the user's check-ins first so
+ * the storage-cleanup trigger can queue their photos while the account still
+ * exists, then deletes the auth user, and every remaining table cascades.
+ *
+ * The local session is cleared afterwards regardless: once the server row is
+ * gone the token is worthless, and leaving it behind would show a signed-in
+ * shell for an account that no longer exists.
+ * ------------------------------------------------------------------------ */
+export async function deleteAccount() {
+  if (!isConfigured) return { error: { message: 'Not signed in to an account.' } };
+  try {
+    const { error } = await supabase.rpc('delete_own_account');
+    if (error) return { error };
+  } catch (e) {
+    return { error: { message: String((e && e.message) || e) } };
+  }
+  // Best effort — the account is already gone, so a failure here is cosmetic.
+  try { await supabase.auth.signOut(); } catch (e) {}
+  return { error: null };
+}

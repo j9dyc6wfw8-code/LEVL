@@ -17,7 +17,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, s, T, RADIUS, SPACING, TOUCH } from '../theme';
-import { Chip, GhostBtn } from '../components/ui';
+import { Chip, GhostBtn, Sheet } from '../components/ui';
 import { HunterAvatar } from '../components/HunterAvatar';
 import SFIcon from '../components/SFIcon';
 import BugReportModal from './BugReportModal';
@@ -28,6 +28,7 @@ import {
 } from './AuthScreens';
 import { WINDOW_PRESETS, windowLabel, formatMinute } from '../hooks/useCheckInPreferences';
 import { setUsername as claimUsername, listBlocked, unblockUser } from '../services/supabase/checkInService';
+import { deleteAccount } from '../services/supabase/authService';
 import notifications from '../services/notifications';
 import haptics from '../services/haptics';
 
@@ -57,6 +58,13 @@ export default function SettingsScreen({
   const [guideOpen, setGuideOpen] = useState(false);
   const [profileEdit, setProfileEdit] = useState(false);
   const [confirmReset, setConfirmReset] = useState(false);
+  // Account deletion asks you to TYPE the word, not tap twice. Two-tap is the
+  // right weight for "reset my local save"; it is far too light for an action
+  // that erases a server account and every photo attached to it.
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteWord, setDeleteWord] = useState('');
+  const [deleting, setDeleting] = useState(false);
+  const [deleteErr, setDeleteErr] = useState('');
   const [nameDraft, setNameDraft] = useState(data.name);
   const [handleDraft, setHandleDraft] = useState((profile && profile.username) || '');
   const [handleBusy, setHandleBusy] = useState(false);
@@ -483,11 +491,111 @@ export default function SettingsScreen({
               {confirmReset ? 'Tap again to erase everything' : 'Reset all data'}
             </Text>
           </Pressable>
+
+          {/* Apple requires an in-app route to delete the ACCOUNT, not just the
+              local save, for any app that lets you create one. Shown only when
+              there is a server account to delete — a guest has nothing on a
+              server, and "Reset all data" above already erases their device. */}
+          {userEmail ? (
+            <Pressable
+              onPress={() => { haptics.warning(); setDeleteWord(''); setDeleteErr(''); setDeleteOpen(true); }}
+              accessibilityRole="button"
+              accessibilityLabel="Delete your account and all of your data"
+              style={[s.ghostBtn, { marginTop: 10, borderColor: C.red }]}>
+              <Text style={{ ...T.subheadline, fontWeight: '700', color: C.red }}>
+                Delete account
+              </Text>
+            </Pressable>
+          ) : null}
         </Section>
       </ScrollView>
 
       <BugReportModal visible={bugOpen} onClose={() => setBugOpen(false)} />
       <AppGuide visible={guideOpen} onClose={() => setGuideOpen(false)} />
+
+      {/* ---- delete account ------------------------------------------------
+          Spells out exactly what goes, requires the word DELETE typed in full,
+          and states plainly that it cannot be undone. */}
+      {deleteOpen ? (
+        <Sheet visible title="Delete account" onClose={() => { if (!deleting) setDeleteOpen(false); }}>
+          <View style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 20 }}>
+            <Text style={{ ...T.subheadline, color: C.text, fontWeight: '700' }}>
+              This permanently deletes your account.
+            </Text>
+            <Text style={{ ...T.footnote, color: C.mut, marginTop: 8, lineHeight: 19 }}>
+              Your training history, Check In photos, friends, duels, rank and
+              saved workouts are all removed from our servers. This cannot be
+              undone, and your username becomes available to somebody else.
+            </Text>
+            <Text style={{ ...T.footnote, color: C.mut, marginTop: 8, lineHeight: 19 }}>
+              If you only want to start over, use “Reset all data” instead — that
+              clears this device and keeps your account.
+            </Text>
+
+            <Text style={{ ...T.caption, color: C.dim, marginTop: 16, marginBottom: 6 }}>
+              Type DELETE to confirm
+            </Text>
+            <TextInput
+              value={deleteWord}
+              onChangeText={(t) => { setDeleteWord(t); setDeleteErr(''); }}
+              autoCapitalize="characters"
+              autoCorrect={false}
+              editable={!deleting}
+              placeholder="DELETE"
+              placeholderTextColor={C.faint}
+              accessibilityLabel="Type the word DELETE to confirm"
+              style={[s.input, { borderColor: deleteWord.trim().toUpperCase() === 'DELETE' ? C.red : C.lineSoft }]}
+            />
+
+            {deleteErr ? (
+              <Text style={{ ...T.footnote, color: C.red, marginTop: 10 }}>{deleteErr}</Text>
+            ) : null}
+
+            <Pressable
+              disabled={deleting || deleteWord.trim().toUpperCase() !== 'DELETE'}
+              onPress={async () => {
+                setDeleting(true); setDeleteErr('');
+                const res = await deleteAccount();
+                setDeleting(false);
+                if (res && res.error) {
+                  setDeleteErr((res.error.message || 'Could not delete the account.')
+                    + ' Nothing was deleted — please try again.');
+                  return;
+                }
+                haptics.success();
+                setDeleteOpen(false);
+                // Drops back to a clean signed-out app with no local remnants.
+                resetAll();
+                signOut();
+                onClose();
+              }}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: deleting || deleteWord.trim().toUpperCase() !== 'DELETE' }}
+              accessibilityLabel="Permanently delete my account"
+              style={{
+                minHeight: 48, marginTop: 16, borderRadius: RADIUS.md,
+                alignItems: 'center', justifyContent: 'center',
+                backgroundColor: deleteWord.trim().toUpperCase() === 'DELETE' ? C.red : C.panel2,
+                opacity: deleting ? 0.6 : 1,
+              }}>
+              <Text style={{
+                ...T.subheadline, fontWeight: '700',
+                color: deleteWord.trim().toUpperCase() === 'DELETE' ? '#fff' : C.faint,
+              }}>
+                {deleting ? 'Deleting…' : 'Delete my account permanently'}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => { if (!deleting) setDeleteOpen(false); }}
+              accessibilityRole="button"
+              accessibilityLabel="Keep my account"
+              style={[s.ghostBtn, { marginTop: 10 }]}>
+              <Text style={s.ghostTxt}>Keep my account</Text>
+            </Pressable>
+          </View>
+        </Sheet>
+      ) : null}
     </View>
   );
 }
