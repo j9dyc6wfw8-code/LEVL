@@ -175,7 +175,19 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
       if (region) return region.cats.indexOf(e.c) >= 0;
       return cat === 'All' || e.c === cat;
     };
-    return EXERCISES.filter((e) => inScope(e) && (!q || e.n.toLowerCase().includes(q))).slice(0, 60);
+    // NO CAP. This used to end in .slice(0, 60), which quietly hid a third of
+    // the library: the button above literally reads "Browse all 127 exercises"
+    // and then showed sixty of them, with nothing on screen admitting it. A
+    // person looking for an exercise that sorts late would conclude LEVL simply
+    // does not have it.
+    //
+    // The cap was presumably guarding render cost, but EXERCISES is a
+    // compile-time constant of 127 fixed records — it cannot grow at runtime,
+    // so there was no unbounded case to protect against. Region and search
+    // filters bring the typical list to 10-25 rows; the full 127 only renders
+    // when somebody explicitly asks to browse everything, which is the one time
+    // they must not be lied to.
+    return EXERCISES.filter((e) => inScope(e) && (!q || e.n.toLowerCase().includes(q)));
   }, [query, cat, region]);
 
   const todayCount = sel ? data.lifts.filter((l) => l.ex === sel.n && dayKeyOf(l.t) === dayKeyOf(Date.now())).length : 0;
@@ -1912,7 +1924,12 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
   const chosenSet = useMemo(() => new Set(chosen.map((e) => e.n)), [chosen]);
   const list = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return EXERCISES.filter((e) => (cat === 'All' || e.c === cat) && (!q || e.n.toLowerCase().includes(q))).slice(0, 40);
+    // Same uncapped rule as the exercise picker, and this one mattered more:
+    // capped at 40, two thirds of the library could not be added to a Workout
+    // Day at all unless you already knew the exercise's name well enough to
+    // search for it. A builder that cannot reach its own catalogue is broken,
+    // not merely slow.
+    return EXERCISES.filter((e) => (cat === 'All' || e.c === cat) && (!q || e.n.toLowerCase().includes(q)));
   }, [query, cat]);
 
   const toggle = (e) => setChosen((c) =>
