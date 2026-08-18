@@ -193,89 +193,12 @@ Four jobs. Do them in this order.
 
 ---
 
-## ✅ JOB 1 — Make a new app build (do this first)
+## ✅ JOB 1 — Put your Privacy Policy and Terms online (do this FIRST)
 
-**Why:** The database is now stricter than the app currently on your phone. The
-version your testers have will fail when they try to accept a friend request or
-answer a duel. The fixed app code is ready and waiting — it just needs building.
-
-You needed a new build anyway; several other changes require one.
-
-**What to do** — open Terminal, and run these one at a time:
-
-```bash
-cd ~/LEVL
-```
-
-```bash
-git checkout main
-```
-
-```bash
-git merge prelaunch-hardening
-```
-
-```bash
-eas build --platform ios --profile production
-```
-
-The build takes roughly 15–25 minutes. When it finishes, submit it to TestFlight
-as you normally do.
-
-**Until you do this, tell your testers:** adding friends and accepting duels
-won't work on the current version.
-
----
-
-## ✅ JOB 2 — Two switches in Supabase (5 minutes)
-
-Go to **supabase.com** and open your LEVL project.
-
-### 2a. Leaked-password protection — ❌ not available, and already handled
-
-**If you tried this and got "available on Pro Plans and up" — that's expected.**
-Supabase gates that feature behind a paid plan. You did nothing wrong.
-
-**You don't need it.** I've built the same protection into the app itself, for
-free. When someone signs up or changes their password, LEVL now checks it
-against the Have I Been Pwned database of passwords exposed in real data
-breaches, and refuses the ones that appear there.
-
-*Your password is never sent anywhere.* The app hashes it, sends only the first
-5 characters of that hash, gets back several hundred possible matches, and
-compares them on your phone. The server can't tell which one you asked about,
-and never sees the password.
-
-I tested it live. `Password1!` — which passes every "use a capital, a number and
-a symbol" rule you've ever seen — has been exposed **584,516 times** and is now
-rejected. A random password passes.
-
-Supabase's dashboard will still warn you this feature is off. **Ignore it** —
-you're covered a different way.
-
-**Still worth doing while you're in there:** find **Minimum password length** and
-set it to **8**, so the server agrees with the app. That part is free.
-
-### 2b. Change the push notification password
-1. Left sidebar → **Edge Functions** → click **push** → **Secrets** (or
-   **Settings**)
-2. Find `PUSH_HOOK_SECRET`. Replace its value with a new random string — mash the
-   keyboard, 40+ characters, letters and numbers.
-3. **Copy that exact same value.**
-4. Left sidebar → **Database** → **Webhooks** → click **levl_push** → find the
-   header called `x-levl-secret` → paste the same value there.
-5. Save both.
-
-⚠️ **Both must match exactly.** If you change one and not the other,
-notifications stop working. That's why I didn't do this myself — I could only
-reach one of the two places.
-
-*This isn't urgent. It's a tidy-up. Anyone who could read the old value already
-has full access to your database.*
-
----
-
-## ✅ JOB 3 — Put your Privacy Policy and Terms online
+> **Correction to an earlier version of this document.** This used to be Job 3,
+> after the build. That was wrong. Your privacy policy address is baked *into*
+> the app when it is built, so building before this step means building twice.
+> Sorry — my mistake, not yours.
 
 **Why this matters:** Apple requires a working link to your privacy policy, and
 they check it. Right now those links point at **claude.ai** — my servers, not
@@ -328,6 +251,91 @@ actual code staying private. That's about 5 extra minutes.
 
 **Either way, push the code somewhere today.** The backup matters more than the
 hosting.
+
+---
+
+## ✅ JOB 2 — Supabase settings (5 minutes)
+
+Go to **supabase.com** and open your LEVL project.
+
+### 2a. Leaked-password protection — ❌ not available, and already handled
+
+**If you tried this and got "available on Pro Plans and up" — that's expected.**
+Supabase gates that feature behind a paid plan. You did nothing wrong.
+
+**You don't need it.** I've built the same protection into the app itself, for
+free. When someone signs up or changes their password, LEVL now checks it
+against the Have I Been Pwned database of passwords exposed in real data
+breaches, and refuses the ones that appear there.
+
+*Your password is never sent anywhere.* The app hashes it, sends only the first
+5 characters of that hash, gets back several hundred possible matches, and
+compares them on your phone. The server can't tell which one you asked about,
+and never sees the password.
+
+I tested it live. `Password1!` — which passes every "use a capital, a number and
+a symbol" rule you've ever seen — has been exposed **584,516 times** and is now
+rejected. A random password passes.
+
+Supabase's dashboard will still warn you this feature is off. **Ignore it** —
+you're covered a different way.
+
+**Still worth doing while you're in there:** find **Minimum password length** and
+set it to **8**, so the server agrees with the app. That part is free.
+
+### 2b. Change the push notification password
+1. Left sidebar → **Edge Functions** → click **push** → **Secrets** (or
+   **Settings**)
+2. Find `PUSH_HOOK_SECRET`. Replace its value with a new random string — mash the
+   keyboard, 40+ characters, letters and numbers.
+3. **Copy that exact same value.**
+4. Left sidebar → **Database** → **Webhooks** → click **levl_push** → find the
+   header called `x-levl-secret` → paste the same value there.
+5. Save both.
+
+⚠️ **Both must match exactly.** If you change one and not the other,
+notifications stop working. That's why I didn't do this myself — I could only
+reach one of the two places.
+
+*This isn't urgent. It's a tidy-up. Anyone who could read the old value already
+has full access to your database.*
+
+---
+
+## ✅ JOB 3 — Make a new app build
+
+**Do this only after Jobs 1 and 2**, so the new policy links are inside the
+binary.
+
+**Why:** The database is now stricter than the app currently on your phone. The
+version your testers have will fail when they try to accept a friend request or
+answer a duel. The fixed app code is ready and waiting — it just needs building.
+
+You needed a new build anyway; several other changes require one.
+
+**What to do** — open Terminal, and run these one at a time:
+
+```bash
+cd ~/LEVL
+```
+
+```bash
+git checkout main
+```
+
+```bash
+git merge prelaunch-hardening
+```
+
+```bash
+eas build --platform ios --profile production
+```
+
+The build takes roughly 15–25 minutes. When it finishes, submit it to TestFlight
+as you normally do.
+
+**Until you do this, tell your testers:** adding friends and accepting duels
+won't work on the current version.
 
 ---
 
@@ -408,13 +416,16 @@ needs a full App Store review.
 
 # Quick reference
 
-| Job | Time | Blocking submission? |
-|---|---|---|
-| 1. New build | 25 min | **Yes** |
-| 2. Supabase secret + min length | 5 min | No — leaked-password protection is handled in the app instead |
-| 3. GitHub + legal pages | 20 min | **Yes** — Apple checks the privacy link |
-| 4. App Store Connect | 30 min | **Yes** |
-| 5. Test on your phone | 45 min | **Yes** — please don't skip it |
+| Order | Job | Time | Blocking submission? |
+|---|---|---|---|
+| 1st | GitHub + legal pages | 20 min | **Yes** — Apple checks the privacy link, and the link must be in the build |
+| 2nd | Supabase settings | 5 min | No — done, apart from the minimum-length setting |
+| 3rd | New app build | 25 min | **Yes** |
+| 4th | App Store Connect | 30 min | **Yes** |
+| 5th | Test on your phone | 45 min | **Yes** — please don't skip it |
+
+⚠️ **The order matters.** The privacy policy address is compiled into the app, so
+GitHub must come before the build or you will build twice.
 
 **Documents in this repo:**
 - `LEVL-NEXT-STEPS.md` ← you are here
