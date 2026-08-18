@@ -73,4 +73,4 @@ an account that breaks these terms.
 
 ## Contact
 
-**[YOUR SUPPORT EMAIL]**
+**support@levl.app**
