@@ -29,6 +29,7 @@ import {
 import { WINDOW_PRESETS, windowLabel, formatMinute } from '../hooks/useCheckInPreferences';
 import { setUsername as claimUsername, listBlocked, unblockUser } from '../services/supabase/checkInService';
 import { deleteAccount } from '../services/supabase/authService';
+import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from '../services/legal';
 import notifications from '../services/notifications';
 import haptics from '../services/haptics';
 
@@ -466,6 +467,25 @@ export default function SettingsScreen({
           <GhostBtn onPress={signOut} style={{ marginTop: 10 }}>
             {userEmail ? 'Sign out' : 'Sign in / create account'}
           </GhostBtn>
+        </Section>
+
+        {/* Apple requires a reachable privacy policy for any app that collects
+            data, and these must be findable from inside the app — not only on
+            the store listing. */}
+        <Section label="LEGAL & SUPPORT">
+          <GhostBtn onPress={() => Linking.openURL(PRIVACY_URL)}>Privacy Policy</GhostBtn>
+          <GhostBtn onPress={() => Linking.openURL(TERMS_URL)} style={{ marginTop: 10 }}>
+            Terms of Use
+          </GhostBtn>
+          <GhostBtn
+            onPress={() => Linking.openURL('mailto:' + SUPPORT_EMAIL + '?subject=LEVL%20support')}
+            style={{ marginTop: 10 }}>
+            Contact support
+          </GhostBtn>
+          <Text style={{ ...T.caption, color: C.faint, marginTop: 10, lineHeight: 17 }}>
+            Report any Check In or comment from its ⋯ menu. Reports are reviewed
+            within 24 hours.
+          </Text>
         </Section>
 
         <Section label="HELP & DATA">

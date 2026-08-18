@@ -250,3 +250,15 @@ export async function deleteAccount() {
   try { await supabase.auth.signOut(); } catch (e) {}
   return { error: null };
 }
+
+/* Records that this user accepted the terms. The version is written server-side
+ * by accept_terms(), so a client cannot backdate or forge an acceptance. */
+export async function acceptTerms(version) {
+  if (!isConfigured) return { error: null };
+  try {
+    const { error } = await supabase.rpc('accept_terms', { p_version: version });
+    return { error: error || null };
+  } catch (e) {
+    return { error: { message: String((e && e.message) || e) } };
+  }
+}

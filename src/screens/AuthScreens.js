@@ -1,11 +1,12 @@
 // LEVL React Native — auth, physical-profile onboarding, account transfer
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing, Dimensions } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing, Dimensions, Linking } from 'react-native';
 import { C, s, MONO, RADIUS, TYPE, TOUCH } from '../theme';
 import { Card, Lbl, Chip, GoldBtn, GhostBtn, ChunkyBtn, LevlMark } from '../components/ui';
 import { copyText, pasteText } from '../services/platform';
 import { isConfigured } from '../services/supabase/client';
-import { signInEmail, signUpEmail, resetPassword, verifyResetCode, setNewPassword } from '../services/supabase/authService';
+import { signInEmail, signUpEmail, resetPassword, verifyResetCode, setNewPassword, acceptTerms } from '../services/supabase/authService';
+import { PRIVACY_URL, TERMS_URL, TERMS_VERSION } from '../services/legal';
 import { isAppleAuthAvailable, signInWithApple } from '../services/appleAuth';
 
 // Friendlier text for the handful of Supabase auth errors a user actually hits.
@@ -164,6 +165,9 @@ function AuthField({ label, ...props }) {
 
 /* ------------------------------ auth screen ------------------------------ */
 export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }) {
+  // Guideline 1.2: a social app must have the user's AGREEMENT before they can
+  // post, and agreement means an affirmative act — not a link they walked past.
+  const [agreed, setAgreed] = useState(false);
   const [mode, setMode] = useState('signin');
   const [email, setEmail] = useState('');
   const [pw, setPw] = useState('');
@@ -223,6 +227,10 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
   };
 
   const submit = async () => {
+    if (mode === 'signup' && !agreed) {
+      setErr('Please accept the Terms of Use and Privacy Policy to continue.');
+      return;
+    }
     setErr(''); setNotice('');
     const em = email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setErr('Enter a valid email address.'); return; }
@@ -238,6 +246,9 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
         if (mode === 'signup') {
           if (pw !== pw2) { setErr('Passwords do not match.'); setBusy(false); return; }
           const { data, error } = await signUpEmail(em, pw);
+          // Recorded server-side against the profile, with the version, so the
+          // acceptance is evidence rather than a checkbox that vanished.
+          if (!error) acceptTerms(TERMS_VERSION).catch(() => {});
           if (error) { setErr(readableAuthError(error.message)); setBusy(false); return; }
 
           // Supabase returns a session ONLY if email confirmation is off. If
@@ -393,6 +404,39 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
           {mode === 'signup' && (
             <AuthField label="Confirm password" value={pw2} onChangeText={setPw2} placeholder="Repeat it" secureTextEntry />
           )}
+
+          {/* Unticked by default and required to submit. A pre-ticked box is not
+              consent, and reviewers do check. */}
+          {mode === 'signup' ? (
+            <Pressable
+              onPress={() => setAgreed((v) => !v)}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: agreed }}
+              accessibilityLabel="I agree to the Terms of Use and Privacy Policy"
+              style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 18 }}>
+              <View style={{
+                width: 22, height: 22, borderRadius: 6, marginTop: 1, marginRight: 11,
+                alignItems: 'center', justifyContent: 'center',
+                backgroundColor: agreed ? C.gold : 'transparent',
+                borderWidth: 1.5, borderColor: agreed ? C.gold : C.line,
+              }}>
+                {agreed ? <Text style={{ fontSize: 13, fontWeight: '900', color: C.ink }}>✓</Text> : null}
+              </View>
+              <Text style={{ flex: 1, fontSize: 12.5, color: C.mut, lineHeight: 18 }}>
+                I agree to the{' '}
+                <Text
+                  style={{ color: C.gold, fontWeight: '700' }}
+                  onPress={() => Linking.openURL(TERMS_URL)}
+                  accessibilityRole="link">Terms of Use</Text>
+                {' '}and{' '}
+                <Text
+                  style={{ color: C.gold, fontWeight: '700' }}
+                  onPress={() => Linking.openURL(PRIVACY_URL)}
+                  accessibilityRole="link">Privacy Policy</Text>
+                , including zero tolerance for abusive content.
+              </Text>
+            </Pressable>
+          ) : null}
           {err ? <Text style={{ fontSize: 12.5, color: C.red, marginBottom: 14, fontWeight: '600' }}>{err}</Text> : null}
           {notice ? <Text style={{ fontSize: 12.5, color: C.green, marginBottom: 14, fontWeight: '600' }}>{notice}</Text> : null}
           {resetSent ? (
