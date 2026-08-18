@@ -625,7 +625,20 @@ export function useGameSave({ toast, onLevelUp, stage }) {
     } catch (e) { return null; }
   }, [data]);
 
+  /* Backup codes exist for ONE job: moving a save to a new device. They were
+   * also the fastest way to forge a rank — paste any crafted payload and the
+   * app wrote it straight to state and disk, no questions asked.
+   *
+   * Restricting it to accounts with nothing to lose keeps the legitimate use
+   * (fresh install, fresh account, guest) and removes the abuse: you can no
+   * longer overwrite an account that already has training on it. The server-side
+   * xp clamp (sql/2811) is the backstop for anything that gets past this. */
   const importCode = useCallback((code) => {
+    const existing = (data.lifts || []).length + (data.cardio || []).length;
+    if (existing > 0) {
+      toast('Import only works on an empty account — this one already has training logged', 'error');
+      return false;
+    }
     try {
       const payload = JSON.parse(b64decode(code.trim()));
       const knownApp = payload && (payload.app === 'levl' || payload.app === 'ascend');
@@ -635,7 +648,7 @@ export function useGameSave({ toast, onLevelUp, stage }) {
       toast('Save restored from backup code', 'green');
       return true;
     } catch (e) { toast('Could not read that backup code', 'error'); return false; }
-  }, [persist, toast]);
+  }, [data.lifts, data.cardio, persist, toast]);
 
   /* ------------------------------- account ------------------------------- */
 

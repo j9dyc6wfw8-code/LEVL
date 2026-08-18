@@ -12,37 +12,12 @@ import { coinBalance, toKg } from '../../engine/engine';
 // Weekly XP isn't a stored field — derive it from this week's records so the
 // leaderboard has something real to sort on. Sums xp from lifts+cardio whose
 // timestamp falls in the last 7 days.
-function weeklyXPfrom(data) {
-  const weekAgo = Date.now() - 7 * 86400000;
-  const all = [...(data.lifts || []), ...(data.cardio || [])];
-  return all.reduce((sum, e) => (e.t >= weekAgo ? sum + (e.xp || 0) : sum), 0);
-}
 
 // Heaviest single estimated 1RM across all logged lifts, normalised to kg so
 // kg and lb users are ranked on the same scale.
-function bestLiftFrom(data) {
-  const unit = data.unit || 'kg';
-  let best = 0, name = null;
-  (data.lifts || []).forEach((l) => {
-    const kg = toKg(l.e1rm || 0, unit);
-    if (kg > best) { best = kg; name = l.ex; }
-  });
-  return { kg: Math.round(best * 10) / 10, name };
-}
 
 // Share of the last 28 days with any logged activity. A fairer "most
 // consistent" measure than a raw streak, which one missed day resets to zero.
-function consistencyFrom(data) {
-  const DAY = 86400000, now = Date.now(), since = now - 28 * DAY;
-  const days = new Set();
-  [...(data.lifts || []), ...(data.cardio || [])].forEach((e) => {
-    if (e && e.t >= since) {
-      const d = new Date(e.t);
-      days.add(d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate());
-    }
-  });
-  return Math.round((days.size / 28) * 100);
-}
 
 // Map the app's derived view (dv) + save (data) onto a profile row.
 // Only public, display-safe fields go here. Every value below is one that
@@ -58,7 +33,6 @@ function consistencyFrom(data) {
 // have; sql/2801_social_core.sql de-duplicates them and adds the unique index.
 export function toProfileRow(userId, data, dv) {
   const streak = (dv && dv.streak) || 0;
-  const best = bestLiftFrom(data);
   return {
     id: userId,
     display_name: data.name || 'Player',
@@ -77,16 +51,25 @@ export function toProfileRow(userId, data, dv) {
     coins: coinBalance(data),
     rank: dv && dv.tier ? dv.tier.name : 'Bronze',
     league: dv && dv.tier ? dv.tier.name : 'Bronze',
-    weekly_xp: weeklyXPfrom(data),
     streak,
     longest_streak: Math.max(streak, (data._longestStreak || 0)),  // best-effort; grows over time
-    best_e1rm: best.kg,
-    best_lift_name: best.name,
-    consistency: consistencyFrom(data),
     last_active: new Date().toISOString(),
     updated_at: new Date().toISOString(),
   };
 }
+
+/* WHY weekly_xp, best_e1rm, best_lift_name AND consistency ARE NOT SENT
+ *
+ * They are the columns the leaderboard sorts by, and they used to be written
+ * from the local save — which meant the ladder ranked whatever the client
+ * claimed. They are now DERIVED on the server from the workouts table by
+ * levl_recompute_profile_stats(), and the authenticated role no longer holds
+ * UPDATE on them at all. Including them here would not just be ignored: the
+ * grant makes the whole row update fail.
+ *
+ * Anything added to this object in future must be a column the client is still
+ * allowed to write. See sql/2811_leaderboard_integrity.sql.
+ */
 
 // Upsert my own profile (called after workouts sync).
 export async function upsertMyProfile(data, dv) {
