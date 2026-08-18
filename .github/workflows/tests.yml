@@ -1,0 +1,30 @@
+name: tests
+
+# Two regressions reached a running simulator during one afternoon of work: a
+# component deleted by a bad text replacement, and a helper removed during a
+# refactor. Both were invisible to every static check at the time. This is the
+# net that catches the next one before it is committed.
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      # The suites need the app's own babel and its dependency tree to resolve
+      # imports; nothing else is installed.
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run the suite
+        run: npm test
