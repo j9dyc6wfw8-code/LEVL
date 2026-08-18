@@ -28,7 +28,7 @@ Verified by re-running the original attacks as a real signed-in user and as
 | 5 | Fix the push webhook URL | ✅ **applied** | trigger repointed at the Edge Function |
 | 6 | Turn off **Verify JWT** on the `push` function | ✅ **applied** | redeployed as version 3, `verify_jwt: false` |
 | 7 | Rotate the `x-levl-secret` push secret | ☐ **You** — deliberately left; see note below. Low urgency. |
-| 8 | Host Privacy Policy + Terms on a domain you own | ☐ **You** create repo/Pages → then I swap the URLs |
+| 8 | Host Privacy Policy + Terms somewhere you control | ✅ **done** — GitHub Pages from `/docs` in the LEVL repo. Both URLs verified loading; [legal.js](src/services/legal.js) updated. Repo is also now backed up off the laptop. |
 | 9 | Content filtering — blocklist + auto-hide on 3 reports (Guideline 1.2) | ✅ **applied** | 122 terms live; word-boundary + leetspeak matching verified 13/13 |
 | 10 | Terms state the 24-hour commitment | ✅ already stated; now also describes filtering and auto-hide | |
 | 11 | iPad — **dropped**, iPhone only | ✅ `app.json`, `TARGETED_DEVICE_FAMILY=1`, `~ipad` orientations removed | |

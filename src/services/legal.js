@@ -16,17 +16,28 @@
 
 export const TERMS_VERSION = '2026-08-18';
 
-/* These point at the published copies of /docs/privacy.html and /docs/terms.html.
+/* GitHub Pages, serving /docs from the LEVL repository.
  *
- * They previously pointed at levl.app, which is NOT ours — the domain is listed
- * for sale on Atom.com, and /privacy and /terms both returned 404. A privacy
- * policy URL that lands on a for-sale page is an immediate App Store rejection,
- * so these had to become links that resolve before anything else.
+ * These have now had three homes, and the first two are worth recording so
+ * nobody restores one by accident:
  *
- * Moving to your own domain later is a one-line change here plus a build: host
- * the two files in /docs and swap these two constants. */
-export const PRIVACY_URL = 'https://claude.ai/code/artifact/cb1a58e5-a578-4213-9992-acc108869397';
-export const TERMS_URL = 'https://claude.ai/code/artifact/99ef57a5-aead-486e-9d4b-7fa8906b3dee';
+ *   1. levl.app — NOT ours. The domain is listed for sale and both paths 404'd.
+ *      A privacy policy URL landing on a for-sale page is an instant rejection.
+ *   2. claude.ai artifact links — they resolved, but on a third party's domain,
+ *      pinned to a snapshot, and revocable by someone other than us. Apple
+ *      requires a privacy policy that stays reachable, and GDPR expects you to
+ *      be able to publish an updated notice; neither is true of a link you do
+ *      not control.
+ *   3. Here. Same repository as the app, served from /docs, so the published
+ *      policy and the source in legal/ can never silently disagree — updating
+ *      one is updating the other.
+ *
+ * NOTE THE CAPITALS. The repository is `LEVL`, and GitHub Pages paths are
+ * case-sensitive: /levl/privacy.html is a 404.
+ *
+ * Moving to your own domain later is a one-line change here plus a build. */
+export const PRIVACY_URL = 'https://j9dyc6wfw8-code.github.io/LEVL/privacy.html';
+export const TERMS_URL = 'https://j9dyc6wfw8-code.github.io/LEVL/terms.html';
 export const SUPPORT_EMAIL = 'Levlup18@gmail.com';
 
 // True when this user has never accepted, or accepted a version older than the

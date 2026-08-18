@@ -430,7 +430,13 @@ Source: [App Review Guidelines §1.2](https://developer.apple.com/app-store/revi
 
 ### P0-7 — Your Privacy Policy and Terms are hosted on claude.ai
 
-**Status: CONFIRMED.**
+**Status: ✅ RESOLVED 19 August 2026.** Now served from GitHub Pages out of the
+app's own repository — `https://j9dyc6wfw8-code.github.io/LEVL/privacy.html` and
+`.../terms.html`, both verified loading. Because they are served from `/docs` in
+the same repo as the app, the published policy and the source in `legal/` cannot
+silently drift apart. The original finding follows.
+
+**Status when found: CONFIRMED.**
 
 **Problem.** [src/services/legal.js](src/services/legal.js):
 
