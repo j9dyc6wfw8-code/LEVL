@@ -111,10 +111,6 @@ function DuelHistory({ past }) {
 // also retires a duplicate doorway, since Friends already had its own modal
 // route (levl://friends). The focusFriendsSignal effect moved up with it.
 export default function DuelTab({ data, dv, startDuel, claimDuel, forfeitDuel, friendDuels, onCreateInvite, onJoinByCode, enabled = true }) {
-  if (!enabled) {
-    return <Unavailable title="Duels are paused" body="New duels are switched off for a moment. Any duel already running is unaffected and still scoring." />;
-  }
-
   const now = Date.now();
   const [confirmFF, setConfirmFF] = useState(false);
   const duels = data.duels || [];
@@ -122,6 +118,14 @@ export default function DuelTab({ data, dv, startDuel, claimDuel, forfeitDuel, f
   const past = duels.filter((x) => x.status === 'finished').sort((a, b) => b.endT - a.endT).slice(0, 6);
   const est = estimateDailyOutput(data, now);
   const recKey = recommendedDuelTier(est);
+
+  /* The gate sits BELOW every hook on purpose. app_config loads asynchronously,
+     so `enabled` genuinely flips true -> false after mount — and an early return
+     above the hooks would change the hook COUNT between those two renders, which
+     is React's "Rendered more hooks than during the previous render" crash. */
+  if (!enabled) {
+    return <Unavailable title="Duels are paused" body="New duels are switched off for a moment. Any duel already running is unaffected and still scoring." />;
+  }
 
   return (
     <View style={{ flex: 1 }}>

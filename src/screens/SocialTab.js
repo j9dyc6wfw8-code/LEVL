@@ -223,17 +223,6 @@ export default function SocialTab({
     setScope, unreadCount, pendingRequests,
   ]);
 
-  if (!enabled) {
-    return (
-      <View style={{ flex: 1, padding: 14 }}>
-        <Unavailable
-          title="Social is paused"
-          body="The feed is switched off for a moment while we fix something. Your Check Ins are safe, and everything else in LEVL still works."
-        />
-      </View>
-    );
-  }
-
   /* ------------------------------- rendering ------------------------------ */
 
   const renderItem = useCallback(({ item }) => (
@@ -270,6 +259,22 @@ export default function SocialTab({
       />
     );
   }, [feed.loading, feed.error, feed.refresh, user, scope, onOpenCamera, onOpenFriends, publicDiscovery, setScope, onOpenIntro]);
+
+  /* Below every hook on purpose. app_config loads asynchronously, so `enabled`
+     genuinely flips true -> false after mount, and an early return above the
+     hooks would change the hook COUNT between those renders — React's "Rendered
+     more hooks than during the previous render" crash. The kill switch must not
+     itself be the outage. */
+  if (!enabled) {
+    return (
+      <View style={{ flex: 1, padding: 14 }}>
+        <Unavailable
+          title="Social is paused"
+          body="The feed is switched off for a moment while we fix something. Your Check Ins are safe, and everything else in LEVL still works."
+        />
+      </View>
+    );
+  }
 
   return (
     <>

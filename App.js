@@ -23,7 +23,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, Pressable, ScrollView, StatusBar, StyleSheet,
-  KeyboardAvoidingView, Platform, Modal, AppState,
+  KeyboardAvoidingView, Platform, Modal, AppState, Alert,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -95,6 +95,7 @@ import haptics from './src/services/haptics';
 const SPLASH_MS = 3500;
 const INTRO_KEY = 'ascend.introSeen.v1';
 const SOCIAL_INTRO_KEY = 'levl.socialIntroSeen.v1';
+const GUEST_PROMPT_KEY = 'levl.guestBackupPrompt.v1';
 const LAST_USER_KEY = 'ascend-last-user';
 
 // Toast colours, resolved here so the data layer can name a tone rather than
@@ -235,9 +236,54 @@ function AppInner() {
   const prefsApi = useCheckInPreferences(user);
   const prefs = prefsApi.prefs;
   const checkIn = useCheckIn(user, prefs);
+  /* Social opens on Friends, which for a brand new user is an empty room — and
+   * an empty feed reads as a broken app, not a new one. If they have no friends
+   * yet, open on Discover instead, where there is something to see. Moved once,
+   * automatically, and never again after they have touched the control or added
+   * anyone. */
   const [scope, setScope] = useState('friends');
+  const [scopeAutoMoved, setScopeAutoMoved] = useState(false);
+  useEffect(() => {
+    if (scopeAutoMoved || stage !== 'app') return;
+    if (!friends || friends.loading || !friends.available) return;
+    setScopeAutoMoved(true);
+    if ((friends.friends || []).length === 0 && prefs && prefs.public_discovery !== false) {
+      setScope('public');
+    }
+  }, [stage, friends, prefs, scopeAutoMoved]);
   const feed = useCheckInFeed(user, scope);
   const health = useHealth(stage === 'app');
+
+  /* ---- guests have something to lose now -----------------------------------
+   * "Continue as guest / Saves to this device only" is honest but far too quiet
+   * for what it means: delete the app and months of training go with it. Nobody
+   * reads a 10.5pt caption before tapping the fastest-looking button on screen.
+   *
+   * So we say nothing at the start, when they have nothing to lose, and ask once
+   * after the THIRD logged session — the point where the history is worth
+   * keeping and the app has earned the right to ask. Once only, ever.
+   * ---------------------------------------------------------------------- */
+  const [guestPrompted, setGuestPrompted] = useState(true);
+  useEffect(() => {
+    stGet(GUEST_PROMPT_KEY).then((v) => setGuestPrompted(v === '1')).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (stage !== 'app' || user || guestPrompted) return;
+    const logged = (data.lifts || []).length + (data.cardio || []).length;
+    if (logged < 3) return;
+    setGuestPrompted(true);
+    stSet(GUEST_PROMPT_KEY, '1').catch(() => {});
+    Alert.alert(
+      'Save your progress?',
+      'You are training as a guest, so this history lives only on this phone. '
+      + 'If you delete the app or lose the device, it is gone. Creating a free '
+      + 'account backs it up and lets you add friends.',
+      [
+        { text: 'Not now', style: 'cancel' },
+        { text: 'Create account', onPress: () => setStage('auth') },
+      ],
+    );
+  }, [stage, user, guestPrompted, data.lifts, data.cardio]);
 
   /* The six events. Fired here rather than scattered through the screens, so the
    * whole funnel is legible in one place and nobody has to grep for what is
