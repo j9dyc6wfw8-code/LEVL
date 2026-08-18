@@ -9,6 +9,7 @@ import { signInEmail, signUpEmail, resetPassword, verifyResetCode, setNewPasswor
 import { PRIVACY_URL, TERMS_URL, TERMS_VERSION } from '../services/legal';
 import telemetry from '../services/telemetry';
 import { isAppleAuthAvailable, signInWithApple } from '../services/appleAuth';
+import { breachWarning } from '../services/breachCheck';
 
 // Friendlier text for the handful of Supabase auth errors a user actually hits.
 function readableAuthError(msg) {
@@ -243,6 +244,16 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
     if (pw.length < 8) { setErr('Password must be at least 8 characters.'); return; }
     setBusy(true);
 
+    // Reject passwords already published in a breach. Supabase does this too,
+    // but only on the Pro plan; breachWarning() is the same check against the
+    // same data, run on the device. It fails open, so a slow or unreachable
+    // HIBP never blocks a signup. Only on signup — refusing to let somebody
+    // SIGN IN with a password they already have would just lock them out.
+    if (mode === 'signup') {
+      const warning = await breachWarning(pw);
+      if (warning) { setErr(warning); setBusy(false); return; }
+    }
+
     // Cloud path: real Supabase auth, when configured. This runs ALONGSIDE the
     // existing local account system below rather than replacing it — local
     // save-keying (by email) and merge logic are untouched either way, so the
@@ -349,6 +360,10 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
     if (!resetCode.trim()) { setErr('Enter the 6-digit code from your email.'); return; }
     if (!resetPw || resetPw.length < 8) { setErr('New password must be at least 8 characters.'); return; }
     setErr(''); setNotice(''); setBusy(true);
+    // Checked BEFORE the code is spent, so a rejected password does not also
+    // cost them their one-time reset code.
+    const pwned = await breachWarning(resetPw);
+    if (pwned) { setErr(pwned); setBusy(false); return; }
     const v = await verifyResetCode(em, resetCode);
     if (v.error) { setBusy(false); setErr(readableAuthError(v.error.message) || 'That code is invalid or expired.'); return; }
     const u = await setNewPassword(resetPw);

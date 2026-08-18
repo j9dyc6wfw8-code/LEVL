@@ -30,6 +30,14 @@ export async function sha256Hex(str) {
   }
 }
 
+// SHA-1, used ONLY for the Have I Been Pwned range lookup, which specifies that
+// algorithm. Never used for anything that needs to be secure — SHA-1 is broken
+// for collision resistance and has no business near a credential otherwise.
+// No fallback: if this cannot run we must not guess, we must skip the check.
+export async function sha1Hex(str) {
+  return Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA1, str);
+}
+
 export async function copyText(t) {
   try { await Clipboard.setStringAsync(t); return true; } catch (e) { return false; }
 }

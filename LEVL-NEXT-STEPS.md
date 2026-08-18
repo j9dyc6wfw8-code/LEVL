@@ -231,14 +231,30 @@ won't work on the current version.
 
 Go to **supabase.com** and open your LEVL project.
 
-### 2a. Turn on leaked-password protection
-1. Left sidebar → **Authentication**
-2. Click **Policies** (or **Providers** → Email, depending on your version)
-3. Find **"Prevent use of leaked passwords"** → turn it **ON**
-4. While you're there, find **Minimum password length** and set it to **8**
+### 2a. Leaked-password protection — ❌ not available, and already handled
 
-*This checks new passwords against a public list of passwords known to have been
-stolen in past data breaches. It's free and it's one click.*
+**If you tried this and got "available on Pro Plans and up" — that's expected.**
+Supabase gates that feature behind a paid plan. You did nothing wrong.
+
+**You don't need it.** I've built the same protection into the app itself, for
+free. When someone signs up or changes their password, LEVL now checks it
+against the Have I Been Pwned database of passwords exposed in real data
+breaches, and refuses the ones that appear there.
+
+*Your password is never sent anywhere.* The app hashes it, sends only the first
+5 characters of that hash, gets back several hundred possible matches, and
+compares them on your phone. The server can't tell which one you asked about,
+and never sees the password.
+
+I tested it live. `Password1!` — which passes every "use a capital, a number and
+a symbol" rule you've ever seen — has been exposed **584,516 times** and is now
+rejected. A random password passes.
+
+Supabase's dashboard will still warn you this feature is off. **Ignore it** —
+you're covered a different way.
+
+**Still worth doing while you're in there:** find **Minimum password length** and
+set it to **8**, so the server agrees with the app. That part is free.
 
 ### 2b. Change the push notification password
 1. Left sidebar → **Edge Functions** → click **push** → **Secrets** (or
@@ -395,7 +411,7 @@ needs a full App Store review.
 | Job | Time | Blocking submission? |
 |---|---|---|
 | 1. New build | 25 min | **Yes** |
-| 2. Supabase switches | 5 min | Password protection: no. Both are quick wins. |
+| 2. Supabase secret + min length | 5 min | No — leaked-password protection is handled in the app instead |
 | 3. GitHub + legal pages | 20 min | **Yes** — Apple checks the privacy link |
 | 4. App Store Connect | 30 min | **Yes** |
 | 5. Test on your phone | 45 min | **Yes** — please don't skip it |

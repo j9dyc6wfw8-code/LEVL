@@ -8,6 +8,7 @@ import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Pla
 import { C, s } from '../theme';
 import { Card, GoldBtn, LevlMark } from '../components/ui';
 import { setNewPassword } from '../services/supabase/authService';
+import { breachWarning } from '../services/breachCheck';
 
 export default function SetNewPasswordScreen({ onDone, onCancel }) {
   const [pw, setPw] = useState('');
@@ -19,6 +20,11 @@ export default function SetNewPasswordScreen({ onDone, onCancel }) {
     if (!pw || pw.length < 8) { setErr('Password must be at least 8 characters.'); return; }
     if (pw !== pw2) { setErr('Those passwords don\u2019t match.'); return; }
     setErr(''); setBusy(true);
+    // Same breach check as signup. This screen is reached from a recovery link,
+    // so it is exactly where somebody reaches for a password they already use
+    // elsewhere. Fails open \u2014 see services/breachCheck.js.
+    const pwned = await breachWarning(pw);
+    if (pwned) { setErr(pwned); setBusy(false); return; }
     const { error } = await setNewPassword(pw);
     setBusy(false);
     if (error) { setErr(error.message || 'Could not update your password.'); return; }
