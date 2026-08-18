@@ -972,7 +972,18 @@ export default function ShopTab({ data, dv, buy, equip, forge, claimTier, claimA
         borderWidth: 1, borderColor: packCount > 0 ? C.gold : C.line,
         borderRadius: RADIUS.md, padding: 14, marginBottom: 12,
       }}>
-        <Text style={{ fontSize: 22, marginRight: 12 }}>🎁</Text>
+        {/* PackGlyph, not 🎁. The reveal this banner leads to is drawn in the
+            same vector idiom, so the entry point may as well match its
+            destination — and the glyph can take the gold tint, which an emoji
+            never can. */}
+        <View style={{
+          width: 38, height: 38, borderRadius: 11, marginRight: 12,
+          alignItems: 'center', justifyContent: 'center',
+          backgroundColor: alpha(packCount > 0 ? C.gold : C.mut, 0.12),
+          borderWidth: 1, borderColor: alpha(packCount > 0 ? C.gold : C.mut, 0.3),
+        }}>
+          <PackGlyph packKey="prime" size={22} color={packCount > 0 ? C.gold : C.mut} strokeWidth={1.7} />
+        </View>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 15, fontWeight: '800', color: C.text }}>
             {packCount > 0 ? `${packCount} pack${packCount > 1 ? 's' : ''} to open` : 'Reward Packs'}

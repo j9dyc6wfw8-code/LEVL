@@ -2,7 +2,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, Animated, Easing, Modal, StyleSheet, AccessibilityInfo, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Polygon, Polyline, Line, Circle, Rect, Path, Text as SvgText } from 'react-native-svg';
+import Svg, { Polygon, Polyline, Line, Circle, Rect, Path, G, Text as SvgText } from 'react-native-svg';
 import { C, s, GRAD, RADIUS, TYPE, MOTION, alpha } from '../theme';
 import haptics from '../services/haptics';
 
@@ -722,11 +722,16 @@ export function BarChart({ data, height }) {
  */
 export function ScreenHeader({ title, hint, right }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 2, marginBottom: 14 }}>
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', marginTop: 4, marginBottom: 16 }}>
       <View style={{ flex: 1 }}>
-        <Text style={{ fontSize: 27, fontWeight: '800', color: C.text, letterSpacing: -0.8 }}>{title}</Text>
+        {/* 700, not 800. SF is already a confident face; the extra weight was
+            reading as shouty rather than authoritative, and at 28pt the tighter
+            tracking does the work that the heavier stem was trying to do. */}
+        <Text style={{ fontSize: 28, fontWeight: '700', color: C.text, letterSpacing: -0.62 }}>{title}</Text>
         {hint ? (
-          <Text style={{ fontSize: 13.5, color: C.mut, fontWeight: '600', marginTop: 3 }}>{hint}</Text>
+          <Text style={{ fontSize: 13.5, color: C.mut, fontWeight: '500', marginTop: 4, letterSpacing: -0.1 }}>
+            {hint}
+          </Text>
         ) : null}
       </View>
       {right || null}
@@ -754,6 +759,71 @@ export function ScreenHeader({ title, hint, right }) {
  * generated from this exact path, so nothing can drift out of sync.
  */
 export const LEVL_GLYPH = 'M30 15h19v52l38-15v19L49 85H30z';
+
+/* THE COIN.
+ *
+ * The header used to draw currency as a gold circle with the letter "C" in it.
+ * A letter standing in for an icon is the cheapest thing an interface can do —
+ * it is what you reach for when you have not drawn the asset yet.
+ *
+ * This is a struck coin: a gold face, a milled inner rim, and the LEVL mark
+ * itself as the device. Currency in this app is earned by training, so making
+ * the brand the thing stamped on it is the honest design — and it costs one
+ * shape the app already owns.
+ */
+export function CoinGlyph({ size, face, ink }) {
+  const S = size || 20;
+  const gold = face || C.gold;
+  const dark = ink || C.ink;
+  return (
+    <Svg width={S} height={S} viewBox="0 0 100 100">
+      <Circle cx="50" cy="50" r="48" fill={gold} />
+      {/* milled rim — the detail that reads as "struck" rather than "circle" */}
+      <Circle cx="50" cy="50" r="40" fill="none" stroke={dark} strokeOpacity="0.22" strokeWidth="3" />
+      <G transform="translate(50 50) scale(0.6) translate(-58.5 -50)">
+        <Path d={LEVL_GLYPH} fill={dark} />
+      </G>
+    </Svg>
+  );
+}
+
+/* THE MARK, WEARING ITS OWN PROGRESS.
+ *
+ * Level progress used to be a 4pt bar stretched across the full width beneath
+ * the header — a generic component that could have come from any app, taking up
+ * a whole row to say one number.
+ *
+ * Wrapping it around the mark instead costs no vertical space at all, and it
+ * gives the logo a job. The ring reads at a glance the way a watch ring does:
+ * you learn its shape, not its percentage.
+ */
+export function LevlRing({ size, pct, tint }) {
+  const S = size || 40;
+  const stroke = 2.6;
+  const r = (S - stroke) / 2 - 0.5;
+  const circ = 2 * Math.PI * r;
+  const p = Math.max(0, Math.min(100, pct || 0));
+  return (
+    <View style={{ width: S, height: S, alignItems: 'center', justifyContent: 'center' }}>
+      <Svg width={S} height={S} style={{ position: 'absolute' }}>
+        <Circle
+          cx={S / 2} cy={S / 2} r={r}
+          stroke={alpha(tint || C.gold, 0.18)} strokeWidth={stroke} fill="none"
+        />
+        <Circle
+          cx={S / 2} cy={S / 2} r={r}
+          stroke={tint || C.gold} strokeWidth={stroke} fill="none"
+          strokeLinecap="round"
+          strokeDasharray={`${circ} ${circ}`}
+          strokeDashoffset={circ * (1 - p / 100)}
+          // start the arc at 12 o'clock rather than 3
+          transform={`rotate(-90 ${S / 2} ${S / 2})`}
+        />
+      </Svg>
+      <LevlMark size={S * 0.62} />
+    </View>
+  );
+}
 
 export function LevlMark({ size, showWord }) {
   const S = size || 30;

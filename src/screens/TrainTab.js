@@ -4,6 +4,7 @@ import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, useWindowDime
 import { C, s, MONO, alpha } from '../theme';
 import { Card, Lbl, Chip, PBar, NumField, GoldBtn, GreenBtn, FadeIn, CountUp, Sheet, ScreenHeader, Segmented } from '../components/ui';
 import MuscleIcon from '../components/MuscleIcon';
+import CardioGlyph from '../components/CardioGlyph';
 import { exerciseInfo } from '../engine/exerciseInfo';
 import { todaysSessions, formatVolume } from '../engine/session';
 import {
@@ -901,8 +902,8 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                     paddingHorizontal: 13, borderRadius: 999, marginRight: 8,
                     backgroundColor: C.panel2, borderWidth: 1, borderColor: alpha(tint, 0.45),
                   }}>
-                  <Text style={{ fontSize: 15, marginRight: 8 }}>{ct.e}</Text>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: C.text }} numberOfLines={1}>{ct.n}</Text>
+                  <CardioGlyph name={ct.n} size={17} color={tint} strokeWidth={1.7} />
+                  <Text style={{ fontSize: 13, fontWeight: '700', color: C.text, marginLeft: 8 }} numberOfLines={1}>{ct.n}</Text>
                 </Pressable>
               );
             })}
@@ -947,7 +948,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                   backgroundColor: alpha(fam.tint, 0.12),
                   borderWidth: 1, borderColor: alpha(fam.tint, 0.3),
                 }}>
-                  <Text style={{ fontSize: 19 }}>{ct.e}</Text>
+                  <CardioGlyph name={ct.n} size={22} color={fam.tint} />
                 </View>
                 <View style={{ flex: 1, paddingRight: 8 }}>
                   <Text style={{ fontSize: 15, fontWeight: '700', color: C.text, letterSpacing: -0.2 }} numberOfLines={1}>
@@ -985,7 +986,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                   backgroundColor: alpha(familyOf(type).tint, 0.14),
                   borderWidth: 1, borderColor: alpha(familyOf(type).tint, 0.34),
                 }}>
-                  <Text style={{ fontSize: 21 }}>{type.e}</Text>
+                  <CardioGlyph name={type.n} size={24} color={familyOf(type).tint} strokeWidth={1.7} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={{ fontSize: 16.5, fontWeight: '800', color: C.text, letterSpacing: -0.3 }} numberOfLines={2}>
@@ -1145,14 +1146,17 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
               <CountUp value={last.xp + (last.bonus || 0)} prefix="+" suffix=" XP" duration={600}
                 style={{ fontSize: 14, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'] }} />
             </View>
-            <Text style={{ fontSize: 13, color: C.mut, marginTop: 7, fontVariant: ['tabular-nums'] }}>
-              {last.emoji} {[
-                last.name,
-                Math.round(last.mins) + ' min',
-                (INTENSITIES.find((i) => i.k === last.inten) || {}).label,
-                last.dist > 0 ? last.dist + ' km' : null,
-              ].filter(Boolean).join(' · ')}
-            </Text>
+            <View style={[s.row, { marginTop: 7 }]}>
+              <CardioGlyph name={last.name} size={16} color={C.mut} />
+              <Text style={{ fontSize: 13, color: C.mut, marginLeft: 7, flex: 1, fontVariant: ['tabular-nums'] }}>
+                {[
+                  last.name,
+                  Math.round(last.mins) + ' min',
+                  (INTENSITIES.find((i) => i.k === last.inten) || {}).label,
+                  last.dist > 0 ? last.dist + ' km' : null,
+                ].filter(Boolean).join(' · ')}
+              </Text>
+            </View>
             {last.bonus > 0 ? (
               <Text style={{ fontSize: 12, color: C.purp, marginTop: 8 }}>
                 First session today: +{last.bonus} XP → Discipline &amp; Vitality

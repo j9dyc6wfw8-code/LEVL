@@ -27,8 +27,8 @@ import {
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { C, s, T, MONO, RADIUS } from './src/theme';
-import { Toasts, LevelUpOverlay, FadeIn, CountUp, LevlMark, Glass } from './src/components/ui';
+import { C, alpha, s, T, MONO, RADIUS } from './src/theme';
+import { Toasts, LevelUpOverlay, FadeIn, CountUp, LevlRing, CoinGlyph, Glass } from './src/components/ui';
 import { coinBalance } from './src/engine/engine';
 import { todaysSessions, primarySessionToday } from './src/engine/session';
 import { stGet, stSet } from './src/services/platform';
@@ -559,21 +559,72 @@ function AppInner() {
         onOpen={(notice) => { setNotifOpen(false); router.open(routeForNotice(notice)); }}
       />
 
-      {/* ---- header: identity left, controls right --------------------- */}
-      <View style={{ paddingHorizontal: 14, paddingTop: 4, paddingBottom: 8 }}>
+      {/* ---- header ------------------------------------------------------
+       * WHAT THIS USED TO BE
+       * A 30pt mark, the word "LEVL" set beside it in letterspaced caps, the
+       * level and rank at 10.5pt underneath, and a 4pt progress bar stretched
+       * across the full width below the whole row.
+       *
+       * Three things were wrong with that. The mark and the wordmark said the
+       * same thing twice, which is the layout equivalent of a raised voice —
+       * and no mature app spends its most valuable row telling its own user
+       * what the app is called. The level, which is the entire point of the
+       * product, was the smallest text on screen. And the progress bar was a
+       * generic full-width rule that could have come from anywhere.
+       *
+       * WHAT IT IS NOW
+       * The ring around the mark IS the progress bar, so a whole row of chrome
+       * disappears and the logo gains a job. The identity line belongs to the
+       * PLAYER — their name, their rank in their tier's colour — because that
+       * is the thing worth being proud of. Every control on the right is the
+       * same 34pt circle, so the row reads as one set rather than three
+       * unrelated widgets.
+       * ------------------------------------------------------------------ */}
+      <View style={{ paddingHorizontal: 14, paddingTop: 4, paddingBottom: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-            <LevlMark size={30} />
-            <View style={{ marginLeft: 9 }}>
-              <Text style={{ fontSize: 15, fontWeight: '800', color: C.text, letterSpacing: 2.4 }}>LEVL</Text>
+          <LevlRing size={40} pct={dv.levelPct} tint={dv.placed ? dv.tier.color : C.gold} />
+
+          <View style={{ marginLeft: 11, flex: 1 }}>
+            <Text
+              numberOfLines={1}
+              style={{ fontSize: 17, fontWeight: '700', color: C.text, letterSpacing: -0.4 }}>
+              {data.name || 'Player'}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
               <Text style={{
-                fontSize: 10.5, fontWeight: '700', letterSpacing: 0.7, marginTop: 1,
+                fontSize: 11.5, fontWeight: '800', letterSpacing: 0.4,
+                color: dv.placed ? dv.tier.color : C.dim, fontVariant: ['tabular-nums'],
+              }}>
+                LV {dv.level}
+              </Text>
+              <View style={{
+                width: 3, height: 3, borderRadius: 1.5, marginHorizontal: 6,
+                backgroundColor: C.faint,
+              }} />
+              <Text style={{
+                fontSize: 11.5, fontWeight: '700', letterSpacing: 0.4,
                 color: dv.placed ? dv.tier.color : C.dim,
               }}>
-                LV {dv.level}{dv.placed ? ' · ' + (dv.tier.name + dv.division).toUpperCase() : ' · UNRANKED'}
+                {dv.placed ? (dv.tier.name + ' ' + dv.division).toUpperCase() : 'UNRANKED'}
               </Text>
             </View>
           </View>
+
+          <Pressable
+            onPress={() => router.open({ tab: 'forge' })}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityLabel="Coins. Opens the Forge."
+            style={{
+              flexDirection: 'row', alignItems: 'center', height: 34,
+              backgroundColor: C.panel2, borderRadius: 999,
+              borderWidth: 1, borderColor: alpha(C.gold, 0.33),
+              paddingLeft: 5, paddingRight: 11, marginRight: 8,
+            }}>
+            <CoinGlyph size={21} />
+            <CountUp value={coinBalance(data)}
+              style={{ fontSize: 13.5, fontWeight: '700', color: C.text, marginLeft: 6, fontVariant: ['tabular-nums'] }} />
+          </Pressable>
 
           {isConfigured && user ? (
             <Pressable
@@ -581,8 +632,13 @@ function AppInner() {
               hitSlop={8}
               accessibilityRole="button"
               accessibilityLabel={'Notifications' + (notificationCenter.unread > 0 ? ', ' + notificationCenter.unread + ' unread' : '')}
-              style={headerBtn}>
-              <NoticeGlyph color={notificationCenter.unread > 0 ? C.gold : C.mut} size={18} />
+              style={{
+                width: 34, height: 34, borderRadius: 17, marginRight: 8,
+                alignItems: 'center', justifyContent: 'center',
+                backgroundColor: C.panel2, borderWidth: 1,
+                borderColor: notificationCenter.unread > 0 ? alpha(C.gold, 0.45) : C.line,
+              }}>
+              <NoticeGlyph color={notificationCenter.unread > 0 ? C.gold : C.mut} size={17} />
               {notificationCenter.unread > 0 ? (
                 <View style={badgeDot}>
                   <Text style={{ fontSize: 9, fontWeight: '800', color: '#fff' }}>
@@ -592,27 +648,6 @@ function AppInner() {
               ) : null}
             </Pressable>
           ) : null}
-
-          <Pressable
-            onPress={() => router.open({ tab: 'forge' })}
-            hitSlop={6}
-            accessibilityRole="button"
-            accessibilityLabel="Coins. Opens the Forge."
-            style={{
-              flexDirection: 'row', alignItems: 'center',
-              backgroundColor: C.panel2, borderRadius: 999,
-              borderWidth: 1, borderColor: C.gold + '55',
-              paddingLeft: 4, paddingRight: 10, paddingVertical: 3, marginRight: 7,
-            }}>
-            <View style={{
-              width: 19, height: 19, borderRadius: 10, backgroundColor: C.gold,
-              alignItems: 'center', justifyContent: 'center', marginRight: 5,
-            }}>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: '#5a3f06' }}>C</Text>
-            </View>
-            <CountUp value={coinBalance(data)}
-              style={{ fontSize: 13.5, fontWeight: '600', color: C.text, fontVariant: ['tabular-nums'] }} />
-          </Pressable>
 
           {/* The profile control, in the one place it lives on every screen. */}
           <Pressable
@@ -627,13 +662,6 @@ function AppInner() {
               size={34}
             />
           </Pressable>
-        </View>
-
-        <View style={{ marginTop: 9, height: 4, borderRadius: 2, backgroundColor: C.panel2, overflow: 'hidden' }}>
-          <View style={{
-            height: 4, borderRadius: 2,
-            width: Math.max(2, Math.min(100, dv.levelPct)) + '%', backgroundColor: C.gold,
-          }} />
         </View>
       </View>
 
@@ -986,11 +1014,6 @@ function ModalShell({ title, onClose, children, scroll = true }) {
   );
 }
 
-const headerBtn = {
-  width: 32, height: 32, borderRadius: 999, marginRight: 7,
-  backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
-  alignItems: 'center', justifyContent: 'center',
-};
 const badgeDot = {
   position: 'absolute', top: -3, right: -3, minWidth: 16, height: 16,
   borderRadius: 8, backgroundColor: C.red, borderWidth: 1.5, borderColor: C.bg,
