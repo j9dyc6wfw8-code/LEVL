@@ -15,7 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { C, alpha, s, RADIUS, TYPE, T, MOTION } from '../theme';
-import { Card, Lbl, Chip, PBar, StatBar, ChunkyBtn, Sheet, EmptyState, ScreenHeader } from '../components/ui';
+import { Card, Lbl, Chip, PBar, StatBar, ChunkyBtn, Sheet, EmptyState, ScreenHeader, Segmented } from '../components/ui';
 import { ItemGlyph, ItemTile, PackGlyph, RewardGlyph } from '../components/ItemGlyph';
 import {
   COSMETICS, SLOTS, RARITY, TIERS, coinBalance, xpBalance, rankStyleFor,
@@ -985,35 +985,17 @@ export default function ShopTab({ data, dv, buy, equip, forge, claimTier, claimA
       </Pressable>
 
       <Card style={[s.hero, { padding: 12 }]}>
-        <View style={{
-          flexDirection: 'row', backgroundColor: C.sunken,
-          borderWidth: 1, borderColor: C.lineSoft, borderRadius: RADIUS.md, padding: 3,
-        }}>
-          {BAYS.map((b) => {
-            const on = bay === b[0];
-            return (
-              <Pressable key={b[0]} onPress={() => setBay(b[0])} style={{
-                flex: 1, paddingVertical: 9, borderRadius: RADIUS.sm, alignItems: 'center',
-                backgroundColor: on ? C.gold : 'transparent',
-              }}>
-                <View style={s.row}>
-                  <Text style={{
-                    ...TYPE.body, fontWeight: on ? '800' : '600',
-                    color: on ? C.ink : C.mut,
-                  }}>{b[1]}</Text>
-                  {b[0] === 'pass' && passClaims > 0 && !on ? (
-                    <View style={{
-                      minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 4,
-                      backgroundColor: C.green, marginLeft: 5, alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <Text style={{ fontSize: 10, fontWeight: '800', color: C.ink }}>{passClaims}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              </Pressable>
-            );
-          })}
-        </View>
+        {/* The pass segment carries its unclaimed-reward count, which is the
+            only thing that should ever pull you into a tab you weren't heading
+            for. */}
+        <Segmented
+          value={bay}
+          onChange={setBay}
+          options={BAYS.map((b) => ({
+            key: b[0], label: b[1],
+            badge: b[0] === 'pass' && passClaims > 0 ? passClaims : null,
+          }))}
+        />
       </Card>
 
       {bay === 'forge' ? <ForgeBay data={data} onForge={forge} /> : null}

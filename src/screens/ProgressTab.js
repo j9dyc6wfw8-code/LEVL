@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { C, s, MONO } from '../theme';
-import { Card, Lbl, Chip, LineChart, BarChart, EmptyState, CountUp, ScreenHeader } from '../components/ui';
+import { Card, Lbl, Chip, LineChart, BarChart, EmptyState, CountUp, ScreenHeader, Segmented } from '../components/ui';
 import { dayKeyOf, fmtShort, DAY, EXERCISES } from '../engine/engine';
 // EntryEditor lives in TrainTab beside the effort scale it shares. The import
 // direction is deliberate: ProgressTab already depended on TrainTab for the
@@ -122,20 +122,7 @@ export default function ProgressTab({ data, dv, onDelete, onEdit }) {
   return (
     <View>
       <ScreenHeader title="Your numbers" hint="Pick a view below" />
-      <View style={{
-        flexDirection: 'row', backgroundColor: C.panel2, borderRadius: 12,
-        padding: 4, marginBottom: 14, borderWidth: 1, borderColor: C.line,
-      }}>
-        {SEGS.map(([k, label]) => (
-          <Pressable key={k} onPress={() => setSeg(k)} hitSlop={4}
-            style={{
-              flex: 1, paddingVertical: 9, borderRadius: 9, alignItems: 'center',
-              backgroundColor: seg === k ? C.gold : 'transparent',
-            }}>
-            <Text style={{ fontSize: 12, fontWeight: '700', color: seg === k ? C.ink : C.mut }}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <Segmented options={SEGS} value={seg} onChange={setSeg} style={{ marginBottom: 14 }} />
 
       {seg === 'overview' && (
         <OverviewView data={data} dv={dv} unit={unit} now={now} sinceT={sinceT}

@@ -29,6 +29,7 @@ import CheckInPrompt from '../components/social/CheckInPrompt';
 import FeedSkeleton from '../components/social/FeedSkeleton';
 import CommentSheet from '../components/social/CommentSheet';
 import SFIcon from '../components/SFIcon';
+import { Segmented } from '../components/ui';
 import { useCheckInComments } from '../hooks/useCheckInComments';
 import { REPORT_REASONS, reportContent, blockUser } from '../services/supabase/checkInService';
 import haptics from '../services/haptics';
@@ -202,35 +203,17 @@ export default function SocialTab({
       />
 
       {user ? (
-        <View style={{
-          flexDirection: 'row', backgroundColor: C.panel2, borderRadius: RADIUS.md,
-          padding: 4, marginBottom: SPACING.xl, borderWidth: 1, borderColor: C.line,
-        }}>
-          {SCOPES.map((s) => {
-            const on = scope === s.key;
+        <Segmented
+          value={scope}
+          onChange={setScope}
+          style={{ marginBottom: SPACING.xl }}
+          options={SCOPES
             // Discover is hidden entirely for anyone who has opted out of public
             // discovery — offering a feed they have chosen not to take part in
             // would be odd.
-            if (s.key === 'public' && publicDiscovery === false) return null;
-            return (
-              <Pressable
-                key={s.key}
-                onPress={() => { haptics.selection(); setScope(s.key); }}
-                accessibilityRole="tab"
-                accessibilityState={{ selected: on }}
-                accessibilityLabel={s.label}
-                style={{
-                  flex: 1, minHeight: 38, borderRadius: 9,
-                  alignItems: 'center', justifyContent: 'center',
-                  backgroundColor: on ? C.gold : 'transparent',
-                }}>
-                <Text style={{ ...T.footnote, fontWeight: '600', color: on ? C.ink : C.mut }}>
-                  {s.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+            .filter((sc) => !(sc.key === 'public' && publicDiscovery === false))
+            .map((sc) => ({ key: sc.key, label: sc.label }))}
+        />
       ) : null}
     </View>
   ), [

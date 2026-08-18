@@ -45,14 +45,22 @@ export function VerifiedBadge({ compact }) {
 
 export default function WorkoutAttachment({ workout, title, unit, expandable = true }) {
   const [open, setOpen] = useState(false);
-  if (!workout) return null;
 
+  // EVERY hook runs before the first return. The `if (!workout) return null`
+  // used to sit above this useCallback, so a card rendered once without a
+  // workout and then again with one ran a different NUMBER of hooks on the two
+  // renders — which is the React error "Rendered more hooks than during the
+  // previous render", i.e. a hard crash of the feed. The feed hits exactly that
+  // transition: a Check In renders first from the list payload and gains its
+  // workout attachment when the detail resolves.
   const toggle = useCallback(() => {
     if (!expandable) return;
     haptics.selection();
     LayoutAnimation.configureNext(LayoutAnimation.create(180, 'easeInEaseOut', 'opacity'));
     setOpen((o) => !o);
   }, [expandable]);
+
+  if (!workout) return null;
 
   // Only the metrics that actually exist get a slot.
   const stats = [];

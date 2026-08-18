@@ -1,9 +1,17 @@
 // LEVL React Native — shared UI atoms, overlays, and SVG charts
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, Animated, Easing, Modal, StyleSheet } from 'react-native';
+import { View, Text, TextInput, Pressable, Animated, Easing, Modal, StyleSheet, AccessibilityInfo, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon, Polyline, Line, Circle, Rect, Path, Text as SvgText } from 'react-native-svg';
-import { C, s, MONO, GRAD, RADIUS, TYPE, MOTION } from '../theme';
+import { C, s, GRAD, RADIUS, TYPE, MOTION, alpha } from '../theme';
+import haptics from '../services/haptics';
+
+/* expo-blur is already a dependency AND already linked in ios/Podfile.lock, so
+ * this costs no new native module and no extra rebuild. It is still required
+ * defensively: if the module is ever unlinked, Glass must degrade to an opaque
+ * panel rather than take the navigation layer down with it. */
+let BlurView = null;
+try { BlurView = require('expo-blur').BlurView || null; } catch (e) { BlurView = null; }
 import { STAT_META } from '../engine/engine';
 
 /* ------------------------------- atoms ---------------------------------- */
@@ -179,45 +187,195 @@ export function HeroStat({ label, value, color, suffix, size }) {
 }
 
 /* ============================ glass surface =============================
- * "Liquid glass" WITHOUT a native blur module.
+ * Real iOS material, not a painted imitation.
  *
- * Real backdrop blur needs expo-blur (a native module). We deliberately don't
- * use it: native modules are what crashed this app twice, and a rebuild costs
- * 30 minutes vs a 60-second OTA update. On a dark charcoal app the visual gap
- * is small, because the convincing part of glass isn't the blur — it's the
- * LAYERING: a translucent fill, a rim light on the top edge, and a scrim.
+ * WHAT THIS USED TO SAY, AND WHY IT CHANGED
+ * This component used to fake glass with a flat translucent fill, on the
+ * reasoning that expo-blur is a native module and native modules cost a
+ * rebuild. That reasoning has expired: expo-blur is in package.json AND in
+ * ios/Podfile.lock, so the binary already carries it. Using it now costs
+ * nothing that has not already been paid, and Expo Go bundles it too.
  *
- * Per Apple's own retreat in iOS 27 (they reduced default transparency after
- * readability complaints), this is used ONLY on the navigation/control layer —
- * sheets and the tab bar. Never on content, never on primary buttons.
+ * WHY IT IS WORTH USING
+ * Blur only reads as glass when live content moves behind it. Both surfaces
+ * this is used on qualify: the tab bar is absolutely positioned over a
+ * ScrollView with 110pt of bottom padding, so cards genuinely travel underneath
+ * it, and a sheet sits over the whole screen. Both were previously 94% opaque,
+ * which is a solid panel with extra steps.
+ *
+ * THE RULES, WHICH HAVE NOT CHANGED
+ *   · Navigation and control layer ONLY — the tab bar and sheets.
+ *   · Never on content, never on primary buttons. Blurred content is unreadable
+ *     content, and Apple themselves walked back default transparency after
+ *     legibility complaints.
+ *   · Always pair the blur with a scrim and a rim light. The blur supplies
+ *     depth; the scrim is what keeps text legible over a bright photo.
+ *   · Honour Reduce Transparency. Someone who has asked the OS for less
+ *     translucency gets a solid panel — this is an accessibility setting, not a
+ *     preference to override.
  */
-export function Glass({ children, style, tint, radius, rim }) {
+
+// iOS exposes Reduce Transparency; Android does not, so it resolves false there.
+function useReduceTransparency() {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    try {
+      if (AccessibilityInfo.isReduceTransparencyEnabled) {
+        AccessibilityInfo.isReduceTransparencyEnabled()
+          .then((v) => { if (alive) setReduce(!!v); })
+          .catch(() => {});
+      }
+    } catch (e) { /* older RN, or a platform without the API */ }
+    let sub = null;
+    try {
+      sub = AccessibilityInfo.addEventListener('reduceTransparencyChanged', (v) => setReduce(!!v));
+    } catch (e) { sub = null; }
+    return () => { alive = false; try { if (sub) sub.remove(); } catch (e) {} };
+  }, []);
+  return reduce;
+}
+
+export function Glass({
+  children, style, tint, radius, rim, border, intensity, pointerEvents, solid,
+}) {
+  const reduce = useReduceTransparency();
   const R = radius != null ? radius : RADIUS.lg;
+  /* Any one of these paints an opaque panel instead.
+   *
+   * ANDROID IS DELIBERATELY EXCLUDED. Android has no free backdrop blur; the
+   * only route is expo-blur's `experimentalBlurMethod`, which renders the view
+   * hierarchy into a bitmap every frame. It is experimental by name, it fights
+   * with elevation and z-ordering, and it is a frame-rate risk on exactly the
+   * surface that is on screen 100% of the time. A clean opaque bar beats a
+   * janky translucent one, so real glass is iOS-only and Android keeps the
+   * solid treatment it already had. */
+  const flat = !!solid || reduce || !BlurView || Platform.OS !== 'ios';
+
   return (
-    <View style={[{ borderRadius: R, overflow: 'hidden' }, style]}>
-      {/* base translucent fill */}
-      <View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        backgroundColor: tint || 'rgba(30,36,50,0.82)',
-      }} />
+    <View pointerEvents={pointerEvents} style={[{ borderRadius: R, overflow: 'hidden' }, style]}>
+      {flat ? (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: tint || 'rgba(20,23,32,0.97)' }]} />
+      ) : (
+        <>
+          <BlurView
+            // A SYSTEM material rather than a plain dark blur: it is the same
+            // effect UIKit gives its own chrome, so the bar reads as part of iOS
+            // rather than as a dark rectangle that happens to be blurry.
+            tint="systemChromeMaterialDark"
+            intensity={intensity != null ? intensity : 60}
+            style={StyleSheet.absoluteFill}
+          />
+          {/* Tint on TOP of the blur, at low alpha. The old 0.94 fill is what
+              made the previous surface look flat — nothing could show through. */}
+          <View style={[StyleSheet.absoluteFill, { backgroundColor: tint || 'rgba(20,23,32,0.52)' }]} />
+        </>
+      )}
+
       {/* scrim — keeps text legible whatever sits behind */}
       <LinearGradient
         colors={['rgba(255,255,255,0.06)', 'rgba(0,0,0,0.10)']}
         start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+        pointerEvents="none"
+        style={StyleSheet.absoluteFill}
       />
       {/* rim light — the single detail that sells "glass edge" */}
       {rim !== false && (
-        <View style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: 1,
-          backgroundColor: 'rgba(255,255,255,0.16)',
+        <View pointerEvents="none" style={{
+          position: 'absolute', top: 0, left: 0, right: 0,
+          height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.16)',
         }} />
       )}
-      <View style={{
-        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-        borderRadius: R, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-      }} />
+      {border !== false && (
+        <View pointerEvents="none" style={[StyleSheet.absoluteFill, {
+          borderRadius: R, borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+        }]} />
+      )}
       {children}
+    </View>
+  );
+}
+
+/* ============================ segmented control ==========================
+ * ONE segmented control for the whole app.
+ *
+ * There were eight hand-rolled versions of this: four on a sunken track and
+ * four on a raised C.panel2 one, with radii of 9 / 12 / RADIUS.md, track
+ * padding of 3 or 4, and heights set by paddingVertical rather than a minimum —
+ * so several landed under Apple's 44pt touch floor once track padding was
+ * counted. The same control looked like a different control on every screen.
+ *
+ * The kept behaviour is CompeteTab's, the best of the eight: a SUNKEN track
+ * with a raised pill, so the active segment reads as physically ON rather than
+ * merely tinted. 38pt items inside 3pt of track padding come to exactly 44pt.
+ *
+ * options: ['key', 'Label'] tuples, or { key, label, sub, badge, tint, a11y }.
+ *   sub   — a second, smaller line (Cardio uses it for the count per discipline)
+ *   badge — a count pill (the Forge uses it for unclaimed pass rewards)
+ *   tint  — overrides the active colour for that one segment
+ */
+export function Segmented({ options, value, onChange, style, tint, dense }) {
+  const items = (options || []).filter(Boolean).map((o) => (
+    Array.isArray(o) ? { key: o[0], label: o[1] } : o
+  ));
+  const H = dense ? 34 : 38;
+  return (
+    <View style={[{
+      flexDirection: 'row', backgroundColor: C.sunken, borderRadius: RADIUS.md,
+      padding: 3, borderWidth: 1, borderColor: C.lineSoft,
+    }, style]}>
+      {items.map((it) => {
+        const on = value === it.key;
+        const active = it.tint || tint || C.gold;
+        return (
+          <Pressable
+            key={it.key}
+            onPress={() => { haptics.selection(); onChange(it.key); }}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: on }}
+            accessibilityLabel={it.a11y || it.label}
+            style={{
+              flex: 1, minHeight: H, borderRadius: RADIUS.sm,
+              alignItems: 'center', justifyContent: 'center',
+              paddingHorizontal: 4,
+              backgroundColor: on ? active : 'transparent',
+            }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {/* Progress carries FIVE segments, which on an SE leaves ~69pt
+                  each. Shrinking beats truncating: "Overview" must never render
+                  as "Overvie…". */}
+              <Text
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.82}
+                style={{
+                  fontSize: dense ? 12 : 12.5, fontWeight: on ? '800' : '600',
+                  color: on ? C.ink : C.mut,
+                }}>
+                {it.label}
+              </Text>
+              {it.badge ? (
+                <View style={{
+                  minWidth: 16, height: 16, borderRadius: 8, paddingHorizontal: 4, marginLeft: 5,
+                  alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: on ? alpha(C.ink, 0.22) : C.green,
+                }}>
+                  <Text style={{ fontSize: 10, fontWeight: '800', color: C.ink }}>{it.badge}</Text>
+                </View>
+              ) : null}
+            </View>
+            {it.sub != null ? (
+              <Text style={{
+                fontSize: 9.5, fontWeight: '700', marginTop: 1,
+                color: on ? alpha(C.ink, 0.6) : C.faint,
+                fontVariant: ['tabular-nums'],
+              }}>
+                {it.sub}
+              </Text>
+            ) : null}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -267,15 +425,16 @@ export function Sheet({ visible, title, onClose, children }) {
         borderTopLeftRadius: 24, borderTopRightRadius: 24, overflow: 'hidden',
         transform: [{ translateY: translate }],
       }}>
-        {/* glass: nav/control layer only */}
-        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(31,36,49,0.94)' }} />
-        <LinearGradient
-          colors={['rgba(255,255,255,0.07)', 'rgba(0,0,0,0.12)']}
-          start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}
+        {/* Real material. The parent already clips to the sheet's rounded top,
+            so this fills it squarely and lets the corners do the shaping. */}
+        <Glass
           pointerEvents="none"
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          style={StyleSheet.absoluteFill}
+          radius={0}
+          border={false}
+          tint="rgba(26,30,42,0.55)"
+          intensity={70}
         />
-        <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, backgroundColor: 'rgba(255,255,255,0.18)' }} />
         <View style={{ alignItems: 'center', paddingTop: 10, paddingBottom: 4 }}>
           <View style={{ width: 38, height: 4, borderRadius: 2, backgroundColor: C.line }} />
         </View>

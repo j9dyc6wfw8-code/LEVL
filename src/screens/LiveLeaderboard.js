@@ -16,7 +16,7 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { C, alpha, T, RADIUS, SPACING } from '../theme';
-import { Card, EmptyState } from '../components/ui';
+import { Card, EmptyState, Segmented } from '../components/ui';
 import { isConfigured } from '../services/supabase/client';
 import { MiniHunter } from '../components/Hunter';
 import { DEFAULT_DATA } from '../engine/engine';
@@ -26,32 +26,11 @@ const BOARDS = [
   { key: 'consistency', label: 'Most consistent', blurb: 'Days trained in the last 28' },
 ];
 
-/* Primary: full width, raised active pill on a sunken track. */
-function BoardControl({ options, value, onChange }) {
-  return (
-    <View style={{
-      flexDirection: 'row', backgroundColor: C.sunken, borderRadius: RADIUS.md,
-      padding: 3, borderWidth: 1, borderColor: C.lineSoft,
-    }}>
-      {options.map(([k, label]) => {
-        const on = value === k;
-        return (
-          <Pressable key={k} onPress={() => onChange(k)}
-            accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={label}
-            style={{
-              flex: 1, minHeight: 38, borderRadius: RADIUS.sm,
-              alignItems: 'center', justifyContent: 'center',
-              backgroundColor: on ? C.gold : 'transparent',
-            }}>
-            <Text style={{ ...T.caption, fontWeight: on ? '800' : '600', letterSpacing: 0.6, color: on ? C.ink : C.mut }}>
-              {label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
+/* This screen's board control WAS this pattern's best implementation; it now
+   lives in the design system as Segmented, and every other screen uses it too. */
+const BoardControl = ({ options, value, onChange }) => (
+  <Segmented options={options} value={value} onChange={onChange} />
+);
 
 /* Secondary: small, outlined, sits inline. Deliberately NOT gold-filled — it
    must not compete with the board control above it. */

@@ -28,7 +28,7 @@ import {
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { C, s, T, MONO, RADIUS } from './src/theme';
-import { Toasts, LevelUpOverlay, FadeIn, CountUp, LevlMark } from './src/components/ui';
+import { Toasts, LevelUpOverlay, FadeIn, CountUp, LevlMark, Glass } from './src/components/ui';
 import { coinBalance } from './src/engine/engine';
 import { todaysSessions, primarySessionToday } from './src/engine/session';
 import { stGet, stSet } from './src/services/platform';
@@ -744,11 +744,18 @@ function AppInner() {
         position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row',
         paddingBottom: Math.max(insets.bottom, 8), paddingTop: 10, overflow: 'hidden',
       }}>
-        <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(20,23,32,0.94)' }]} />
-        <View pointerEvents="none" style={{
-          position: 'absolute', top: 0, left: 0, right: 0,
-          height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(255,255,255,0.12)',
-        }} />
+        {/* Real iOS material. Content genuinely travels under this bar — the
+            scroll view carries 110pt of bottom padding — so the blur has
+            something to work on. It was a 94%-opaque panel before, which threw
+            that away. Glass falls back to opaque under Reduce Transparency. */}
+        <Glass
+          pointerEvents="none"
+          style={StyleSheet.absoluteFill}
+          radius={0}
+          border={false}
+          tint="rgba(20,23,32,0.55)"
+          intensity={65}
+        />
         {TABS.map((t) => {
           const on = tab === t.key;
           // Each destination owns an accent when active — distinct tabs are

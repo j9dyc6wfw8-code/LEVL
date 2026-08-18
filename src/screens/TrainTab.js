@@ -2,7 +2,7 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { C, s, MONO, alpha } from '../theme';
-import { Card, Lbl, Chip, PBar, NumField, GoldBtn, GreenBtn, FadeIn, CountUp, Sheet, ScreenHeader } from '../components/ui';
+import { Card, Lbl, Chip, PBar, NumField, GoldBtn, GreenBtn, FadeIn, CountUp, Sheet, ScreenHeader, Segmented } from '../components/ui';
 import MuscleIcon from '../components/MuscleIcon';
 import { exerciseInfo } from '../engine/exerciseInfo';
 import { todaysSessions, formatVolume } from '../engine/session';
@@ -915,33 +915,14 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
        * so the two read as one system. */}
       {!type ? (
         <View>
-          <View style={{
-            flexDirection: 'row', backgroundColor: C.sunken, borderWidth: 1,
-            borderColor: C.lineSoft, borderRadius: 12, padding: 3,
-          }}>
-            {CARDIO_FAMILIES.map((f) => {
-              const on = f.key === family;
-              return (
-                <Pressable key={f.key} onPress={() => setFamily(f.key)}
-                  accessibilityRole="tab" accessibilityState={{ selected: on }}
-                  accessibilityLabel={f.label + ', ' + f.items.length + ' activities'}
-                  style={{
-                    flex: 1, minHeight: 42, borderRadius: 10, alignItems: 'center',
-                    justifyContent: 'center', backgroundColor: on ? f.tint : 'transparent',
-                  }}>
-                  <Text style={{ fontSize: 12.5, fontWeight: on ? '800' : '600', color: on ? C.ink : C.mut }}>
-                    {f.label}
-                  </Text>
-                  <Text style={{
-                    fontSize: 9.5, fontWeight: '700', marginTop: 1,
-                    color: on ? alpha(C.ink, 0.6) : C.faint, fontVariant: ['tabular-nums'],
-                  }}>
-                    {f.items.length}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
+          <Segmented
+            value={family}
+            onChange={setFamily}
+            options={CARDIO_FAMILIES.map((f) => ({
+              key: f.key, label: f.label, sub: f.items.length, tint: f.tint,
+              a11y: f.label + ', ' + f.items.length + ' activities',
+            }))}
+          />
           <Text style={{ fontSize: 12.5, color: C.dim, marginTop: 9, marginBottom: 12, lineHeight: 17 }}>
             {fam.blurb}
           </Text>
@@ -1592,14 +1573,7 @@ export default function TrainTab({ data, dv, onLift, onLiftBatch, onCardio, onSa
   return (
     <View>
       <Card style={[s.hero, { padding: 12 }]}>
-        <View style={{ flexDirection: 'row', backgroundColor: C.sunken, borderWidth: 1, borderColor: C.lineSoft, borderRadius: 12, padding: 3 }}>
-          {SEGS.map((x) => (
-            <Pressable key={x[0]} onPress={() => setSeg(x[0])}
-              style={{ flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center', backgroundColor: seg === x[0] ? C.gold : 'transparent' }}>
-              <Text style={{ fontWeight: seg === x[0] ? '800' : '600', fontSize: 14, letterSpacing: 0.2, color: seg === x[0] ? C.ink : C.mut }}>{x[1]}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <Segmented options={SEGS} value={seg} onChange={setSeg} />
         <View style={[s.row, { marginTop: 10 }]}>
           <Text style={{ fontSize: 10, color: near ? C.gold : C.dim, fontWeight: '700', fontVariant: ['tabular-nums'], marginRight: 8 }}>
             {Math.round(xpToday)}/{INTEGRITY.DAILY_XP_CAP} XP today

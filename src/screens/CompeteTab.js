@@ -29,9 +29,9 @@
 // ============================================================================
 
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { C, RADIUS, T, SPACING } from '../theme';
-import { ScreenHeader } from '../components/ui';
+import { View } from 'react-native';
+import { SPACING } from '../theme';
+import { ScreenHeader, Segmented } from '../components/ui';
 import StandingPanel from '../components/StandingPanel';
 import DuelTab from './DuelTab';
 import RanksTab from './RanksTab';
@@ -90,7 +90,7 @@ export default function CompeteTab({
   // change in routes.js, not a prop.
 
   const pick = useCallback((next) => {
-    haptics.selection();
+    // No haptic here — Segmented fires the selection tick itself.
     setView(next);
     // Standings are fetched on demand: switching segments alone would not
     // remount the hook, so nothing would refresh without this.
@@ -136,40 +136,7 @@ export default function CompeteTab({
         onToggleDetail={() => { haptics.selection(); setDetail((v) => !v); }}
       />
 
-      {/* One control. Sunken track, raised active pill — the active state reads
-          as ON rather than merely coloured, which matters at four segments. */}
-      <View style={{
-        flexDirection: 'row', backgroundColor: C.sunken, borderRadius: RADIUS.md,
-        padding: 3, marginBottom: SPACING.md, borderWidth: 1, borderColor: C.lineSoft,
-      }}>
-        {segments.map((sgm) => {
-          const on = active === sgm[0];
-          return (
-            <Pressable
-              key={sgm[0]}
-              onPress={() => pick(sgm[0])}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: on }}
-              accessibilityLabel={sgm[1]}
-              style={{
-                flex: 1, minHeight: 38, borderRadius: RADIUS.sm,
-                alignItems: 'center', justifyContent: 'center',
-                backgroundColor: on ? C.gold : 'transparent',
-              }}>
-              <Text
-                numberOfLines={1}
-                style={{
-                  ...T.caption,
-                  fontWeight: on ? '800' : '600',
-                  letterSpacing: 0.6,
-                  color: on ? C.ink : C.mut,
-                }}>
-                {sgm[1]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      <Segmented options={segments} value={active} onChange={pick} style={{ marginBottom: SPACING.md }} />
 
       {active === 'duels' ? (
         <DuelTab

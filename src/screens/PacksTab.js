@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { C, alpha, s, T, RADIUS, RARITY as RARITY_THEME } from '../theme';
-import { Card, Lbl, GoldBtn, GhostBtn, CountUp, ChunkyBtn, Stagger } from '../components/ui';
+import { Card, Lbl, GoldBtn, GhostBtn, CountUp, ChunkyBtn, Stagger, Segmented } from '../components/ui';
 import { PackGlyph, RewardGlyph, LockGlyph } from '../components/ItemGlyph';
 import { PACK_TYPES, packTypeByKey, packMeter, COSMETICS, PACK_TITLES, DECORATIONS } from '../engine/engine';
 import { Sheet } from '../components/ui';
@@ -723,15 +723,7 @@ function Catalogue({ data, onClose }) {
   return (
     <Sheet visible title="Catalogue" onClose={onClose}>
       <View style={{ paddingHorizontal: 16, paddingTop: 10 }}>
-        <View style={{ flexDirection: 'row', backgroundColor: C.panel2, borderRadius: 12, padding: 4, borderWidth: 1, borderColor: C.line }}>
-          {TABS.map((t) => (
-            <Pressable key={t[0]} onPress={() => setTab(t[0])}
-              accessibilityRole="tab" accessibilityState={{ selected: tab === t[0] }} accessibilityLabel={t[1]}
-              style={{ flex: 1, minHeight: 40, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: tab === t[0] ? C.gold : 'transparent' }}>
-              <Text style={{ fontSize: 12.5, fontWeight: '800', color: tab === t[0] ? C.ink : C.mut }}>{t[1]}</Text>
-            </Pressable>
-          ))}
-        </View>
+        <Segmented options={TABS} value={tab} onChange={setTab} />
 
         <View style={[s.between, { marginTop: 12, alignItems: 'center' }]}>
           <Text style={{ fontSize: 13, color: C.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
