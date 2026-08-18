@@ -36,6 +36,15 @@ function ago(iso) {
 // Online = active in the last 5 minutes.
 const isOnline = (iso) => iso && (Date.now() - new Date(iso).getTime()) < 5 * 60 * 1000;
 
+/* Presence as one phrase. ago() returns '' when there is no timestamp, which
+   rendered — and announced — as "Active  ago". */
+const presence = (iso) => {
+  if (!iso) return 'Never active';
+  if (isOnline(iso)) return 'Online';
+  const a = ago(iso);
+  return a ? 'Active ' + a + ' ago' : 'Never active';
+};
+
 // Everyone's actual character, not a letter in a circle. The duel screen has
 // always drawn the real model; the rest of the app fell back to an initial even
 // though the avatar was being synced the whole time. Falls back to the letter
@@ -66,6 +75,11 @@ function Avatar({ profile, size = 40 }) {
     </View>
   );
 }
+
+/* Every actionable control in this screen acts ON A PERSON, so every label has
+ * to name them. "Accept" repeated down a list of five requests is unusable with
+ * VoiceOver — you cannot tell which row you are on. */
+const nameOf = (p) => (p && (p.display_name || p.username)) || 'this player';
 
 function StatPill({ label, value, tint }) {
   return (
@@ -133,7 +147,8 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
         <View style={{ backgroundColor: C.redSoft, borderWidth: 1, borderColor: C.red, borderRadius: RADIUS.md, padding: 12, marginBottom: 12 }}>
           <Text style={{ ...TYPE.caption, color: C.red, fontWeight: '700' }}>Couldn't load friends</Text>
           <Text style={{ ...TYPE.micro, color: C.mut, marginTop: 4 }}>{String(fr.error)}</Text>
-          <Pressable onPress={fr.refresh} hitSlop={6} style={{ marginTop: 8 }}>
+          <Pressable onPress={fr.refresh} hitSlop={6} style={{ marginTop: 8 }}
+            accessibilityRole="button" accessibilityLabel="Retry loading friends">
             <Text style={{ ...TYPE.caption, color: C.gold, fontWeight: '700' }}>Tap to retry</Text>
           </Pressable>
         </View>
@@ -143,7 +158,8 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
         <View style={{ backgroundColor: C.redSoft, borderWidth: 1, borderColor: C.red, borderRadius: RADIUS.md, padding: 12, marginBottom: 12 }}>
           <Text style={{ ...TYPE.body, color: C.red, fontWeight: '700' }}>Duel needs attention.</Text>
           <Text style={{ ...TYPE.caption, color: C.mut, marginTop: 4 }}>{String(duels.error)}</Text>
-          <Pressable onPress={duels.refresh} hitSlop={6} style={{ marginTop: 8 }}>
+          <Pressable onPress={duels.refresh} hitSlop={6} style={{ marginTop: 8 }}
+            accessibilityRole="button" accessibilityLabel="Retry loading duels">
             <Text style={{ ...TYPE.caption, color: C.gold, fontWeight: '700' }}>Try again</Text>
           </Pressable>
         </View>
@@ -193,10 +209,18 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                 <Text style={{ ...TYPE.caption, color: C.dim }}>challenges you · {d.reward} coins</Text>
               </View>
               <Pressable disabled={duels.busy} onPress={() => duels.accept(d.id)} hitSlop={6}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: !!duels.busy }}
+                accessibilityLabel={'Accept duel from ' + nameOf(d.opponent)}
+                accessibilityHint={duels.busy ? 'Unavailable while another duel is active' : undefined}
                 style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, backgroundColor: duels.busy ? C.panel2 : C.goldSoft, borderWidth: 1, borderColor: duels.busy ? C.line : C.gold, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ ...TYPE.caption, fontWeight: '700', color: duels.busy ? C.dim : C.gold }}>Accept</Text>
               </Pressable>
+              {/* The label is spelled out because the glyph is a ✕: VoiceOver
+                  reads that as "multiplication sign", or skips it entirely. */}
               <Pressable onPress={() => duels.decline(d.id)} hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel={'Decline duel from ' + nameOf(d.opponent)}
                 style={{ minHeight: 36, paddingHorizontal: 12, marginLeft: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ ...TYPE.caption, fontWeight: '700', color: C.dim }}>✕</Text>
               </Pressable>
@@ -247,6 +271,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             style={[s.input, { flex: 1, marginBottom: 0 }]}
           />
           <Pressable onPress={runSearch} hitSlop={6}
+            accessibilityRole="button" accessibilityLabel="Search for this username"
             style={{ marginLeft: 8, minHeight: TOUCH, paddingHorizontal: 16, borderRadius: RADIUS.md, backgroundColor: C.goldSoft, borderWidth: 1, borderColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
             <Text style={{ color: C.gold, fontWeight: '700' }}>Find</Text>
           </Pressable>
@@ -257,7 +282,9 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
         {results.map((p) => (
           <View key={p.id} style={[s.row, { marginTop: 12, alignItems: 'center' }]}>
             <Avatar profile={p} />
-            <Pressable onPress={() => openProfile(p.id)} style={{ flex: 1, marginLeft: 10 }}>
+            <Pressable onPress={() => openProfile(p.id)} style={{ flex: 1, marginLeft: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={'Open ' + nameOf(p) + "'s profile"}>
               <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }}>{p.display_name || p.username}</Text>
               <Text style={{ ...TYPE.caption, color: C.dim }}>@{p.username} · Lv {p.level} · {p.rank}</Text>
             </Pressable>
@@ -265,6 +292,11 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
               disabled={!!added[p.id]}
               onPress={() => doAdd(p.id)}
               hitSlop={6}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !!added[p.id] }}
+              accessibilityLabel={added[p.id]
+                ? 'Friend request already sent to ' + nameOf(p)
+                : 'Send a friend request to ' + nameOf(p)}
               style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: added[p.id] ? C.panel2 : C.greenSoft, borderWidth: 1, borderColor: added[p.id] ? C.line : C.green }}>
               <Text style={{ ...TYPE.caption, fontWeight: '700', color: added[p.id] ? C.dim : C.green }}>
                 {added[p.id] ? 'Sent' : 'Add'}
@@ -290,10 +322,14 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                 </Text>
               </View>
               <Pressable onPress={() => fr.accept(req.senderId)} hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel={'Accept friend request from ' + nameOf(req.profile)}
                 style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, backgroundColor: C.greenSoft, borderWidth: 1, borderColor: C.green, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ ...TYPE.caption, fontWeight: '700', color: C.green }}>Accept</Text>
               </Pressable>
               <Pressable onPress={() => fr.decline(req.senderId)} hitSlop={6}
+                accessibilityRole="button"
+                accessibilityLabel={'Decline friend request from ' + nameOf(req.profile)}
                 style={{ minHeight: 36, paddingHorizontal: 12, marginLeft: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ ...TYPE.caption, fontWeight: '700', color: C.dim }}>✕</Text>
               </Pressable>
@@ -310,7 +346,15 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             No friends yet. Search a username above to add your first.
           </Text>
         ) : fr.friends.map((f) => (
-          <Pressable key={f.id} onPress={() => openProfile(f.id)} style={{ marginTop: 14 }}>
+          /* The row opens a profile and CONTAINS a Duel button. Without an
+             explicit label the row swallows its children and VoiceOver reads the
+             whole card as one long string; with one, the row and the button are
+             two clear targets. */
+          <Pressable key={f.id} onPress={() => openProfile(f.id)} style={{ marginTop: 14 }}
+            accessibilityRole="button"
+            accessibilityLabel={nameOf(f) + "'s profile"}
+            accessibilityValue={{ text: 'Level ' + (f.level || 1) + ', ' + (f.rank || 'unranked')
+              + ', ' + presence(f.last_active).toLowerCase() }}>
             <View style={[s.row, { alignItems: 'center' }]}>
               <View>
                 <Avatar profile={f} />
@@ -321,11 +365,16 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
               <View style={{ flex: 1, marginLeft: 10 }}>
                 <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }}>{f.display_name || f.username}</Text>
                 <Text style={{ ...TYPE.caption, color: isOnline(f.last_active) ? C.green : C.dim }}>
-                  {isOnline(f.last_active) ? 'Online' : `Active ${ago(f.last_active)} ago`}
+                  {presence(f.last_active)}
                 </Text>
               </View>
               {onChallenge && (
                 <Pressable disabled={duels && duels.busy} onPress={() => onChallenge(f)} hitSlop={6}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: !!(duels && duels.busy) }}
+                  accessibilityLabel={duels && duels.busy
+                    ? 'Cannot challenge ' + nameOf(f) + ' — you already have an active duel'
+                    : 'Challenge ' + nameOf(f) + ' to a duel'}
                   style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, backgroundColor: duels && duels.busy ? C.panel2 : C.goldSoft, borderWidth: 1, borderColor: duels && duels.busy ? C.line : C.gold, alignItems: 'center', justifyContent: 'center' }}>
                   <Text style={{ ...TYPE.caption, fontWeight: '700', color: duels && duels.busy ? C.dim : C.gold }}>{duels && duels.busy ? 'Active' : 'Duel'}</Text>
                 </Pressable>
@@ -334,7 +383,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             <View style={[s.row, { marginTop: 10, backgroundColor: C.panel2, borderRadius: RADIUS.md, paddingVertical: 10 }]}>
               <StatPill label="LEVEL" value={f.level} />
               <StatPill label="RANK" value={f.rank} tint={C.gold} />
-              <StatPill label="STREAK" value={(f.streak || 0) + '🔥'} tint={C.orange} />
+              <StatPill label="STREAK" value={f.streak || 0} tint={C.orange} />
               <StatPill label="WK XP" value={f.weekly_xp || 0} tint={C.green} />
             </View>
           </Pressable>
@@ -490,6 +539,9 @@ const FriendProfileBody = React.memo(function FriendProfileBody({ userId, onClos
       <View style={[s.row, { marginTop: 18 }]}>
         {[['recent', 'Recent lifts'], ['exercises', 'By exercise']].map(([k, label]) => (
           <Pressable key={k} onPress={() => setMode(k)} hitSlop={6}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: mode === k }}
+            accessibilityLabel={label}
             style={{
               flex: 1, paddingVertical: 9, alignItems: 'center', borderRadius: RADIUS.pill,
               backgroundColor: mode === k ? C.goldSoft : 'transparent',
