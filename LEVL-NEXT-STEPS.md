@@ -431,3 +431,84 @@ GitHub must come before the build or you will build twice.
 - `LEVL-NEXT-STEPS.md` ← you are here
 - `LEVL-LAUNCH-CHECKLIST.md` — the tick-list version
 - `LEVL-PRE-LAUNCH-AUDIT.md` — the full technical audit
+
+---
+
+# APPENDIX — Working with pull requests
+
+`gh` (the GitHub command-line tool) is installed. One thing left before it works:
+
+```bash
+gh auth login
+```
+
+Answer: **GitHub.com** → **HTTPS** → **Y** to authenticate git → **Login with a
+web browser**. It shows you an 8-character code, you paste it into the browser
+page it opens. Done once, forever.
+
+While you're there, fix how your commits are labelled. Right now they say
+`matteo@Mac.lan`, which is a name your Mac invented — GitHub can't link those
+commits to your account, so they show as an unknown author. Get your private
+GitHub address from **github.com → Settings → Emails** (it looks like
+`1234567+j9dyc6wfw8-code@users.noreply.github.com`), then:
+
+```bash
+git config --global user.email "PASTE-THAT-HERE"
+```
+
+Old commits keep the old address; new ones will be right.
+
+## The routine, for any future change
+
+Four commands. The first one is the one that matters — never work directly on
+`main` again.
+
+```bash
+git checkout -b what-im-changing
+```
+
+...make the changes, then:
+
+```bash
+git add -A && git commit -m "what changed and why"
+```
+
+```bash
+git push
+```
+
+```bash
+gh pr create --fill
+```
+
+`git push` works without extra arguments now — I've set `push.autoSetupRemote`,
+which saves you the `-u origin branch-name` incantation every time.
+
+To merge it once you're happy:
+
+```bash
+gh pr merge --squash --delete-branch
+```
+
+## Why bother, when it's just you?
+
+Three reasons that apply even to a solo project:
+
+1. **`main` always works.** Half-finished work lives on a branch, so the thing
+   you'd ship in an emergency is never broken.
+2. **Your tests run before you merge, not after.** GitHub runs the 48/216/191
+   checks on every push. A PR shows you a green tick or a red cross *before* the
+   change reaches `main`.
+3. **You get a written record.** The PR page holds the reasoning next to the
+   diff. In four months, when you're wondering why rank protection decays over
+   14 days, that's where the answer is.
+
+## About this session's work
+
+It's already on `main` and pushed, so there is no PR for it — a PR needs a
+branch holding changes `main` doesn't have yet, and `main` has them all. The
+history is at
+**github.com/j9dyc6wfw8-code/LEVL/commits/main**, and each commit message
+explains its own reasoning.
+
+Next change onwards, use the routine above.
