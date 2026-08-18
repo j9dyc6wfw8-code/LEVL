@@ -5,11 +5,15 @@
 // one line. No paragraphs. No feature tours.
 //
 // The job is not to explain every system — it's to make the loop obvious:
-//   lift -> earn -> rank up -> claim.
+//   lift -> earn -> rank up -> prove it.
 // Everything else (Forge, Packs, Duels) reveals itself in play.
+//
+// The last slide is deliberately the differentiator rather than the rewards:
+// loot is the least distinctive thing here, and Verified Sessions are the only
+// mechanic a competitor cannot copy.
 import React, { useRef, useState } from 'react';
 import { View, Text, Pressable, Animated, Dimensions, ScrollView } from 'react-native';
-import Svg, { Polygon, Circle, Path, Rect, Line } from 'react-native-svg';
+import Svg, { Polygon, Circle, Path, Rect } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, TYPE, TOUCH } from '../theme';
 import { ChunkyBtn } from '../components/ui';
@@ -50,16 +54,26 @@ const ArtLadder = () => (
   </Svg>
 );
 
-const ArtChest = () => (
+// A shield with a tick inside it. The one idea no competitor can copy gets the
+// one piece of artwork that is not about loot or ladders.
+const ArtVerified = () => (
   <Svg width={132} height={132} viewBox="0 0 100 100">
-    <Rect x={20} y={44} width={60} height={38} rx={6} fill={C.panel3} stroke={C.gold} strokeWidth={2.5} />
-    <Path d="M20 56 Q50 34 80 56" fill={C.panel2} stroke={C.gold} strokeWidth={2.5} />
-    <Rect x={44} y={54} width={12} height={16} rx={3} fill={C.gold} />
-    <Line x1={50} y1={22} x2={50} y2={32} stroke={C.gold} strokeWidth={3} strokeLinecap="round" />
-    <Line x1={30} y1={28} x2={35} y2={36} stroke={C.gold} strokeWidth={3} strokeLinecap="round" opacity={0.6} />
-    <Line x1={70} y1={28} x2={65} y2={36} stroke={C.gold} strokeWidth={3} strokeLinecap="round" opacity={0.6} />
+    <Path
+      d="M50 12 L82 24 V52 C82 70 68 82 50 89 C32 82 18 70 18 52 V24 Z"
+      fill="none" stroke={C.green} strokeWidth={3} strokeLinejoin="round"
+    />
+    <Path
+      d="M50 20 L74 29 V52 C74 65 63 75 50 81 C37 75 26 65 26 52 V29 Z"
+      fill={C.green} opacity={0.13}
+    />
+    <Path
+      d="M35 51 L45 62 L67 38"
+      stroke={C.green} strokeWidth={5} fill="none"
+      strokeLinecap="round" strokeLinejoin="round"
+    />
   </Svg>
 );
+
 
 /* -------------------------------- slides -------------------------------- */
 // One idea each. Title is a hammer. Body is a single line.
@@ -85,12 +99,20 @@ const SLIDES = [
     body: 'Bronze to Grandmaster. Earned, never bought.',
     tint: C.blue,
   },
+  // THE DIFFERENTIATOR GOES LAST, where it is the thing they carry into the app.
+  //
+  // This slot used to be "Claim the spoils — gear and cosmetics", which is the
+  // least distinctive thing LEVL does: every game has loot, and nobody installs
+  // a training app for it. Verified Sessions are the one mechanic no competitor
+  // can copy — Strava can verify a run because GPS exists, and nothing verifies
+  // a gym session except a log the app itself owns. It was a small green badge
+  // on a feed card and nothing else. Now it is the promise.
   {
-    art: ArtChest,
-    kicker: 'REWARDS',
-    title: 'Claim the spoils.',
-    body: 'Gear and cosmetics. Your rank stays honest.',
-    tint: C.orange,
+    art: ArtVerified,
+    kicker: 'THE DIFFERENCE',
+    title: 'Proof, not claims.',
+    body: 'Attach the session you logged and LEVL checks it. Nobody fakes a lift here.',
+    tint: C.green,
   },
 ];
 
