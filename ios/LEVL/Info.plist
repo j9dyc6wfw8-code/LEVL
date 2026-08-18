@@ -55,8 +55,6 @@
     <string>LEVL shows your daily activity from Apple Health alongside your training. This information is for context only — it never changes your XP, stats or rank, and it is never shared with other people.</string>
     <key>NSHealthUpdateUsageDescription</key>
     <string>LEVL can save the workouts you log into Apple Health, so your training appears alongside the rest of your activity.</string>
-    <key>NSMicrophoneUsageDescription</key>
-    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
     <key>NSSupportsLiveActivities</key>
     <true/>
     <key>NSSupportsLiveActivitiesFrequentUpdates</key>
@@ -119,13 +117,6 @@
     <array>
       <string>UIInterfaceOrientationPortrait</string>
       <string>UIInterfaceOrientationPortraitUpsideDown</string>
-    </array>
-    <key>UISupportedInterfaceOrientations~ipad</key>
-    <array>
-      <string>UIInterfaceOrientationPortrait</string>
-      <string>UIInterfaceOrientationPortraitUpsideDown</string>
-      <string>UIInterfaceOrientationLandscapeLeft</string>
-      <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
     <key>UIUserInterfaceStyle</key>
     <string>Dark</string>

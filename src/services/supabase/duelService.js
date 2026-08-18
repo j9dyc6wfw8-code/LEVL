@@ -12,48 +12,31 @@ import { notify } from './notificationService';
 const DAY_MS = 86400000;
 const errorResult = (message) => ({ data: null, error: { message } });
 
-async function participantDuel(duelId, uid, status) {
-  let q = supabase.from('duels').select('*')
-    .eq('id', duelId)
-    .or('player_one.eq.' + uid + ',player_two.eq.' + uid);
-  if (status) q = q.eq('status', status);
-  return q.maybeSingle();
-}
+// SCORING MOVED SERVER-SIDE (sql/2815).
+//
+// This file used to compute duel scores here, honestly, by summing xp_earned
+// from `workouts` inside each duel's window — and then write the result to the
+// duels row. The logic was right; nothing enforced it. The UPDATE policy was
+// `using (player_one or player_two)` with no column restriction, so a tampered
+// client could skip all of it and write `winner = me, score = 999999`. And
+// claim_friend_duel_rewards() pays out on `winner`, so that was money.
+//
+// levl_duel_xp() in the database is now the single definition of a duel score,
+// and levl_duel_sync_scores() / levl_duel_resolve() are the only things that
+// can write one. The client no longer holds UPDATE on `duels` at all.
+//
+// Keeping a second copy of the arithmetic here would be the "two competing
+// implementations" problem the pre-launch audit called out, so it is gone
+// rather than left commented out.
 
-// Server evidence is the score source of truth. Reading in pages avoids the
-// default PostgREST row cap and prevents a second phone with a partial local
-// save from accidentally lowering a player's live score.
-async function workoutXpTotals(userIds, startISO, endISO) {
-  const ids = [...new Set((userIds || []).filter(Boolean))];
-  const totals = {};
-  ids.forEach((id) => { totals[id] = 0; });
-  if (!ids.length) return { data: totals, error: null };
-
-  let from = 0;
-  const pageSize = 1000;
-  while (true) {
-    let q = supabase.from('workouts')
-      .select('id, user_id, xp_earned, date')
-      .in('user_id', ids);
-    if (startISO) q = q.gte('date', startISO);
-    if (endISO) q = q.lte('date', endISO);
-    q = q.order('date', { ascending: true })
-      .order('id', { ascending: true })
-      .range(from, from + pageSize - 1);
-    const page = await q;
-    if (page.error) return { data: null, error: page.error };
-    const rows = page.data || [];
-    rows.forEach((row) => {
-      if (Object.prototype.hasOwnProperty.call(totals, row.user_id)) {
-        totals[row.user_id] += Math.max(0, Number(row.xp_earned) || 0);
-      }
-    });
-    if (rows.length < pageSize) break;
-    from += pageSize;
-  }
-  Object.keys(totals).forEach((id) => { totals[id] = Math.round(totals[id]); });
-  return { data: totals, error: null };
+// Surfaces a missing 2815 as a readable instruction instead of a raw PostgREST
+// error, the same way claimDuelRewards handles a missing duel_integrity_patch.
+function missingMigration(error, fn) {
+  if (!error) return false;
+  return error.code === 'PGRST202' || error.code === '42883'
+    || new RegExp(fn + '.*schema cache|function.*does not exist', 'i').test(String(error.message || ''));
 }
+const NEEDS_2815 = 'Duel update required. Run sql/2815_p1_hardening.sql in Supabase.';
 
 // Shared guard for every route that can start another head-to-head. The SQL
 // integrity trigger is still the final authority; this gives the UI an early,
@@ -117,52 +100,22 @@ export async function respondToDuel(duelId, accept) {
   const uid = await currentUserId();
   if (!uid) return offline('Not signed in');
   try {
-    // Only the challenged player can answer, and only while it is pending.
-    const { data: duel, error: readError } = await supabase.from('duels').select('*')
-      .eq('id', duelId)
-      .eq('player_two', uid)
-      .eq('status', 'pending')
-      .maybeSingle();
-    if (readError) return { data: null, error: readError };
-    if (!duel) return errorResult('This challenge is no longer available.');
-
-    if (!accept) {
-      const declined = await supabase.from('duels')
-        .update({ status: 'declined' })
-        .eq('id', duelId).eq('player_two', uid).eq('status', 'pending')
-        .select().maybeSingle();
-      if (!declined.error && !declined.data) return errorResult('This challenge was already answered.');
-      return declined;
+    // One call. The function checks that you are the challenged player and that
+    // it is still pending, enforces the one-active-duel rule under a row lock,
+    // starts the clock at ACCEPT while preserving the intended duration, and
+    // notifies the challenger — all in a single transaction, so two phones
+    // answering at once cannot both succeed.
+    const { data, error } = await supabase.rpc('levl_duel_respond', {
+      p_duel: duelId,
+      p_accept: !!accept,
+    });
+    if (error) {
+      if (missingMigration(error, 'levl_duel_respond')) return errorResult(NEEDS_2815);
+      return { data: null, error };
     }
-
-    const active = await hasActiveDuel(uid);
-    if (active.error) return { data: null, error: active.error };
-    if (active.data) return errorResult('Finish your current duel first.');
-
-    // The seven-day clock starts on ACCEPT, not when the invitation was sent.
-    const originalStart = new Date(duel.start_date || 0).getTime();
-    const originalEnd = new Date(duel.end_date || 0).getTime();
-    const rawDuration = originalEnd - originalStart;
-    const duration = Number.isFinite(rawDuration) && rawDuration > 0
-      ? Math.max(DAY_MS, Math.min(30 * DAY_MS, rawDuration))
-      : 7 * DAY_MS;
-    const start = new Date();
-    const accepted = await supabase.from('duels')
-      .update({
-        status: 'active',
-        start_date: start.toISOString(),
-        end_date: new Date(start.getTime() + duration).toISOString(),
-        player_one_score: 0,
-        player_two_score: 0,
-        winner: null,
-      })
-      .eq('id', duelId).eq('player_two', uid).eq('status', 'pending')
-      .select().maybeSingle();
-    if (!accepted.error && !accepted.data) return errorResult('This challenge was already answered.');
-    if (!accepted.error) {
-      await notify(duel.player_one, 'duel_challenge', { from: uid, duel_id: duel.id, started: true });
-    }
-    return accepted;
+    const duel = Array.isArray(data) ? data[0] : data;
+    if (!duel) return errorResult('This challenge was already answered.');
+    return { data: duel, error: null };
   } catch (e) {
     return errorResult(String(e && e.message || e));
   }
@@ -175,42 +128,22 @@ export async function quitDuel(duelId) {
   const uid = await currentUserId();
   if (!uid) return offline('Not signed in');
   try {
-    const { data: duel, error } = await participantDuel(duelId, uid, 'active');
-    if (error) return { data: null, error };
-    if (!duel) return errorResult('This duel is no longer active.');
-    const opponentId = duel.player_one === uid ? duel.player_two : duel.player_one;
-    const result = await supabase.from('duels')
-      .update({ status: 'complete', winner: opponentId })
-      .eq('id', duelId).eq('status', 'active')
-      .or('player_one.eq.' + uid + ',player_two.eq.' + uid)
-      .select().maybeSingle();
-    if (!result.error && !result.data) return errorResult('This duel already ended.');
-    if (!result.error) await notify(opponentId, 'duel_result', { result: 'win', reason: 'forfeit', from: uid });
-    return result;
+    const { data, error } = await supabase.rpc('levl_duel_quit', { p_duel: duelId });
+    if (error) {
+      if (missingMigration(error, 'levl_duel_quit')) return errorResult(NEEDS_2815);
+      return { data: null, error };
+    }
+    const duel = Array.isArray(data) ? data[0] : data;
+    if (!duel) return errorResult('This duel already ended.');
+    return { data: duel, error: null };
   } catch (e) {
     return errorResult(String(e && e.message || e));
   }
 }
 
-// Compatibility accepts both updateMyScore(id, score) and the older
-// updateMyScore(id, isPlayerOne, score), but never trusts the caller's slot.
-export async function updateMyScore(duelId, scoreOrLegacySlot, legacyScore) {
-  if (!isConfigured) return offline();
-  const uid = await currentUserId();
-  if (!uid) return offline('Not signed in');
-  try {
-    const { data: duel, error } = await participantDuel(duelId, uid, 'active');
-    if (error) return { data: null, error };
-    if (!duel) return errorResult('This duel is no longer active.');
-    const col = duel.player_one === uid ? 'player_one_score' : 'player_two_score';
-    const rawScore = legacyScore === undefined ? scoreOrLegacySlot : legacyScore;
-    const score = Math.max(0, Math.round(Number(rawScore) || 0));
-    return await supabase.from('duels').update({ [col]: score })
-      .eq('id', duelId).eq('status', 'active').select().maybeSingle();
-  } catch (e) {
-    return errorResult(String(e && e.message || e));
-  }
-}
+// updateMyScore() was removed with the move to server-side scoring. It had no
+// callers — scores have only ever been pushed by pushMyDuelScores() — and a
+// client-supplied score is precisely what 2815 exists to stop accepting.
 
 export async function myDuels(status) {
   if (!isConfigured) return offline();
@@ -257,28 +190,17 @@ export async function pushMyDuelScores() {
   const uid = await currentUserId();
   if (!uid) return offline('Not signed in');
   try {
-    const { data: duels, error } = await supabase.from('duels').select('*')
-      .or('player_one.eq.' + uid + ',player_two.eq.' + uid)
-      .eq('status', 'active');
-    if (error || !duels) return { data: null, error };
-    let updated = 0;
-    let updateError = null;
-    for (const d of duels) {
-      const col = d.player_one === uid ? 'player_one_score' : 'player_two_score';
-      const totals = await workoutXpTotals([uid], d.start_date, d.end_date);
-      if (totals.error) {
-        if (!updateError) updateError = totals.error;
-        continue;
-      }
-      const score = totals.data[uid] || 0;
-      const current = Number(d[col]) || 0;
-      if (current === score) continue;
-      const result = await supabase.from('duels').update({ [col]: score })
-        .eq('id', d.id).eq('status', 'active');
-      if (!result.error) updated += 1;
-      else if (!updateError) updateError = result.error;
+    // One call, and it refreshes BOTH players rather than only mine. The old
+    // version could only write its own column, which is why an opponent's score
+    // sat stale until they next opened the app — two phones showing different
+    // numbers for the same duel. Recomputing both server-side is free and ends
+    // that entire class of "the score is wrong".
+    const { data, error } = await supabase.rpc('levl_duel_sync_scores');
+    if (error) {
+      if (missingMigration(error, 'levl_duel_sync_scores')) return errorResult(NEEDS_2815);
+      return { data: null, error };
     }
-    return { data: updated, error: updateError };
+    return { data: Math.max(0, Number(data) || 0), error: null };
   } catch (e) {
     return { data: null, error: { message: String(e && e.message || e) } };
   }
@@ -293,48 +215,18 @@ export async function resolveEndedDuels() {
   const uid = await currentUserId();
   if (!uid) return offline('Not signed in');
   try {
-    const { data: duels, error } = await supabase.from('duels').select('*')
-      .or('player_one.eq.' + uid + ',player_two.eq.' + uid)
-      .eq('status', 'active');
-    if (error || !duels) return { data: null, error };
-    let resolved = 0;
-    let firstError = null;
-    for (const d of duels) {
-      if (!d.end_date || new Date(d.end_date).getTime() > Date.now()) continue;   // still running
-
-      // Re-read the evidence rows before settling. A score update and an app
-      // foreground can race; trusting the cached duel row here could award the
-      // wrong winner even though the final workout already synced.
-      const totals = await workoutXpTotals([d.player_one, d.player_two], d.start_date, d.end_date);
-      if (totals.error) {
-        if (!firstError) firstError = totals.error;
-        continue; // fail safe: do not settle from stale scores
-      }
-
-      const oneScore = totals.data[d.player_one] || 0;
-      const twoScore = totals.data[d.player_two] || 0;
-      let winner = null;
-      if (oneScore > twoScore) winner = d.player_one;
-      else if (twoScore > oneScore) winner = d.player_two;
-      const result = await supabase.from('duels').update({
-        player_one_score: oneScore,
-        player_two_score: twoScore,
-        status: 'complete',
-        winner,
-      }).eq('id', d.id).eq('status', 'active').select('id');
-      if (result.error) {
-        if (!firstError) firstError = result.error;
-      } else if (result.data && result.data.length) {
-        resolved += 1;
-        const oneResult = winner === null ? 'draw' : winner === d.player_one ? 'win' : 'loss';
-        const twoResult = winner === null ? 'draw' : winner === d.player_two ? 'win' : 'loss';
-        await Promise.all([
-          notify(d.player_one, 'duel_result', { duel_id: d.id, result: oneResult }),
-          notify(d.player_two, 'duel_result', { duel_id: d.id, result: twoResult }),
-        ]);
-      }
+    // The function re-reads the workout evidence at settlement time rather than
+    // trusting the cached score columns — a final set can sync in the same
+    // moment the screen opens — and notifies both players itself, so the result
+    // arrives even for the player who did not happen to open the app. The
+    // `and status = 'active'` guard makes it idempotent: a second caller settles
+    // nothing and returns 0.
+    const { data, error } = await supabase.rpc('levl_duel_resolve');
+    if (error) {
+      if (missingMigration(error, 'levl_duel_resolve')) return errorResult(NEEDS_2815);
+      return { data: null, error };
     }
-    return { data: resolved, error: firstError };
+    return { data: Math.max(0, Number(data) || 0), error: null };
   } catch (e) {
     return errorResult(String(e && e.message || e));
   }

@@ -363,6 +363,57 @@ const fmtShort = (t) => new Date(t).toLocaleDateString(undefined, { month: 'shor
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
 const tierForFR = (fr) => { let t = TIERS[0]; for (const x of TIERS) if (fr >= x.min) t = x; return t; };
+
+/* ============================ rank protection ============================
+ * Fitness Rating is computed ENTIRELY from a rolling 28-day window, so every
+ * one of its four terms decays to zero during a layoff. Two weeks off with flu
+ * took a Grandmaster to Bronze, instantly, with nothing on screen explaining
+ * it. That does not read as a form rating. It reads as the app deleting your
+ * rank while you were ill — and rank is meant to be an identity, which an
+ * identity that evaporates cannot be.
+ *
+ * Every competitive ladder that works solves this the same way: you fall, but
+ * not all the way, and not at once. So:
+ *
+ *   • for GRACE_DAYS after your peak, you cannot drop more than one tier below
+ *     the tier you peaked in
+ *   • over the DECAY_DAYS that follow, that floor slides away linearly
+ *   • after that, FR is the raw 28-day number again, and coming back is the
+ *     only way up
+ *
+ * This protects the number, never the reward: the floor is not XP, not coins,
+ * not a duel score. It is only what your crest says while you are away.
+ */
+const FR_GRACE_DAYS = 14;
+const FR_DECAY_DAYS = 14;
+
+// The bottom of the tier one below `peak` — how far a protected player can fall.
+function frFloorOf(peak) {
+  const idx = TIERS.findIndex((t) => t.name === tierForFR(peak).name);
+  return idx > 0 ? TIERS[idx - 1].min : 0;
+}
+
+/**
+ * How much of the floor still applies, 0..1.
+ * 1 during grace, sliding to 0 across the decay window, 0 after.
+ */
+function frProtection(peakAt, now) {
+  if (!peakAt) return 0;
+  const days = (now - peakAt) / DAY;
+  if (days <= FR_GRACE_DAYS) return 1;
+  if (days >= FR_GRACE_DAYS + FR_DECAY_DAYS) return 0;
+  return 1 - (days - FR_GRACE_DAYS) / FR_DECAY_DAYS;
+}
+
+/**
+ * Record a new high-water mark. Pure; called from the save's commit path so the
+ * peak is stored rather than recomputed from history that no longer exists.
+ */
+function updateFrPeak(d, now) {
+  const fr = computeDerived(d, now).frRaw;
+  if (fr > (d.frPeak || 0)) return { ...d, frPeak: fr, frPeakAt: now };
+  return d;
+}
 const divisionForFR = (fr, tier) => {
   if (tier.name === 'Grandmaster') return '';
   const d = Math.min(3, Math.floor((fr - tier.min) / 200) + 1);
@@ -470,6 +521,10 @@ const DEFAULT_DATA = {
   // physical profile — used for realistic-lift validation and stat context.
   bodyweight: 0, heightCm: 0, age: 0, sex: '', activity: '', experience: '',
   profileComplete: false,
+  // Highest Fitness Rating ever reached, and when. Drives rank protection —
+  // see frProtection(). Zero on an old save simply means no protection yet,
+  // and the first commit after upgrading sets it.
+  frPeak: 0, frPeakAt: 0,
   stats: { STR: 0, PWR: 0, END: 0, VIT: 0, MOB: 0, DIS: 0 },
   avatar: { skin: 0, hair: 0, outfit: 0, accent: 0 },
   // cosmetics: ids the player owns, what they have equipped per slot, and the
@@ -685,7 +740,16 @@ function computeDerived(data, now) {
     const sd = Math.sqrt(shares.reduce((s, x) => s + (x - mean) * (x - mean), 0) / 6);
     balance = Math.max(0, 1 - sd / 0.3727);
   }
-  const fr = Math.round(4200 * (0.35 * consistency + 0.25 * trend + 0.25 * prScore + 0.15 * balance));
+  // frRaw is the honest 28-day number. `fr` is what the player is shown, which
+  // is frRaw held up by the decaying floor while a layoff is still recent.
+  const frRaw = Math.round(4200 * (0.35 * consistency + 0.25 * trend + 0.25 * prScore + 0.15 * balance));
+  const protection = frProtection(data.frPeakAt || 0, now);
+  const frFloor = Math.round(frFloorOf(data.frPeak || 0) * protection);
+  const fr = Math.max(frRaw, frFloor);
+  const frProtected = fr > frRaw;
+  const frProtectionDaysLeft = frProtected
+    ? Math.max(0, Math.ceil(FR_GRACE_DAYS + FR_DECAY_DAYS - (now - (data.frPeakAt || 0)) / DAY))
+    : 0;
   const placed = daySet.length >= 5;
   const tier = tierForFR(fr);
 
@@ -710,6 +774,7 @@ function computeDerived(data, now) {
 
   return {
     daySet, streak, best, level, levelPct, nextNeed, curBase, fr, tier,
+    frRaw, frProtected, frProtectionDaysLeft,
     division: divisionForFR(fr, tier), placed,
     placementCount: Math.min(daySet.length, 5),
     frParts: { consistency, trend, prScore, balance },
@@ -1428,6 +1493,11 @@ export {
   fmtShort,
   uid,
   tierForFR,
+  updateFrPeak,
+  frFloorOf,
+  frProtection,
+  FR_GRACE_DAYS,
+  FR_DECAY_DAYS,
   divisionForFR,
   seasonLabel,
   linReg,

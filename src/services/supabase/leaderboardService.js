@@ -9,11 +9,31 @@ import { currentUserId } from './authService';
 
 const COLS = 'id, username, display_name, avatar, level, rank, xp, weekly_xp, streak, longest_streak, best_e1rm, best_lift_name, consistency';
 
+// A ladder is only motivating if the people on it are still climbing.
+//
+// This used to sort EVERY profile row with no filter at all, so the global
+// board was padded with accounts that had signed up, never logged a set, and
+// never come back — which makes a small player base look smaller and deader
+// than it is. Two conditions, both cheap and both index-backed:
+//
+//   consistency > 0    trained at least once in the last 28 days
+//                      (derived server-side by levl_recompute_profile_stats,
+//                       so it cannot be faked from the client)
+//   updated_at recent  has actually opened the app
+//
+// Someone who stops training drops off the ladder rather than occupying it.
+const ACTIVE_WINDOW_DAYS = 30;
+
 // metric: 'weekly_xp' | 'xp' | 'level' | 'streak' | 'best_e1rm' | 'consistency' | 'longest_streak'
 export async function globalTop(metric = 'weekly_xp', limit = 100) {
   if (!isConfigured) return offline();
   try {
-    return await supabase.from('profiles').select(COLS).order(metric, { ascending: false }).limit(limit);
+    const since = new Date(Date.now() - ACTIVE_WINDOW_DAYS * 86400000).toISOString();
+    return await supabase.from('profiles').select(COLS)
+      .gt('consistency', 0)
+      .gte('updated_at', since)
+      .order(metric, { ascending: false })
+      .limit(limit);
   } catch (e) {
     return { data: null, error: { message: String(e && e.message || e) } };
   }

@@ -16,7 +16,12 @@ function readableAuthError(msg) {
   if (m.includes('invalid login')) return 'Incorrect email or password.';
   if (m.includes('already registered') || m.includes('already exists')) return 'An account with this email already exists — sign in instead.';
   if (m.includes('email not confirmed')) return 'Check your email to confirm your account, then sign in.';
-  if (m.includes('password') && m.includes('6')) return 'Password must be at least 6 characters.';
+  // Supabase phrases its own length complaint with whatever minimum the project
+  // is configured for, so match on the subject rather than on a specific digit —
+  // this used to look for "6" and went silent the moment the minimum moved.
+  if (m.includes('password') && (m.includes('short') || m.includes('at least') || m.includes('characters'))) {
+    return 'Password must be at least 8 characters.';
+  }
   if (m.includes('rate limit')) return 'Too many attempts. Wait an hour, then try again.';
   if (m.includes('audience') || m.includes('id_token')) return 'Apple sign-in isn\'t finished setting up yet. Use email for now.';
   return msg || 'Something went wrong — try again.';
@@ -235,7 +240,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
     setErr(''); setNotice('');
     const em = email.trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) { setErr('Enter a valid email address.'); return; }
-    if (pw.length < 6) { setErr('Password must be at least 6 characters.'); return; }
+    if (pw.length < 8) { setErr('Password must be at least 8 characters.'); return; }
     setBusy(true);
 
     // Cloud path: real Supabase auth, when configured. This runs ALONGSIDE the
@@ -342,7 +347,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
   const completeReset = async () => {
     const em = email.trim().toLowerCase();
     if (!resetCode.trim()) { setErr('Enter the 6-digit code from your email.'); return; }
-    if (!resetPw || resetPw.length < 6) { setErr('New password must be at least 6 characters.'); return; }
+    if (!resetPw || resetPw.length < 8) { setErr('New password must be at least 8 characters.'); return; }
     setErr(''); setNotice(''); setBusy(true);
     const v = await verifyResetCode(em, resetCode);
     if (v.error) { setBusy(false); setErr(readableAuthError(v.error.message) || 'That code is invalid or expired.'); return; }
@@ -404,7 +409,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
           <AuthField label="Email" value={email} onChangeText={setEmail}
             placeholder="you@example.com" autoCapitalize="none" autoCorrect={false} keyboardType="email-address" />
           <AuthField label="Password" value={pw} onChangeText={setPw}
-            placeholder="At least 6 characters" secureTextEntry />
+            placeholder="At least 8 characters" secureTextEntry />
           {mode === 'signup' && (
             <AuthField label="Confirm password" value={pw2} onChangeText={setPw2} placeholder="Repeat it" secureTextEntry />
           )}
@@ -459,7 +464,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                   <AuthField label="Reset code" value={resetCode} onChangeText={setResetCode}
                     placeholder="6 digits" keyboardType="number-pad" maxLength={6} />
                   <AuthField label="New password" value={resetPw} onChangeText={setResetPw}
-                    placeholder="At least 6 characters" secureTextEntry />
+                    placeholder="At least 8 characters" secureTextEntry />
                   <GoldBtn onPress={completeReset} disabled={busy}>{busy ? 'Working…' : 'Set new password'}</GoldBtn>
                 </View>
               )}
@@ -600,9 +605,12 @@ export function AccountTransfer({ makeCode, importCode }) {
 
   return (
     <View style={{ marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: C.line }}>
-      <Lbl>Move save to another device</Lbl>
+      {/* Rendered in two places now — the signed-out auth screen (move a save
+          to a new phone) and Settings (export my data). One label has to read
+          correctly for both, because they are the same mechanism. */}
+      <Lbl>Export or move your data</Lbl>
       <View style={s.row}>
-        <GhostBtn onPress={doExport} style={{ flex: 1, marginRight: 6 }}>Export backup code</GhostBtn>
+        <GhostBtn onPress={doExport} style={{ flex: 1, marginRight: 6 }}>Export my data</GhostBtn>
         <GhostBtn onPress={() => setMode('import')} style={{ flex: 1 }}>Import a code</GhostBtn>
       </View>
       {mode === 'export' && (

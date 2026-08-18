@@ -165,5 +165,47 @@ console.log('\n7. normal logging is untouched by the new opts parameter');
   ok('cardio xp unchanged formula', c.meta.xp === Math.max(5, Math.round(30 * 1.6)), String(c.meta.xp));
 }
 
+console.log('\n8. rank protection — a layoff costs you rank slowly, not instantly');
+{
+  const DAY = 86400000;
+  const now = Date.now();
+
+  ok('floor of a Grandmaster peak is the Champion minimum', E.frFloorOf(3700) === 3000, String(E.frFloorOf(3700)));
+  ok('floor of a Bronze peak is zero', E.frFloorOf(100) === 0, String(E.frFloorOf(100)));
+
+  ok('full protection during grace', E.frProtection(now - 14 * DAY, now) === 1);
+  ok('half protection mid-decay', Math.abs(E.frProtection(now - 21 * DAY, now) - 0.5) < 1e-9);
+  ok('no protection after decay', E.frProtection(now - 28 * DAY, now) === 0);
+  ok('no protection without a peak', E.frProtection(0, now) === 0);
+
+  // A Champion who stops training entirely: raw FR is zero in all three cases,
+  // so any difference is the floor doing its job.
+  const lapsed = (daysAgo) => {
+    const d = fresh();
+    d.frPeak = 3700; d.frPeakAt = now - daysAgo * DAY;
+    return E.computeDerived(d, now);
+  };
+  const at3 = lapsed(3), at21 = lapsed(21), at40 = lapsed(40);
+  ok('raw rating really is zero', at3.frRaw === 0, String(at3.frRaw));
+  ok('held at Champion during grace', at3.tier.name === 'Champion', at3.tier.name);
+  ok('flagged as protected, with a countdown', at3.frProtected && at3.frProtectionDaysLeft > 0);
+  ok('slid partway down mid-decay', at21.fr === 1500 && at21.tier.name === 'Gold', at21.tier.name);
+  ok('fully decayed after the window', at40.fr === 0 && at40.frProtected === false, at40.tier.name);
+
+  // An existing save that predates the feature must behave exactly as before.
+  const old = fresh();
+  delete old.frPeak; delete old.frPeakAt;
+  const dOld = E.computeDerived(old, now);
+  ok('old saves unaffected', dOld.fr === dOld.frRaw && dOld.frProtected === false);
+
+  // The peak is a high-water mark: it rises, never falls.
+  const kept = fresh();
+  kept.frPeak = 3000; kept.frPeakAt = now - 5 * DAY;
+  ok('peak is never lowered', E.updateFrPeak(kept, now).frPeak === 3000);
+
+  // Protection must never touch anything that pays out.
+  ok('protection does not grant XP', at3.level === E.computeDerived(fresh(), now).level);
+}
+
 console.log('\n' + (fail ? 'FAILED ' + fail + ' / ' + (pass + fail) : 'ALL ' + pass + ' CHECKS PASSED'));
 process.exit(fail ? 1 : 0);

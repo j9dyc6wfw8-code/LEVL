@@ -72,18 +72,28 @@ export async function incomingRequests() {
   }
 }
 
+// Accepting is ONE server-side call now, not two client writes.
+//
+// This used to mark the request accepted and then insert the friendship edge
+// straight from the phone. That required an INSERT policy on `friends` which
+// only checked that you were one of the two people in the row — never that the
+// other person had agreed. Anyone could therefore insert an edge with a
+// stranger and, because friendship is the key to friends-only content, read
+// that stranger's private Check In photographs. The victim simply gained a
+// friend they never added.
+//
+// accept_friend_request() (sql/2813) verifies a pending request exists, honours
+// blocks, and writes both rows in one transaction. There is no longer any
+// INSERT policy on `friends` at all, so this is the only way in.
 export async function acceptRequest(senderId) {
   if (!isConfigured) return offline();
   const uid = await currentUserId();
   if (!uid) return offline('Not signed in');
   try {
-    // mark request accepted
-    await supabase.from('friend_requests')
-      .update({ status: 'accepted' })
-      .eq('sender', senderId).eq('receiver', uid);
-    // create the symmetric friend edge (ordered, so it's unique)
+    const { error } = await supabase.rpc('accept_friend_request', { p_sender: senderId });
+    if (error) return { data: null, error };
     const [a, b] = ordered(uid, senderId);
-    return await supabase.from('friends').upsert({ user_one: a, user_two: b }, { onConflict: 'user_one,user_two' }).select().single();
+    return { data: { user_one: a, user_two: b }, error: null };
   } catch (e) {
     return { data: null, error: { message: String(e && e.message || e) } };
   }

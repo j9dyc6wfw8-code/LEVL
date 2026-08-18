@@ -1,4 +1,20 @@
 {
+  "_READ_THIS_FIRST": [
+    "iOS CONFIG IN THIS FILE IS NOT APPLIED AT BUILD TIME.",
+    "ios/ is committed on purpose (see .easignore: EAS resolves widget signing",
+    "credentials before upload, so the Xcode project has to already exist).",
+    "Because the native folder exists, EAS Build does NOT sync these keys:",
+    "orientation, userInterfaceStyle, scheme, backgroundColor, icon, splash,",
+    "ios, android, plugins. `npx expo-doctor` reports this on every run.",
+    "",
+    "So the blocks below are a MIRROR kept for reference, not configuration.",
+    "To actually change iOS behaviour, edit BOTH:",
+    "  ios/LEVL/Info.plist          usage strings, orientations, URL schemes",
+    "  ios/LEVL.xcodeproj           version, build number, device family",
+    "and keep the mirror below in step so the two never disagree.",
+    "",
+    "Editing only this file changes nothing, and the failure is silent."
+  ],
   "expo": {
     "name": "LEVL",
     "slug": "ascend",
@@ -17,7 +33,7 @@
       "**/*"
     ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
       "bundleIdentifier": "com.matteo.ascend",
       "buildNumber": "29",
       "usesAppleSignIn": true,

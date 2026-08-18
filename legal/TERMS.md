@@ -23,10 +23,16 @@ may not post, send or upload:
 - Spam, scams, or impersonation of another person
 - Anyone else's photograph without their permission
 
+**Filtering.** Captions, comments, usernames and display names are checked
+against a blocklist as you post them. Anything that matches is refused outright.
+
 **Reporting.** Every Check In and comment can be reported from the ⋯ menu, and
-any user can be blocked. Reports are reviewed and acted on **within 24 hours**.
-Content that breaks these rules is removed and the account may be suspended or
-terminated without notice or refund.
+any user can be blocked. Once three different people report the same post or
+comment it is hidden automatically, straight away, before anyone has reviewed it.
+
+**Review.** Reports are reviewed and acted on **within 24 hours**. Content that
+breaks these rules is removed and the account may be suspended or terminated
+without notice or refund.
 
 ## Fair play
 

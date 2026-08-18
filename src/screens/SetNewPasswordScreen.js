@@ -16,7 +16,7 @@ export default function SetNewPasswordScreen({ onDone, onCancel }) {
   const [err, setErr] = useState('');
 
   const submit = async () => {
-    if (!pw || pw.length < 6) { setErr('Password must be at least 6 characters.'); return; }
+    if (!pw || pw.length < 8) { setErr('Password must be at least 8 characters.'); return; }
     if (pw !== pw2) { setErr('Those passwords don\u2019t match.'); return; }
     setErr(''); setBusy(true);
     const { error } = await setNewPassword(pw);

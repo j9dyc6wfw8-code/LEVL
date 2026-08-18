@@ -23,12 +23,15 @@ import {
   applyPassReward, FORGE_PASS, passKey, passClaimable, PASS_PREMIUM_COST,
   AUTH_KEY, SAVE_PREFIX, emailKeyOf, openPack, applyPackReward, convertUnits,
   attemptForge, materialById, INTEGRITY, packsEarnedFromXP, COSMETICS,
+  updateFrPeak,
 } from '../engine/engine';
 import { stGet, stSet, stDel, b64encode, b64decode } from '../services/platform';
 import { primarySessionToday } from '../engine/session';
 import telemetry from '../services/telemetry';
 import workoutSession from '../services/workoutSession';
-import { pullAndResolve, pushInBackground, syncWorkouts } from '../services/supabase/syncService';
+import {
+  pullAndResolve, pushInBackground, syncWorkouts, removeSyncedWorkout,
+} from '../services/supabase/syncService';
 import { pushMyDuelScores } from '../services/supabase/duelService';
 import { isConfigured } from '../services/supabase/client';
 import {
@@ -188,6 +191,12 @@ export function useGameSave({ toast, onLevelUp, stage }) {
         nd._packsFromXP = earnedPacks;
       }
 
+      // Record a new Fitness Rating high-water mark, which is what rank
+      // protection decays from. Done here rather than in computeDerived because
+      // computeDerived is a pure read called on every render — the peak has to
+      // be written once, on a real change, and persisted with the save.
+      Object.assign(nd, updateFrPeak(nd, Date.now()));
+
       const after = levelFromXP(nd.xp);
       if (after > before) {
         const packs = { ...(nd.packs || { standard: 0, prime: 0, elite: 0 }) };
@@ -335,7 +344,16 @@ export function useGameSave({ toast, onLevelUp, stage }) {
   // entries that still exist.
   const deleteEntry = useCallback((id) => {
     const removed = commit((d) => removeEntryPure(d, id));
-    if (removed) toast('Entry removed — its XP was refunded', 'mut');
+    if (!removed) return;
+    toast('Entry removed — its XP was refunded', 'mut');
+    // The cloud row has to go too. Deleting locally used to be the whole story:
+    // pushWorkouts only ever upserted and `workouts` had no DELETE policy, so a
+    // mistyped 300 kg bench stayed in the public log permanently. Since
+    // sql/2811 derives best_e1rm, weekly_xp and consistency FROM that table,
+    // the typo the user had already corrected kept sitting at the top of the
+    // Strength leaderboard and kept counting toward any overlapping duel.
+    // The engine's entry id is the row's client_id, so this targets it exactly.
+    removeSyncedWorkout(id).catch(() => {});
   }, [commit, toast]);
 
   /* ------------------------------ editing -------------------------------

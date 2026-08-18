@@ -13,8 +13,9 @@
 // always reads from; the cloud is a mirror kept in step opportunistically.
 
 import { isConfigured } from './client';
-import { pushSave, pullSave, pushWorkouts } from './workoutService';
+import { pushSave, pullSave, pushWorkouts, deleteWorkout } from './workoutService';
 import { upsertMyProfile } from './profileService';
+import telemetry from '../telemetry';
 
 // Local saves don't currently carry an updatedAt field — add one without
 // disturbing the existing save shape. Called wherever we're about to compare
@@ -103,11 +104,37 @@ export async function syncWorkouts(entries, unit) {
   if (!isConfigured) return { data: null, error: { message: 'Backend not configured', offline: true } };
   if (!entries || !entries.length) return { data: [], error: null };
   try {
-    return await pushWorkouts(entries, unit);
+    const result = await pushWorkouts(entries, unit);
+    // A row the server refused as implausible is no longer allowed to be
+    // invisible. It used to abort the entire batch and then poison every
+    // subsequent sync without a single line anywhere saying so.
+    if (result && result.rejected && result.rejected.length) {
+      const first = result.rejected[0];
+      warnOnce('rejected:' + first.client_id,
+        result.rejected.length + ' workout row(s) were refused by the server. First: '
+        + first.exercise + ' ' + first.weight + (first.unit || '') + ' — ' + first.reason);
+      telemetry.track('workout_rows_rejected', {
+        count: result.rejected.length,
+        reason: first.reason.slice(0, 120),
+      });
+    }
+    return result;
   } catch (e) {
     // The caller still keeps the local save. Returning the error lets the duel
     // score update wait until the matching public workout rows exist, so the
     // score and visible exercise feed cannot drift apart.
     return { data: null, error: { message: String(e && e.message || e) } };
+  }
+}
+
+// Remove one set from the cloud log. Called when the user deletes an entry, so
+// the public record matches what they see. Silent on failure: the local save is
+// already correct, and the next full sync is not blocked by this.
+export async function removeSyncedWorkout(clientId) {
+  if (!isConfigured || !clientId) return { data: null, error: null };
+  try {
+    return await deleteWorkout(clientId);
+  } catch (e) {
+    return { data: null, error: { message: String((e && e.message) || e) } };
   }
 }

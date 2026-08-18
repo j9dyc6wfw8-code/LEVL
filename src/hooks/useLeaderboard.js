@@ -13,7 +13,15 @@ import { globalTop, friendsTop } from '../services/supabase/leaderboardService';
 import { listFriends } from '../services/supabase/friendService';
 
 export function useLeaderboard(accountKey) {
+  // Opens on FRIENDS when you have any, GLOBAL otherwise.
+  //
+  // Neither is right on its own. A global top-100 is where a new player finds
+  // out they are 94th, which is not the feeling to open on; a friends board is
+  // the one people actually care about — but it is just your own name until you
+  // have added somebody. So the default adapts once, on first load, rather than
+  // being a fixed guess that is wrong for half the users.
   const [scope, setScope] = useState('global');   // 'global' | 'friends'
+  const pickedScope = useRef(false);
     // Opens on the Strength board — the heaviest-lift list is the one people
   // actually want to see first.
   const [metric, setMetric] = useState('best_e1rm');
@@ -55,6 +63,22 @@ export function useLeaderboard(accountKey) {
     setRows([]); setMeId(null); setLoading(false);
     load();
   }, [accountKey, load]);
+
+  // Choose the opening scope once per account, from whether they actually have
+  // friends. Runs before the user has touched anything, so switching scope
+  // afterwards is never overridden.
+  useEffect(() => {
+    if (!isConfigured || !accountKey) return undefined;
+    let alive = true;
+    pickedScope.current = false;
+    (async () => {
+      const { data } = await listFriends();
+      if (!alive || pickedScope.current) return;
+      pickedScope.current = true;
+      if (data && data.length) setScope('friends');
+    })();
+    return () => { alive = false; };
+  }, [accountKey]);
 
   // The ladder had no refresh path at all: it loaded once and then went stale
   // for as long as the app stayed open, so someone could pass you and you would

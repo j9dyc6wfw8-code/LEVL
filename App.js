@@ -28,7 +28,7 @@ import {
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { C, alpha, s, T, MONO, RADIUS } from './src/theme';
-import { Toasts, LevelUpOverlay, FadeIn, CountUp, LevlRing, CoinGlyph, Glass } from './src/components/ui';
+import { Toasts, LevelUpOverlay, FadeIn, CountUp, LevlRing, CoinGlyph, Glass, Sheet } from './src/components/ui';
 import { coinBalance } from './src/engine/engine';
 import { todaysSessions, primarySessionToday } from './src/engine/session';
 import { stGet, stSet } from './src/services/platform';
@@ -92,10 +92,18 @@ import workoutSession from './src/services/workoutSession';
 import LiveActivity from './modules/levl-live-activity';
 import haptics from './src/services/haptics';
 
-const SPLASH_MS = 3500;
+// The splash is a brand moment, not a loading screen — the save is usually
+// ready long before it ends, so this number was pure imposed delay on EVERY
+// launch, including the ones where somebody is standing at a rack between sets.
+// BootScreen's entrance animation runs 700ms; 1400 lets the mark land and the
+// quote register, then gets out of the way. The gate below is
+// `stage === 'boot' || !splashDone`, so a slow load still waits as long as it
+// genuinely needs to — this only removes the artificial floor.
+const SPLASH_MS = 1400;
 const INTRO_KEY = 'ascend.introSeen.v1';
 const SOCIAL_INTRO_KEY = 'levl.socialIntroSeen.v1';
 const GUEST_PROMPT_KEY = 'levl.guestBackupPrompt.v1';
+const PROFILE_PROMPT_KEY = 'levl.profilePrompt.v1';
 const LAST_USER_KEY = 'ascend-last-user';
 
 // Toast colours, resolved here so the data layer can name a tone rather than
@@ -253,6 +261,30 @@ function AppInner() {
   }, [stage, friends, prefs, scopeAutoMoved]);
   const feed = useCheckInFeed(user, scope);
   const health = useHealth(stage === 'app');
+
+  /* ---- the physical profile, asked for at the right moment ------------------
+   * This used to be a hard gate between signup and the app (see the note where
+   * it was). It is now a single sheet, offered once, AFTER the first logged
+   * set — at which point the user has seen XP land and knows what they are
+   * filling it in for. Skippable, because none of it is required to log, and
+   * always available afterwards in Settings → Physical profile.
+   * ---------------------------------------------------------------------- */
+  const [profileSheet, setProfileSheet] = useState(false);
+  const [profilePrompted, setProfilePrompted] = useState(true);
+  useEffect(() => {
+    stGet(PROFILE_PROMPT_KEY).then((v) => setProfilePrompted(v === '1')).catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (stage !== 'app' || profilePrompted || data.profileComplete) return;
+    const logged = (data.lifts || []).length + (data.cardio || []).length;
+    if (logged < 1) return;
+    setProfilePrompted(true);
+    stSet(PROFILE_PROMPT_KEY, '1').catch(() => {});
+    // A beat after the XP toast, so the reward lands first and the sheet does
+    // not fight it for attention.
+    const id = setTimeout(() => setProfileSheet(true), 1600);
+    return () => clearTimeout(id);
+  }, [stage, profilePrompted, data.profileComplete, data.lifts, data.cardio]);
 
   /* ---- guests have something to lose now -----------------------------------
    * "Continue as guest / Saves to this device only" is honest but far too quiet
@@ -582,16 +614,21 @@ function AppInner() {
       </SafeAreaView>
     );
   }
-  if (!data.profileComplete) {
-    return (
-      <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }}>
-        <StatusBar barStyle="light-content" />
-        <Toasts items={toasts} />
-        <PhysicalProfileForm data={data}
-          onSave={(p) => { game.saveProfile(p); toast('Profile saved — welcome!', 'green'); }} />
-      </SafeAreaView>
-    );
-  }
+  /* THE PROFILE FORM USED TO BE A WALL HERE.
+   *
+   * Six fields — bodyweight, height, age, sex, activity, experience — stood
+   * between finishing signup and ever seeing the app. That is the single
+   * highest-risk moment in the funnel: the new user has been asked to commit
+   * before being shown one reason to. LEVL's actual "oh, I get it" moment is
+   * the first logged set, when XP lands and the ring moves, and it was sitting
+   * three minutes and six text fields behind a form.
+   *
+   * Nothing needs the profile in order to log. validateLift only consults
+   * bodyweight when it is greater than zero (engine.js), so an empty profile
+   * simply skips the bodyweight-multiple check and every other rule still
+   * applies. So the form is now asked for AFTER the first set — see the prompt
+   * effect above — and lives permanently in Settings → Physical profile.
+   */
 
   /* -------------------------------- app ---------------------------------- */
 
@@ -893,6 +930,27 @@ function AppInner() {
         onCheckIn={() => { setShareSession(null); openCamera(); }}
         onDismiss={() => setShareSession(null)}
       />
+
+      {/* Asked once, after the first set is in the log — never before it. */}
+      <Sheet
+        visible={profileSheet}
+        title="A few details"
+        onClose={() => setProfileSheet(false)}>
+        <Text style={{ ...T.subheadline, color: C.mut, lineHeight: 21, marginBottom: 14 }}>
+          Nice work. Adding these lets LEVL sanity-check your lifts and put your
+          stats in context. You can skip it and fill it in later in Settings.
+        </Text>
+        <PhysicalProfileForm
+          data={data}
+          embedded
+          onSave={(p) => {
+            game.saveProfile(p);
+            setProfileSheet(false);
+            toast('Profile saved', 'green');
+          }}
+          onCancel={() => setProfileSheet(false)}
+        />
+      </Sheet>
 
       {/* ---- modal stack -------------------------------------------------- */}
       <Modal

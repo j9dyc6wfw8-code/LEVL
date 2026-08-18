@@ -491,6 +491,16 @@ export default function SettingsScreen({
         <Section label="HELP & DATA">
           <GhostBtn onPress={() => setGuideOpen(true)}>Replay app guide</GhostBtn>
           <GhostBtn onPress={() => setBugOpen(true)} style={{ marginTop: 10 }}>Report a bug</GhostBtn>
+
+          {/* EXPORT.
+              The backup code has always been able to do this — it just lived
+              on the signed-OUT auth screen, where a signed-in user could never
+              find it. Meanwhile the Privacy Policy tells people "the backup
+              code exports it in full", which is the right to access under UK/EU
+              GDPR. A right you cannot locate is not a right, so the same
+              component is now here, under the word people would look for. */}
+          <AccountTransfer makeCode={makeCode} importCode={importCode} />
+
           {empty ? (
             <Pressable onPress={loadDemo} style={[s.ghostBtn, { marginTop: 10, borderColor: C.gold }]}>
               <Text style={{ ...T.subheadline, fontWeight: '600', color: C.gold }}>Load 4-week demo save</Text>

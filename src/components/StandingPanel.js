@@ -143,6 +143,35 @@ export default function StandingPanel({ dv, rank, fieldSize, detail, onToggleDet
         </View>
       </View>
 
+      {/* ---- rank protection ----
+          Fitness Rating is a 28-day rolling number, so a layoff drains all four
+          of its terms. Rank protection holds you up while you are away — but a
+          number that is being propped up and does not say so is exactly the
+          kind of unexplained figure that makes people distrust an app. If the
+          floor is doing the work, the card says so, and says for how long. */}
+      {dv.frProtected ? (
+        <View
+          accessible
+          accessibilityLabel={
+            'Rank protected. Your rating is being held at '
+            + dv.fr.toLocaleString() + ' for ' + dv.frProtectionDaysLeft
+            + ' more days. Train to restore it.'
+          }
+          style={{
+            marginTop: 12, padding: 10, borderRadius: RADIUS.md,
+            backgroundColor: alpha(tier.color, 0.10),
+            borderWidth: 1, borderColor: alpha(tier.color, 0.28),
+          }}>
+          <Text style={{ ...T.caption, color: tier.color, fontWeight: '700', letterSpacing: 0.3 }}>
+            RANK PROTECTED · {dv.frProtectionDaysLeft} {dv.frProtectionDaysLeft === 1 ? 'DAY' : 'DAYS'} LEFT
+          </Text>
+          <Text style={{ ...T.caption, color: C.mut, marginTop: 3, lineHeight: 16 }}>
+            You are being held at {tier.name} while you are away. Train to earn it back
+            before the protection runs out.
+          </Text>
+        </View>
+      ) : null}
+
       {/* ---- the breakdown: what the number is actually made of ---- */}
       <Pressable
         onPress={onToggleDetail}

@@ -581,13 +581,19 @@ export async function addComment(checkInId, body) {
 
 // Soft delete, so the count trigger can adjust and the row survives for
 // moderation. Allowed for the comment's author and the post's owner.
+//
+// This used to be a direct UPDATE, which needed a policy granting the post's
+// OWNER update rights over somebody else's comment row. That policy had no
+// column restriction, so the owner could rewrite `body` as easily as set
+// `deleted_at` — putting words in another person's mouth under their name.
+// levl_hide_comment() (sql/2815) touches deleted_at and nothing else, and
+// checks the caller is the author or the post owner.
 export async function deleteComment(commentId) {
   if (!isConfigured) return offline();
   try {
-    return await supabase
-      .from('check_in_comments')
-      .update({ deleted_at: new Date().toISOString() })
-      .eq('id', commentId);
+    const { error } = await supabase.rpc('levl_hide_comment', { p_comment: commentId });
+    if (error) return { data: null, error };
+    return { data: true, error: null };
   } catch (e) {
     return { data: null, error: { message: String((e && e.message) || e) } };
   }

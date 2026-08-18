@@ -91,6 +91,15 @@ export async function pushWorkouts(entries, preferredUnit = 'kg') {
     if (!result.error) return result;
 
     const message = String(result.error.message || result.error.code || '');
+
+    // A plausibility rejection from levl_validate_workout is NOT a schema
+    // problem, and it is the one failure that used to be catastrophic: the
+    // whole batch is one statement, so a single refused row aborted all 500 —
+    // and because the caller re-sends the same recent window on every sync, the
+    // offending row poisoned every future attempt, permanently and silently.
+    // Chunk instead, so one bad set costs one bad set.
+    if (isPlausibilityRejection(result.error)) return await upsertInChunks(rows);
+
     const canUseLegacySchema = /schema cache|column|constraint|unique|42P10/i.test(message);
     if (!canUseLegacySchema) return result;
     const legacyRows = rows.map(({ kind, unit, rpe, distance, session_id, ...legacy }) => legacy);
@@ -104,6 +113,77 @@ export async function pushWorkouts(entries, preferredUnit = 'kg') {
       if (!result.error) return result;
     }
     return result;
+  } catch (e) {
+    return { data: null, error: { message: String(e && e.message || e) } };
+  }
+}
+
+// The server raises P0001 with a message beginning "workout rejected:" for a
+// row it considers implausible. Anything else is a transport or schema fault
+// and must not be treated as a bad row.
+function isPlausibilityRejection(error) {
+  if (!error) return false;
+  const msg = String(error.message || '');
+  return String(error.code) === 'P0001' || /workout rejected/i.test(msg);
+}
+
+const CHUNK_SIZE = 50;
+
+// Upload in chunks; isolate a failing chunk row by row. Returns the rows that
+// DID land, plus a `rejected` list naming the ones the server refused and why —
+// so the caller can tell the user instead of losing their training in silence.
+async function upsertInChunks(rows) {
+  const saved = [];
+  const rejected = [];
+
+  const push = async (batch) => supabase
+    .from('workouts')
+    .upsert(batch, { onConflict: 'user_id,client_id' })
+    .select();
+
+  for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + CHUNK_SIZE);
+    const res = await push(chunk);
+    if (!res.error) { saved.push(...(res.data || [])); continue; }
+    if (!isPlausibilityRejection(res.error)) return res;   // real failure: stop
+
+    // Narrow it to the individual offenders.
+    for (const row of chunk) {
+      const one = await push([row]);
+      if (!one.error) { saved.push(...(one.data || [])); continue; }
+      if (!isPlausibilityRejection(one.error)) return one;
+      rejected.push({
+        client_id: row.client_id,
+        exercise: row.exercise,
+        weight: row.weight,
+        unit: row.unit,
+        reason: String(one.error.message || 'rejected'),
+      });
+    }
+  }
+
+  return { data: saved, error: null, rejected };
+}
+
+// Remove a set from the cloud log.
+//
+// Deleting in the app only ever changed the local save, and this file only
+// upserted — so a mistyped 300 kg bench that the user deleted stayed in
+// `public.workouts` forever. Since sql/2811 derives best_e1rm, weekly_xp and
+// consistency FROM that table, the typo kept sitting at the top of the Strength
+// leaderboard and kept counting toward any overlapping duel. The
+// levl_workouts_touch_profile trigger fires on DELETE, so the derived stats
+// correct themselves the moment the row goes.
+export async function deleteWorkout(clientId) {
+  if (!isConfigured) return offline();
+  if (!clientId) return { data: null, error: null };
+  const uid = await currentUserId();
+  if (!uid) return offline('Not signed in');
+  try {
+    return await supabase.from('workouts')
+      .delete()
+      .eq('user_id', uid)
+      .eq('client_id', String(clientId));
   } catch (e) {
     return { data: null, error: { message: String(e && e.message || e) } };
   }
