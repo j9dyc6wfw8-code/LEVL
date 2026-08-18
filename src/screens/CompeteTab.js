@@ -62,6 +62,7 @@ export default function CompeteTab({
   onChallengeFriend,
   onCreateInvite,
   onJoinByCode,
+  duelsEnabled = true,
 }) {
   // Breakdown state lives here so it survives switching segments — a player
   // who opened it to understand their rating should not have it snap shut.
@@ -140,6 +141,7 @@ export default function CompeteTab({
 
       {active === 'duels' ? (
         <DuelTab
+          enabled={duelsEnabled}
           data={data}
           dv={dv}
           startDuel={startDuel}

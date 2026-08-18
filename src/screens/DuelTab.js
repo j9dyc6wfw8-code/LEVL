@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, Pressable, TextInput } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
 import { C, s, MONO, TYPE, RADIUS } from '../theme';
-import { Card, Lbl, PBar, GoldBtn } from '../components/ui';
+import { Card, Lbl, PBar, GoldBtn, Unavailable } from '../components/ui';
 import { MiniHunter } from '../components/Hunter';
 import { LoadoutCompare } from '../components/LoadoutCard';
 import { shareText } from '../services/platform';
@@ -110,7 +110,11 @@ function DuelHistory({ past }) {
 // to render a gold pill row identical to the one directly above it — and it
 // also retires a duplicate doorway, since Friends already had its own modal
 // route (levl://friends). The focusFriendsSignal effect moved up with it.
-export default function DuelTab({ data, dv, startDuel, claimDuel, forfeitDuel, friendDuels, onCreateInvite, onJoinByCode }) {
+export default function DuelTab({ data, dv, startDuel, claimDuel, forfeitDuel, friendDuels, onCreateInvite, onJoinByCode, enabled = true }) {
+  if (!enabled) {
+    return <Unavailable title="Duels are paused" body="New duels are switched off for a moment. Any duel already running is unaffected and still scoring." />;
+  }
+
   const now = Date.now();
   const [confirmFF, setConfirmFF] = useState(false);
   const duels = data.duels || [];

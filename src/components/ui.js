@@ -380,6 +380,36 @@ export function Segmented({ options, value, onChange, style, tint, dense }) {
   );
 }
 
+/* A subsystem switched off from app_config.
+ *
+ * The point of a kill switch is that the affected screen says something HONEST
+ * rather than appearing broken. "Temporarily unavailable" with a reason reads as
+ * a company in control; an empty feed that silently fails reads as a dead app.
+ */
+export function Unavailable({ title, body }) {
+  return (
+    <View style={[s.card, { alignItems: 'center', paddingVertical: 30 }]}>
+      <View style={{
+        width: 40, height: 40, borderRadius: 20, marginBottom: 12,
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: alpha(C.orange, 0.14),
+        borderWidth: 1, borderColor: alpha(C.orange, 0.4),
+      }}>
+        <Text style={{ fontSize: 19, fontWeight: '800', color: C.orange }}>!</Text>
+      </View>
+      <Text style={{ ...TYPE.heading, color: C.text, textAlign: 'center' }}>
+        {title || 'Temporarily unavailable'}
+      </Text>
+      <Text style={{
+        ...TYPE.caption, color: C.mut, textAlign: 'center',
+        marginTop: 6, lineHeight: 18, maxWidth: 300,
+      }}>
+        {body || 'We have switched this off for a moment while we fix something. Everything else still works, and nothing you have logged is affected.'}
+      </Text>
+    </View>
+  );
+}
+
 /* ---------------------- dropdown / sheet picker ------------------------- */
 // A tap target that reads like an iOS form row, opening a proper bottom sheet.
 // Replaces nested scroll lists — the page scrolls, the sheet scrolls, never both.

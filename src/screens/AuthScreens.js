@@ -7,6 +7,7 @@ import { copyText, pasteText } from '../services/platform';
 import { isConfigured } from '../services/supabase/client';
 import { signInEmail, signUpEmail, resetPassword, verifyResetCode, setNewPassword, acceptTerms } from '../services/supabase/authService';
 import { PRIVACY_URL, TERMS_URL, TERMS_VERSION } from '../services/legal';
+import telemetry from '../services/telemetry';
 import { isAppleAuthAvailable, signInWithApple } from '../services/appleAuth';
 
 // Friendlier text for the handful of Supabase auth errors a user actually hits.
@@ -248,7 +249,10 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
           const { data, error } = await signUpEmail(em, pw);
           // Recorded server-side against the profile, with the version, so the
           // acceptance is evidence rather than a checkbox that vanished.
-          if (!error) acceptTerms(TERMS_VERSION).catch(() => {});
+          if (!error) {
+            acceptTerms(TERMS_VERSION).catch(() => {});
+            telemetry.track(telemetry.EVENTS.SIGNED_UP, { method: 'email' });
+          }
           if (error) { setErr(readableAuthError(error.message)); setBusy(false); return; }
 
           // Supabase returns a session ONLY if email confirmation is off. If

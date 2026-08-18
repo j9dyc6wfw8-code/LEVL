@@ -69,6 +69,8 @@ import { useFriends } from './src/hooks/useFriends';
 import { useFriendDuels } from './src/hooks/useFriendDuels';
 import { useLeaderboard } from './src/hooks/useLeaderboard';
 import { useNotifications } from './src/hooks/useNotifications';
+import { useAppConfig } from './src/hooks/useAppConfig';
+import telemetry from './src/services/telemetry';
 
 import { TABS, MODALS } from './src/navigation/routes';
 import { isConfigured } from './src/services/supabase/client';
@@ -237,6 +239,15 @@ function AppInner() {
   const feed = useCheckInFeed(user, scope);
   const health = useHealth(stage === 'app');
 
+  /* The six events. Fired here rather than scattered through the screens, so the
+   * whole funnel is legible in one place and nobody has to grep for what is
+   * being measured. */
+  useEffect(() => { telemetry.identify(myUid || null); }, [myUid]);
+  useEffect(() => {
+    if (stage !== 'app') return;
+    telemetry.track(telemetry.EVENTS.APP_OPEN, { signedIn: !!user });
+  }, [stage, user]);
+
   const friends = useFriends(user);
   const quickDuelActive = useMemo(
     () => (data.duels || []).some((duel) => duel.status === 'active'),
@@ -245,6 +256,9 @@ function AppInner() {
   const friendDuels = useFriendDuels(user, quickDuelActive, game.receiveFriendDuelReward);
   const leaderboard = useLeaderboard(user);
   const notificationCenter = useNotifications(user);
+  // Read once at launch; every flag defaults to ON and stays on if the fetch
+  // fails, so a network hiccup can never take a subsystem down.
+  const appConfig = useAppConfig();
 
   const [myUid, setMyUid] = useState(null);
   useEffect(() => {
@@ -685,6 +699,7 @@ function AppInner() {
             scope={scope}
             setScope={setScope}
             checkIn={checkIn}
+            enabled={appConfig.social_enabled}
             prefsWindowText={prefs ? windowLabel(prefs) : null}
             publicDiscovery={prefs ? prefs.public_discovery : true}
             unit={data.unit}
@@ -730,6 +745,7 @@ function AppInner() {
                 view={router.competeView}
                 setView={router.setCompeteView}
                 userEmail={user}
+                duelsEnabled={appConfig.duels_enabled}
                 leaderboard={leaderboard}
                 friends={friends}
                 friendDuels={friendDuels}
@@ -853,6 +869,7 @@ function AppInner() {
             friends={friends}
             friendDuels={friendDuels}
             sessionsToday={sessionsToday}
+            appConfig={appConfig}
             onPosted={onPosted}
             onSignOut={doSignOut}
             onOpenProfile={openProfileOf}
@@ -868,7 +885,7 @@ function AppInner() {
 
 function ModalHost({
   modal, router, game, data, dv, user, myUid, checkIn,
-  prefsApi, health, friends, friendDuels, sessionsToday,
+  prefsApi, health, friends, friendDuels, sessionsToday, appConfig,
   onPosted, onSignOut, onOpenProfile, onChallengeFriend,
 }) {
   const close = router.popModal;
@@ -971,6 +988,7 @@ function ModalHost({
       return (
         <ModalShell title="Packs" onClose={close}>
           <PacksTab data={data} dv={dv} openPackH={game.openPack}
+            enabled={!appConfig || appConfig.packs_enabled !== false}
             grantTestPack={game.grantTestPack} goBack={close} />
         </ModalShell>
       );
@@ -1033,7 +1051,13 @@ class RootBoundary extends React.Component {
     this.state = { err: null };
   }
   static getDerivedStateFromError(err) { return { err }; }
-  componentDidCatch(err) { this.setState({ err }); }
+  componentDidCatch(err, info) {
+    this.setState({ err });
+    // The boundary already put the error on screen for the user. This is the
+    // half that was missing: telling US. Without it a crash is only ever seen by
+    // the one person it happened to.
+    try { telemetry.captureFatal(err, info); } catch (e) {}
+  }
   render() {
     if (!this.state.err) return this.props.children;
     const msg = String(this.state.err && (this.state.err.stack || this.state.err.message || this.state.err));

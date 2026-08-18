@@ -5,7 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { C, alpha, s, T, RADIUS, RARITY as RARITY_THEME } from '../theme';
-import { Card, Lbl, GoldBtn, GhostBtn, CountUp, ChunkyBtn, Stagger, Segmented } from '../components/ui';
+import { Card, Lbl, GoldBtn, GhostBtn, CountUp, ChunkyBtn, Stagger, Segmented, Unavailable } from '../components/ui';
 import { PackGlyph, RewardGlyph, LockGlyph } from '../components/ItemGlyph';
 import { PACK_TYPES, packTypeByKey, packMeter, COSMETICS, PACK_TITLES, DECORATIONS } from '../engine/engine';
 import { Sheet } from '../components/ui';
@@ -529,13 +529,17 @@ function PackOpening({ packKey, reward, onDone }) {
 }
 
 /* -------------------------------- screen -------------------------------- */
-export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack }) {
+export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack, enabled = true }) {
   const [opening, setOpening] = useState(null); // { packKey, reward }
   const [catalogueOpen, setCatalogueOpen] = useState(false);
   const meter = packMeter(data);
   const pulls = data.recentPulls || [];
   const packs = data.packs || { standard: 0, prime: 0, elite: 0 };
   const totalPacks = (packs.standard || 0) + (packs.prime || 0) + (packs.elite || 0);
+
+  if (!enabled) {
+    return <Unavailable title="Packs are paused" body="Pack opening is switched off for a moment. Your unopened packs are safe and will be waiting." />;
+  }
 
   const doOpen = (packKey) => {
     if ((packs[packKey] || 0) <= 0) return;

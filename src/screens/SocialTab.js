@@ -29,7 +29,7 @@ import CheckInPrompt from '../components/social/CheckInPrompt';
 import FeedSkeleton from '../components/social/FeedSkeleton';
 import CommentSheet from '../components/social/CommentSheet';
 import SFIcon from '../components/SFIcon';
-import { Segmented } from '../components/ui';
+import { Segmented, Unavailable } from '../components/ui';
 import { useCheckInComments } from '../hooks/useCheckInComments';
 import { REPORT_REASONS, reportContent, blockUser } from '../services/supabase/checkInService';
 import haptics from '../services/haptics';
@@ -40,6 +40,7 @@ const SCOPES = [
 ];
 
 export default function SocialTab({
+  enabled = true,
   user,
   me,
   feed,
@@ -221,6 +222,17 @@ export default function SocialTab({
     onOpenCamera, onOpenFriends, onOpenActivity, onAttachWorkout, onSignIn,
     setScope, unreadCount, pendingRequests,
   ]);
+
+  if (!enabled) {
+    return (
+      <View style={{ flex: 1, padding: 14 }}>
+        <Unavailable
+          title="Social is paused"
+          body="The feed is switched off for a moment while we fix something. Your Check Ins are safe, and everything else in LEVL still works."
+        />
+      </View>
+    );
+  }
 
   /* ------------------------------- rendering ------------------------------ */
 

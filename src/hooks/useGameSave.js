@@ -26,6 +26,7 @@ import {
 } from '../engine/engine';
 import { stGet, stSet, stDel, b64encode, b64decode } from '../services/platform';
 import { primarySessionToday } from '../engine/session';
+import telemetry from '../services/telemetry';
 import workoutSession from '../services/workoutSession';
 import { pullAndResolve, pushInBackground, syncWorkouts } from '../services/supabase/syncService';
 import { pushMyDuelScores } from '../services/supabase/duelService';
@@ -244,6 +245,15 @@ export function useGameSave({ toast, onLevelUp, stage }) {
     });
   }, []);
 
+  /* Activation milestones. Counted from the save rather than tracked per screen,
+   * so batch logging, cardio and lifts all land on the same definition of
+   * "their first set" — and there is exactly one place to look. */
+  const trackMilestones = useCallback((nextData) => {
+    const total = ((nextData.lifts || []).length + (nextData.cardio || []).length);
+    if (total === 1) telemetry.track(telemetry.EVENTS.FIRST_SET);
+    else if (total === 3) telemetry.track(telemetry.EVENTS.THIRD_SET);
+  }, []);
+
   const addLift = useCallback((ex, w, r, rpe) => {
     const check = validateLift(data, ex, w, r, rpe, Date.now());
     if (!check.ok) { toast(check.reason, 'error'); return null; }
@@ -258,10 +268,13 @@ export function useGameSave({ toast, onLevelUp, stage }) {
       }
       // dataRef is updated by the effect above on the next tick, so read the
       // freshest snapshot rather than the closed-over `data`.
-      setTimeout(() => mirrorToSession(dataRef.current, { ...meta, w, r }, ex), 0);
+      setTimeout(() => {
+        mirrorToSession(dataRef.current, { ...meta, w, r }, ex);
+        trackMilestones(dataRef.current);
+      }, 0);
     }
     return meta;
-  }, [data, commit, toast, mirrorToSession]);
+  }, [data, commit, toast, mirrorToSession, trackMilestones]);
 
   // Log N identical sets at once, for when someone trains first and logs after.
   // Timestamps are backdated ~3 min apart so history and volume windows stay
@@ -311,9 +324,10 @@ export function useGameSave({ toast, onLevelUp, stage }) {
     if (meta) {
       if (meta.capped) toast('Daily XP cap reached — logged, 0 XP', 'mut');
       else toast('+' + (meta.xp + meta.bonus) + ' XP');
+      setTimeout(() => trackMilestones(dataRef.current), 0);
     }
     return meta;
-  }, [data, commit, toast]);
+  }, [data, commit, toast, trackMilestones]);
 
   // Deleting an entry must refund its XP and stat allocation. Filtering the
   // arrays alone left the XP behind, so a set could be logged, deleted and
@@ -426,6 +440,7 @@ export function useGameSave({ toast, onLevelUp, stage }) {
       }
       return { nd: { ...d, workoutDays: next }, meta: null };
     });
+    if (!(day && day.id)) telemetry.track(telemetry.EVENTS.WORKOUT_DAY_CREATED);
     toast(day && day.id ? 'Workout Day updated' : 'Workout Day saved', 'green');
   }, [commit, toast]);
 
