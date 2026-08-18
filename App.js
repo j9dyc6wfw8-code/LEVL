@@ -719,6 +719,7 @@ function AppInner() {
                 onDeleteDay={game.deleteWorkoutDay}
                 onEditEntry={game.editEntry}
                 onDeleteEntry={game.deleteEntry}
+                onSetRestSeconds={game.setRestSeconds}
                 onOpenAnalytics={() => router.pushModal(MODALS.ANALYTICS)}
               />
             ) : null}

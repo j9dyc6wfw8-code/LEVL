@@ -493,6 +493,8 @@ const DEFAULT_DATA = {
   forgeLevels: {}, forgeTemper: {},
   // Saved workout days (e.g. "Chest & Tris") for one-tap logging on the Train tab.
   workoutDays: [],
+  // Rest between sets, in seconds. 0 turns the timer off entirely.
+  restSeconds: 90,
   lifts: [], cardio: [],
 };
 

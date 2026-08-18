@@ -49,7 +49,15 @@ export default function ActiveWorkoutBar({ onFinished }) {
 
   if (!state.active) return null;
 
-  const resting = state.resting && state.restRemaining > 0;
+  /* Read FRESH on every render, not from the subscription snapshot.
+   * The 1s interval above forces a re-render, but `state` only changes when the
+   * store publishes — and the rest countdown is derived from a timestamp rather
+   * than published each second. Reading the snapshot meant the bar showed the
+   * rest length frozen at whatever it was when the set was logged: it said
+   * "Rest 1:30" for the entire ninety seconds. Invisible while nothing ever
+   * started a rest; obvious the moment one did. */
+  const live = workoutSession.getState();
+  const resting = live.resting && live.restRemaining > 0;
 
   return (
     <View style={{
@@ -62,7 +70,7 @@ export default function ActiveWorkoutBar({ onFinished }) {
       accessible
       accessibilityLabel={
         `Workout in progress. ${state.exercise}, set ${state.setNumber}. `
-        + (resting ? `Resting, ${state.restRemaining} seconds left.` : `Elapsed ${formatDuration(state.elapsedMs)}.`)
+        + (resting ? `Resting, ${live.restRemaining} seconds left.` : `Elapsed ${formatDuration(live.elapsedMs)}.`)
       }>
 
       <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: C.green, marginRight: 9 }} />
@@ -74,8 +82,8 @@ export default function ActiveWorkoutBar({ onFinished }) {
         </Text>
         <Text style={{ ...T.caption, ...T.numeric, color: C.mut, marginTop: 1 }}>
           {resting
-            ? `Rest ${formatDuration(state.restRemaining * 1000)}`
-            : formatDuration(state.elapsedMs)}
+            ? `Rest ${formatDuration(live.restRemaining * 1000)}`
+            : formatDuration(live.elapsedMs)}
           {state.xpEarned > 0 ? ` · +${state.xpEarned} XP` : ''}
         </Text>
       </View>

@@ -1,6 +1,7 @@
 // LEVL React Native — Train hub (Log Lift · Cardio · Calculator)
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import workoutSession from '../services/workoutSession';
 import { C, s, MONO, alpha } from '../theme';
 import { Card, Lbl, Chip, PBar, NumField, GoldBtn, GreenBtn, FadeIn, CountUp, Sheet, ScreenHeader, Segmented } from '../components/ui';
 import MuscleIcon from '../components/MuscleIcon';
@@ -75,7 +76,7 @@ const EFFORT = [
   { v: 10, label: 'Maximal',   hint: 'Nothing left — could not do another rep.' },
 ];
 
-function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDeleteDay, session, onEditEntry, onDeleteEntry }) {
+function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDeleteDay, session, onEditEntry, onDeleteEntry, onSetRestSeconds }) {
   const [query, setQuery] = useState('');
   const [cat, setCat] = useState('All');
   // Selection and in-progress entry live in TrainTab so switching to the
@@ -179,6 +180,43 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
 
   const todayCount = sel ? data.lifts.filter((l) => l.ex === sel.n && dayKeyOf(l.t) === dayKeyOf(Date.now())).length : 0;
   const best = sel && dv.best[sel.n] ? dv.best[sel.n].e1rm : 0;
+
+  /* ---------------------- what you did last time ------------------------
+   * The single most-looked-at thing in a training log, and it was missing:
+   * the screen showed a lifetime best e1RM and nothing about the session you
+   * are actually trying to beat. You cannot progressively overload against a
+   * number you cannot see, so people were leaving the app to check their old
+   * one.
+   *
+   * "Last time" means the most recent DAY this exercise was trained, not the
+   * most recent set — a session is what you compare against. Today is excluded
+   * on purpose: while you are mid-workout, the thing you want on screen is last
+   * week, not the set you logged ninety seconds ago (that one is already shown
+   * by the confirmation card).
+   * ------------------------------------------------------------------- */
+  const lastSession = useMemo(() => {
+    if (!sel) return null;
+    const today = dayKeyOf(Date.now());
+    const mine = (data.lifts || [])
+      .filter((l) => l && l.ex === sel.n && dayKeyOf(l.t) !== today)
+      .sort((a, b) => b.t - a.t);
+    if (!mine.length) return null;
+    const key = dayKeyOf(mine[0].t);
+    const sameDay = mine.filter((l) => dayKeyOf(l.t) === key).sort((a, b) => a.t - b.t);
+    const top = sameDay.reduce((m, l) => ((l.e1rm || 0) > (m.e1rm || 0) ? l : m), sameDay[0]);
+    return { t: mine[0].t, sets: sameDay, top };
+  }, [sel, data.lifts]);
+
+  // Days since that session, for the "3d ago" stamp.
+  const lastAgo = useMemo(() => {
+    if (!lastSession) return '';
+    const days = Math.round((Date.now() - lastSession.t) / 86400000);
+    if (days <= 0) return 'earlier';
+    if (days === 1) return 'yesterday';
+    if (days < 7) return days + 'd ago';
+    if (days < 30) return Math.round(days / 7) + 'w ago';
+    return Math.round(days / 30) + 'mo ago';
+  }, [lastSession]);
 
   const log = () => {
     const wN = parseFloat(w) || 0, rN = parseInt(r, 10) || 0;
@@ -488,6 +526,71 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
               </Pressable>
             </View>
           </View>
+          {/* ---- last time -------------------------------------------------
+              Tapping it loads those numbers into the fields. Beating last week
+              is the entire job of a training log, so the target and the way to
+              match it are one control. */}
+          {lastSession ? (
+            <Pressable
+              onPress={() => {
+                const src = lastSession.top || lastSession.sets[0];
+                if (!src) return;
+                setW(String(src.w != null ? src.w : ''));
+                setR(String(src.r != null ? src.r : ''));
+                if (src.rpe) setRpe(src.rpe);
+              }}
+              accessibilityRole="button"
+              accessibilityLabel={'Last time, ' + lastAgo + ': ' + lastSession.sets
+                .map((l) => l.w + ' ' + unit + ' for ' + l.r + ' reps').join(', ') + '. Tap to load these numbers.'}
+              style={{
+                marginTop: 14, padding: 12, borderRadius: 12,
+                backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
+              }}>
+              <View style={s.between}>
+                <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 1.2, color: C.dim }}>
+                  LAST TIME · {lastAgo.toUpperCase()}
+                </Text>
+                <Text style={{ fontSize: 11, fontWeight: '700', color: C.gold }}>Tap to load</Text>
+              </View>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
+                {lastSession.sets.slice(0, 6).map((l, i) => {
+                  const isTop = lastSession.top && l.id === lastSession.top.id;
+                  return (
+                    <View key={l.id || i} style={{
+                      paddingHorizontal: 9, paddingVertical: 5, borderRadius: 8,
+                      marginRight: 6, marginBottom: 6,
+                      backgroundColor: isTop ? C.goldSoft : C.sunken,
+                      borderWidth: 1, borderColor: isTop ? C.gold : C.lineSoft,
+                    }}>
+                      <Text style={{
+                        fontSize: 12.5, fontWeight: '700', fontVariant: ['tabular-nums'],
+                        color: isTop ? C.gold : C.mut,
+                      }}>
+                        {l.w > 0 ? l.w + unit : 'BW'} × {l.r}
+                      </Text>
+                    </View>
+                  );
+                })}
+                {lastSession.sets.length > 6 ? (
+                  <View style={{ paddingHorizontal: 9, paddingVertical: 5 }}>
+                    <Text style={{ fontSize: 12.5, color: C.dim, fontWeight: '700' }}>
+                      +{lastSession.sets.length - 6}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+            </Pressable>
+          ) : (
+            <View style={{
+              marginTop: 14, padding: 12, borderRadius: 12,
+              backgroundColor: C.panel2, borderWidth: 1, borderStyle: 'dashed', borderColor: C.line,
+            }}>
+              <Text style={{ fontSize: 12.5, color: C.dim }}>
+                First time logging this — today becomes the number to beat.
+              </Text>
+            </View>
+          )}
+
           <View style={[s.row, { marginTop: 14 }]}>
             <NumField label="Weight" value={w} onChange={setW} suffix={unit} />
             <View style={{ width: 10 }} />
@@ -562,6 +665,11 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
         </Card>
         </View>
       )}
+
+      <RestTimer
+        defaultSeconds={data.restSeconds}
+        onChangeDefault={onSetRestSeconds}
+      />
 
       {last && (
         <FadeIn key={last.seq}>
@@ -680,6 +788,117 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
         />
       )}
     </View>
+  );
+}
+
+/* ============================== rest timer ===============================
+ * The plumbing for this already existed and had never been switched on:
+ * workoutSession exposed startRest/endRest/restRemaining, ActiveWorkoutBar
+ * already rendered a countdown, and logSet() already accepted restSeconds — but
+ * no caller ever passed one, so the timer was dead code in a shipped app.
+ *
+ * This is the visible half. It lives in Train rather than only in the global
+ * bar because the seconds between sets are the ONE moment the user is looking
+ * at this screen with nothing to do — which is exactly when a countdown is
+ * useful and exactly where the app should not be silent.
+ *
+ * It renders nothing at all when no rest is running, so it costs an idle
+ * subscription and no layout.
+ */
+function RestTimer({ defaultSeconds, onChangeDefault }) {
+  const [state, setState] = useState(() => workoutSession.getState());
+  const [, tick] = useState(0);
+
+  useEffect(() => workoutSession.subscribe(setState), []);
+  // One interval, and only while actually resting — a always-on 1s timer is a
+  // battery cost for a screen that is open for an hour.
+  useEffect(() => {
+    if (!state.resting) return undefined;
+    const id = setInterval(() => tick((n) => n + 1), 500);
+    return () => clearInterval(id);
+  }, [state.resting]);
+
+  const live = workoutSession.getState();
+  const remaining = live.resting ? live.restRemaining : 0;
+  if (!live.active || remaining <= 0) return null;
+
+  const total = Math.max(1, defaultSeconds || 90);
+  const pct = Math.max(0, Math.min(100, (remaining / total) * 100));
+  const mm = Math.floor(remaining / 60);
+  const ss = remaining % 60;
+
+  return (
+    <Card style={{ borderWidth: 1, borderColor: C.green }}>
+      <View style={s.between}>
+        <Lbl style={{ marginBottom: 0 }}>Rest</Lbl>
+        <Text
+          accessibilityLiveRegion="polite"
+          style={{ fontSize: 26, fontWeight: '800', color: C.green, fontVariant: ['tabular-nums'], letterSpacing: -0.5 }}>
+          {mm}:{String(ss).padStart(2, '0')}
+        </Text>
+      </View>
+
+      <View style={{ marginTop: 10 }}>
+        <PBar pct={pct} color={C.green} height={6} />
+      </View>
+
+      <View style={[s.row, { marginTop: 12 }]}>
+        <Pressable
+          onPress={() => workoutSession.startRest(remaining + 30)}
+          accessibilityRole="button"
+          accessibilityLabel="Add 30 seconds to the rest"
+          style={{
+            flex: 1, minHeight: 42, borderRadius: 11, marginRight: 8,
+            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
+          }}>
+          <Text style={{ fontSize: 13, fontWeight: '800', color: C.mut }}>+30s</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => workoutSession.endRest()}
+          accessibilityRole="button"
+          accessibilityLabel="Skip the rest and start the next set"
+          style={{
+            flex: 1, minHeight: 42, borderRadius: 11,
+            alignItems: 'center', justifyContent: 'center',
+            backgroundColor: C.greenSoft, borderWidth: 1, borderColor: C.green,
+          }}>
+          <Text style={{ fontSize: 13, fontWeight: '800', color: C.green }}>Skip rest</Text>
+        </Pressable>
+      </View>
+
+      {onChangeDefault ? (
+        <View style={[s.row, { marginTop: 12, alignItems: 'center' }]}>
+          <Text style={{ fontSize: 11.5, color: C.dim, flex: 1 }}>
+            Default rest
+          </Text>
+          {[60, 90, 120, 180].map((sec) => {
+            const on = (defaultSeconds || 90) === sec;
+            return (
+              <Pressable
+                key={sec}
+                onPress={() => onChangeDefault(sec)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: on }}
+                accessibilityLabel={'Default rest ' + sec + ' seconds'}
+                style={{
+                  minHeight: 32, paddingHorizontal: 10, marginLeft: 6, borderRadius: 8,
+                  alignItems: 'center', justifyContent: 'center',
+                  backgroundColor: on ? C.goldSoft : 'transparent',
+                  borderWidth: 1, borderColor: on ? C.gold : C.line,
+                }}>
+                <Text style={{
+                  fontSize: 11.5, fontWeight: '800', fontVariant: ['tabular-nums'],
+                  color: on ? C.gold : C.dim,
+                }}>
+                  {sec < 120 ? sec + 's' : (sec / 60) + 'm'}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+    </Card>
   );
 }
 
@@ -1557,7 +1776,7 @@ function Stepper({ label, onPress }) {
 }
 
 /* ------------------------------- Train hub ------------------------------- */
-export default function TrainTab({ data, dv, onLift, onLiftBatch, onCardio, onSaveDay, onDeleteDay, onEditEntry, onDeleteEntry, onOpenAnalytics }) {
+export default function TrainTab({ data, dv, onLift, onLiftBatch, onCardio, onSaveDay, onDeleteDay, onEditEntry, onDeleteEntry, onSetRestSeconds, onOpenAnalytics }) {
   const [seg, setSeg] = useState('lift');
   // Kept at this level so it survives Log Lift → Calculator → Log Lift.
   const [sel, setSel] = useState(null);
@@ -1596,6 +1815,7 @@ export default function TrainTab({ data, dv, onLift, onLiftBatch, onCardio, onSa
           data={data} dv={dv} onLog={onLift} onLogBatch={onLiftBatch}
           workoutDays={data.workoutDays} onSaveDay={onSaveDay} onDeleteDay={onDeleteDay}
           session={session} onEditEntry={onEditEntry} onDeleteEntry={onDeleteEntry}
+          onSetRestSeconds={onSetRestSeconds}
         />
       )}
       {seg === 'cardio' && (

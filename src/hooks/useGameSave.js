@@ -98,6 +98,8 @@ export function mergeSave(p) {
     experience: cleanSave.experience || '',
     profileComplete: !!cleanSave.profileComplete,
     workoutDays: cleanSave.workoutDays || [],
+    // 0 is a legitimate value (timer off), so only fall back when truly absent.
+    restSeconds: cleanSave.restSeconds == null ? d.restSeconds : cleanSave.restSeconds,
     lifts: cleanSave.lifts || [], cardio: cleanSave.cardio || [],
   };
 }
@@ -228,12 +230,17 @@ export function useGameSave({ toast, onLevelUp, stage }) {
     } else if (active.exercise !== exercise) {
       workoutSession.setExercise(exercise);
     }
+    /* The rest clock starts HERE, on the log, because that is the moment the
+     * set actually ended. workoutSession already had startRest/restRemaining and
+     * ActiveWorkoutBar already rendered them — but nothing ever passed
+     * restSeconds, so the timer existed in full and never once ran. */
     workoutSession.logSet({
       weight: meta && meta.w,
       reps: meta && meta.r,
       xp: meta ? (meta.xp || 0) + (meta.bonus || 0) : 0,
       isPR: !!(meta && meta.isPR),
       exercise,
+      restSeconds: Math.max(0, (nextData && nextData.restSeconds) || 0),
     });
   }, []);
 
@@ -373,6 +380,13 @@ export function useGameSave({ toast, onLevelUp, stage }) {
   /* ----------------------------- identity -------------------------------- */
 
   const rename = useCallback((name) => commit((d) => ({ nd: { ...d, name }, meta: null })), [commit]);
+
+  // Rest length is a training preference, not a game value — no XP consequences,
+  // so it commits without any of the integrity machinery.
+  const setRestSeconds = useCallback((secs) => {
+    const v = Math.max(0, Math.min(600, Math.round(secs) || 0));
+    commit((d) => ({ nd: { ...d, restSeconds: v }, meta: null }));
+  }, [commit]);
 
   const setUnit = useCallback((unit) => {
     if ((data.unit || 'kg') === unit) return;
@@ -693,7 +707,7 @@ export function useGameSave({ toast, onLevelUp, stage }) {
     // social
     applySocialXP,
     // identity
-    rename, setUnit, setAvatar, saveProfile, equipTitle, equipDecoration,
+    rename, setUnit, setRestSeconds, setAvatar, saveProfile, equipTitle, equipDecoration,
     // forge
     buy, equip, forge, buyPremium, claimTier, claimAll, openPack: openPackH, grantTestPack,
     // duels
