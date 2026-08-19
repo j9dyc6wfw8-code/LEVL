@@ -269,6 +269,8 @@ These were closed in the pre-launch audit and must never come back.
 | 90–93. Documents | ⬜ not started |
 | 94–100. Final assessment | ⬜ not started |
 
+**See [LEVL-HANDOVER.md](LEVL-HANDOVER.md) for the full continuation brief.**
+
 **Commits so far**
 - `d3ab85d9` fix: exercise browser hid 67 and 87 exercises
 - `1d9cfaae` ux: fewer taps per weight/reps entry
