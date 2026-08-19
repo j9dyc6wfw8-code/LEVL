@@ -26,7 +26,7 @@ uses neither.**
 | Motion | ✅ 3 springs with a stated rule |
 | Haptics | ✅ 7-verb vocabulary |
 | Colour | ✅ documented roles, ⚠️ 54 raw `rgba()` outside the theme |
-| **Typography** | ❌ **two competing scales + 366 literals across 34 distinct sizes** |
+| **Typography** | ⚠️ two scales, migration restarted; `T.micro` added to close the gap that stalled it |
 
 ---
 
@@ -49,7 +49,7 @@ everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
 
 | Screen | `T.` | `TYPE.` | raw literals |
 |---|---:|---:|---:|
-| **TrainTab** | 0 | 0 | **151** |
+| **TrainTab** | 13 | 0 | **132** ← migration started |
 | ProgressTab | 0 | 0 | 46 |
 | DuelTab | 0 | 1 | 34 |
 | AuthScreens | 0 | 1 | 29 |
@@ -114,7 +114,7 @@ multi-line paragraphs**, where a changed lineHeight compounds per line. So:
 Migrate **one screen per change**, and look at it on a phone before the next.
 Suggested order, worst first:
 
-1. `TrainTab` — 151 literals, highest visibility
+1. `TrainTab` — **132 left** (19 done: set-entry card + Train surface)
 2. `ProgressTab` — 46
 3. `DuelTab` — 34
 4. `PacksTab` — 25, `LoadoutCard` — 19
@@ -136,7 +136,7 @@ Mapping when migrating:
 | 13, 13.5, 14, 14.5 | `T.footnote` |
 | 12, 12.5 | `T.caption` |
 | 11, 11.5 | `T.caption2` |
-| 10, 10.5, 9.5, 9, 8.5, 8 | `T.label` (uppercase headers) or `T.caption2` |
+| 10, 10.5, 9.5, 9, 8.5 | `T.micro` — **added this pass**. Do NOT use `T.label` here: it uppercases and would rewrite your copy. |
 | Any number | pair with `T.numeric` for tabular figures |
 
 Numbers are LEVL's core content — weights, reps, XP, ranks, scores. **Every
