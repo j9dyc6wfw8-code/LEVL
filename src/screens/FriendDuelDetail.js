@@ -8,7 +8,7 @@
 
 import React, { useState } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
-import { C, s, TYPE, MONO } from '../theme';
+import { C, s, MONO, T } from '../theme';
 import { Card } from '../components/ui';
 import { MiniHunter } from '../components/Hunter';
 import { LoadoutCompare } from '../components/LoadoutCard';
@@ -96,14 +96,14 @@ export default function FriendDuelDetail({ data, dv, duel, onQuit }) {
       <Card style={{ borderWidth: 1, borderColor: C.gold }}>
         <View style={s.between}>
           <Text style={[s.label, { color: C.gold }]}>Friend Duel</Text>
-          <Text style={{ ...TYPE.micro, color: C.orange, fontWeight: '700' }}>{timeLeft()}</Text>
+          <Text style={{ ...T.micro, color: C.orange, fontWeight: '700' }}>{timeLeft()}</Text>
         </View>
 
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 16 }}>
           <Fighter name={data.name} avatar={{ ...DEFAULT_DATA.avatar, ...(data.avatar || {}) }} color={myColor}
             level={dv.level} score={duel.myScore} scoreColor={tied ? C.text : winning ? C.green : C.text} />
           <View style={{ paddingHorizontal: 6, alignSelf: 'center' }}>
-            <Text style={{ ...TYPE.title, color: C.faint }}>vs</Text>
+            <Text style={{ ...T.title2, color: C.faint }}>vs</Text>
           </View>
           <Fighter name={opp.display_name || opp.username || 'Rival'} avatar={{ ...DEFAULT_DATA.avatar, ...(opp.avatar || {}) }} color={C.orange}
             level={opp.level} score={duel.theirScore} scoreColor={tied ? C.text : !winning ? C.red : C.text} />
@@ -114,7 +114,7 @@ export default function FriendDuelDetail({ data, dv, duel, onQuit }) {
           <View style={{ flex: 1, backgroundColor: C.orange, opacity: 0.55 }} />
         </View>
 
-        <Text style={{ ...TYPE.caption, color: winning ? C.green : tied ? C.dim : C.red, textAlign: 'center', marginTop: 12, fontWeight: '700' }}>
+        <Text style={{ ...T.caption, color: winning ? C.green : tied ? C.dim : C.red, textAlign: 'center', marginTop: 12, fontWeight: '700' }}>
           {tied ? 'Dead even — log a workout to pull ahead' : winning ? "You're ahead — keep it up" : 'Behind — time to train'}
         </Text>
       </Card>
@@ -158,18 +158,18 @@ export default function FriendDuelDetail({ data, dv, duel, onQuit }) {
             borderWidth: 1, borderColor: confirmQuit ? C.red : C.line,
             backgroundColor: confirmQuit ? 'rgba(240,82,95,0.15)' : 'transparent',
           }}>
-          <Text style={{ ...TYPE.caption, fontWeight: '700', color: confirmQuit ? C.red : C.dim }}>
+          <Text style={{ ...T.caption, fontWeight: '700', color: confirmQuit ? C.red : C.dim }}>
             {quitting ? 'Quitting…' : confirmQuit ? 'Tap again to forfeit this duel' : 'Quit duel'}
           </Text>
         </Pressable>
       )}
       {confirmQuit && !quitting && (
-        <Text style={{ ...TYPE.micro, color: C.dim, textAlign: 'center', marginTop: 6 }}>
+        <Text style={{ ...T.micro, color: C.dim, textAlign: 'center', marginTop: 6 }}>
           Forfeiting counts as a loss and can't be undone.
         </Text>
       )}
       {quitError ? (
-        <Text style={{ ...TYPE.caption, color: C.red, textAlign: 'center', marginTop: 7, fontWeight: '700' }}>
+        <Text style={{ ...T.caption, color: C.red, textAlign: 'center', marginTop: 7, fontWeight: '700' }}>
           {quitError}
         </Text>
       ) : null}
@@ -178,19 +178,19 @@ export default function FriendDuelDetail({ data, dv, duel, onQuit }) {
         <View style={s.between}>
           <View style={s.row}>
             <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: live ? C.green : C.gold, marginRight: 7 }} />
-            <Text style={{ ...TYPE.micro, color: live ? C.green : C.mut, fontWeight: '700' }}>
+            <Text style={{ ...T.micro, color: live ? C.green : C.mut, fontWeight: '700' }}>
               {live ? 'LIVE WORKOUT ACTIVITY' : 'AUTO-REFRESHING'}
             </Text>
           </View>
           <Pressable disabled={refreshing} onPress={refresh} hitSlop={10} accessibilityRole="button" accessibilityLabel="Refresh duel workouts">
-            <Text style={{ ...TYPE.micro, color: refreshing ? C.dim : C.gold, fontWeight: '700' }}>{refreshing ? 'REFRESHING…' : 'REFRESH'}</Text>
+            <Text style={{ ...T.micro, color: refreshing ? C.dim : C.gold, fontWeight: '700' }}>{refreshing ? 'REFRESHING…' : 'REFRESH'}</Text>
           </Pressable>
         </View>
-        <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 4 }}>
+        <Text style={{ ...T.micro, color: C.dim, marginTop: 4 }}>
           {lastUpdated ? 'Updated ' + new Date(lastUpdated).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) : 'Connecting to both workout feeds…'}
         </Text>
         {error ? (
-          <Text style={{ ...TYPE.micro, color: C.red, marginTop: 4 }}>
+          <Text style={{ ...T.micro, color: C.red, marginTop: 4 }}>
             Could not refresh one workout feed. Tap Refresh to retry.
           </Text>
         ) : null}
@@ -202,7 +202,7 @@ export default function FriendDuelDetail({ data, dv, duel, onQuit }) {
         <>
           <PlayerBreakdown title="YOUR WORKOUTS" rows={mine || []} fallbackUnit={unit} accent={myColor} />
           <PlayerBreakdown title={(opp.display_name || opp.username || 'RIVAL').toUpperCase() + "'S WORKOUTS"} rows={theirs || []} fallbackUnit={null} accent={C.orange} />
-          <Text style={{ ...TYPE.body, color: C.mut, textAlign: 'center', marginTop: 14, paddingHorizontal: 20, fontWeight: '700' }}>
+          <Text style={{ ...T.footnote, color: C.mut, textAlign: 'center', marginTop: 14, paddingHorizontal: 20, fontWeight: '700' }}>
             New sets appear live.
           </Text>
         </>
@@ -215,10 +215,10 @@ function Fighter({ name, avatar, color, level, score, scoreColor }) {
   return (
     <View style={{ flex: 1, alignItems: 'center' }}>
       <MiniHunter avatar={avatar} tierColor={color} size={68} />
-      <Text numberOfLines={1} style={{ ...TYPE.caption, color: C.text, fontWeight: '700', marginTop: 8, maxWidth: 130 }}>{name || 'You'}</Text>
-      {level != null && <Text style={{ ...TYPE.micro, color: C.dim }}>LV {level}</Text>}
-      <Text style={{ ...TYPE.display, color: scoreColor, marginTop: 6 }}>{score || 0}</Text>
-      <Text style={{ ...TYPE.micro, color: C.dim }}>XP</Text>
+      <Text numberOfLines={1} style={{ ...T.caption, color: C.text, fontWeight: '700', marginTop: 8, maxWidth: 130 }}>{name || 'You'}</Text>
+      {level != null && <Text style={{ ...T.micro, color: C.dim }}>LV {level}</Text>}
+      <Text style={{ ...T.display, color: scoreColor, marginTop: 6 }}>{score || 0}</Text>
+      <Text style={{ ...T.micro, color: C.dim }}>XP</Text>
     </View>
   );
 }
@@ -235,7 +235,7 @@ function PlayerBreakdown({ title, rows, fallbackUnit, accent }) {
     <Card style={{ marginTop: 14 }}>
       <View style={s.between}>
         <Text style={[s.label, { color: accent }]}>{title}</Text>
-        <Text style={{ ...TYPE.micro, color: C.dim, fontVariant: ['tabular-nums'] }}>{sum.totalXp} XP</Text>
+        <Text style={{ ...T.micro, color: C.dim, fontVariant: ['tabular-nums'] }}>{sum.totalXp} XP</Text>
       </View>
       <View style={{ flexDirection: 'row', marginTop: 10 }}>
         <Stat n={sum.sessions} label="workouts" />
@@ -243,34 +243,34 @@ function PlayerBreakdown({ title, rows, fallbackUnit, accent }) {
         <Stat n={sum.prs} label="PRs" accent={sum.prs ? C.gold : undefined} />
       </View>
       {sum.volume > 0 && volumeUnit ? (
-        <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 8 }}>
+        <Text style={{ ...T.micro, color: C.dim, marginTop: 8 }}>
           {formatNumber(sum.volume)} {volumeUnit} total load volume
         </Text>
       ) : null}
       {sessions.length === 0 ? (
-        <Text style={{ ...TYPE.caption, color: C.dim, marginTop: 10 }}>No workouts synced in this duel yet.</Text>
+        <Text style={{ ...T.caption, color: C.dim, marginTop: 10 }}>No workouts synced in this duel yet.</Text>
       ) : sessions.map((session) => {
         const sessionXp = session.rows.reduce((a, r) => a + (Number(r.xp_earned) || 0), 0);
         const sessionSets = session.rows.reduce((a, r) => a + (Number(r.sets) || 1), 0);
         return (
           <View key={session.key} style={{ marginTop: 16 }}>
             <View style={[s.between, { marginBottom: 4 }]}>
-              <Text style={{ ...TYPE.micro, color: C.faint, fontWeight: '700' }}>
+              <Text style={{ ...T.micro, color: C.faint, fontWeight: '700' }}>
                 {dayLabel(session.newestT).toUpperCase()} · {timeLabel(session.oldestT)}
               </Text>
-              <Text style={{ ...TYPE.micro, color: accent, fontVariant: ['tabular-nums'] }}>
+              <Text style={{ ...T.micro, color: accent, fontVariant: ['tabular-nums'] }}>
                 {sessionSets} {sessionSets === 1 ? 'SET' : 'SETS'} · {sessionXp} XP
               </Text>
             </View>
             {session.rows.map((r, i) => (
               <View key={r.id || r.client_id || session.key + ':' + i} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 7, borderBottomWidth: i < session.rows.length - 1 ? StyleSheet.hairlineWidth : 0, borderBottomColor: C.line }}>
-                <Text style={{ ...TYPE.caption, color: r.is_pr ? C.gold : C.text, flex: 1 }} numberOfLines={1}>
+                <Text style={{ ...T.caption, color: r.is_pr ? C.gold : C.text, flex: 1 }} numberOfLines={1}>
                   {r.is_pr ? '★ ' : ''}{r.exercise || 'Exercise'}
                 </Text>
-                <Text style={{ ...TYPE.micro, color: C.mut, marginHorizontal: 8 }}>
+                <Text style={{ ...T.micro, color: C.mut, marginHorizontal: 8 }}>
                   {workoutDetail(r, fallbackUnit)}
                 </Text>
-                <Text style={{ ...TYPE.micro, color: accent, fontVariant: ['tabular-nums'], fontWeight: '700' }}>+{r.xp_earned || 0}</Text>
+                <Text style={{ ...T.micro, color: accent, fontVariant: ['tabular-nums'], fontWeight: '700' }}>+{r.xp_earned || 0}</Text>
               </View>
             ))}
           </View>
@@ -307,8 +307,8 @@ function workoutDetail(row, fallbackUnit) {
 function Stat({ n, label, accent }) {
   return (
     <View style={{ flex: 1 }}>
-      <Text style={{ ...TYPE.title, color: accent || C.text, fontVariant: ['tabular-nums'] }}>{n}</Text>
-      <Text style={{ ...TYPE.micro, color: C.dim }}>{label}</Text>
+      <Text style={{ ...T.title2, color: accent || C.text, fontVariant: ['tabular-nums'] }}>{n}</Text>
+      <Text style={{ ...T.micro, color: C.dim }}>{label}</Text>
     </View>
   );
 }
