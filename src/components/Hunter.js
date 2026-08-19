@@ -4,7 +4,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, Pressable, Animated, Easing, ScrollView } from 'react-native';
 import Svg, { Circle, Rect, Ellipse, Path, Polygon, G, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { C, s, TYPE } from '../theme';
+import { C, s, T } from '../theme';
 import { SKINS, HAIRS, OUTFITS, ACCENTS, STAT_META } from '../engine/engine';
 
 const pal = (arr, i) => arr[(i || 0) % arr.length];
@@ -504,7 +504,7 @@ function Swatch({ color, selected, onPress }) {
 function SwatchRow({ label, colors, value, onPick }) {
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ ...TYPE.caption, color: C.mut, fontWeight: '700', marginBottom: 8 }}>{label}</Text>
+      <Text style={{ ...T.caption, color: C.mut, fontWeight: '700', marginBottom: 8 }}>{label}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

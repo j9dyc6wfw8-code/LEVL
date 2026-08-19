@@ -1,7 +1,7 @@
 // LEVL React Native — auth, physical-profile onboarding, account transfer
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing, Dimensions, Linking } from 'react-native';
-import { C, s, MONO, RADIUS, TYPE, TOUCH } from '../theme';
+import { C, s, MONO, T, RADIUS, TOUCH } from '../theme';
 import { Card, Lbl, Chip, GoldBtn, GhostBtn, ChunkyBtn, LevlMark } from '../components/ui';
 import { copyText, pasteText } from '../services/platform';
 import { isConfigured } from '../services/supabase/client';
@@ -531,7 +531,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
             <View style={{ marginTop: 14 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                 <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
-                <Text style={{ ...TYPE.micro, color: C.dim, marginHorizontal: 10 }}>OR</Text>
+                <Text style={{ ...T.micro, color: C.dim, marginHorizontal: 10 }}>OR</Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
               </View>
               <Pressable onPress={doApple} disabled={busy}
