@@ -53,7 +53,7 @@ everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
 | **ProgressTab** | 42 | 0 | **5** ✅ migrated |
 | **DuelTab** | 35 | 0 | **0** ✅ migrated |
 | AuthScreens | 0 | 1 | 29 |
-| PacksTab | 0 | 0 | 25 |
+| **PacksTab** | 23 | 0 | **2** ✅ migrated |
 | LoadoutCard | 0 | 0 | 19 |
 | ShopTab | 12 | 36 | 3 |
 | FriendsScreen | 0 | 52 | 3 |
@@ -64,7 +64,7 @@ Three populations:
 
 1. **Migrated to `T`** — everything built from Build 28 onward (social, check-ins)
 2. **On `TYPE`** — FriendsScreen, ShopTab, AppGuide (DuelTab left this group)
-3. **On neither** — PacksTab, LoadoutCard (TrainTab, ProgressTab and DuelTab now on `T`)
+3. **On neither** — LoadoutCard only (TrainTab, ProgressTab, DuelTab and PacksTab now on `T`)
 
 **ShopTab is the worst case: both scales in one file.**
 
@@ -117,7 +117,7 @@ Suggested order, worst first:
 1. ~~`TrainTab`~~ ✅ **done** — 145 of 151 migrated; 6 off-scale sizes (18, 24, 26, 56) left deliberately
 2. ~~`ProgressTab`~~ ✅ **done** — 42 of 46 migrated; 44, 19×3 and a 26/22 ternary left as off-scale hero numerals
 3. ~~`DuelTab`~~ ✅ **done** — all 34 migrated, plus the one `TYPE.body` holdout; no off-scale sizes on this screen
-4. `PacksTab` — 25, `LoadoutCard` — 19
+4. ~~`PacksTab`~~ ✅ **done** — 23 of 25; the 26pt reward numeral and an 18pt chevron left off-scale. `LoadoutCard` — 19
 5. `ShopTab` — resolve the mixed scale
 6. `FriendsScreen` — `TYPE` → `T`
 7. Delete `TYPE` from `theme.js`
