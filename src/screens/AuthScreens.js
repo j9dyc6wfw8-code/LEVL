@@ -170,7 +170,7 @@ function AuthField({ label, ...props }) {
   return (
     <View style={{ marginBottom: 20 }}>
       <Text style={{
-        fontSize: 9.5, letterSpacing: 1.6, fontWeight: '800',
+        ...T.micro, letterSpacing: 1.6, fontWeight: '800',
         color: focus ? C.gold : C.dim, marginBottom: 7, textTransform: 'uppercase',
       }}>{label}</Text>
       <TextInput
@@ -414,7 +414,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
             <View style={{ width: 46, height: 1, backgroundColor: 'rgba(255,201,51,0.28)' }} />
           </View>
           <Text style={{
-            fontSize: 11, color: C.dim, marginTop: 16, textAlign: 'center',
+            ...T.caption2, color: C.dim, marginTop: 16, textAlign: 'center',
             fontWeight: '700', letterSpacing: 2.6, textTransform: 'uppercase',
           }}>
             {mode === 'signup' ? 'Begin the climb' : 'Welcome back'}
@@ -434,7 +434,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                   flex: 1, minHeight: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
                   backgroundColor: mode === m[0] ? C.gold : 'transparent',
                 }}>
-                <Text style={{ fontSize: 13.5, fontWeight: '800', color: mode === m[0] ? C.ink : C.mut }}>{m[1]}</Text>
+                <Text style={{ ...T.footnote, fontWeight: '800', color: mode === m[0] ? C.ink : C.mut }}>{m[1]}</Text>
               </Pressable>
             ))}
           </View>
@@ -464,9 +464,9 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                 backgroundColor: agreed ? C.gold : 'transparent',
                 borderWidth: 1.5, borderColor: agreed ? C.gold : C.line,
               }}>
-                {agreed ? <Text style={{ fontSize: 13, fontWeight: '900', color: C.ink }}>✓</Text> : null}
+                {agreed ? <Text style={{ ...T.footnote, fontWeight: '900', color: C.ink }}>✓</Text> : null}
               </View>
-              <Text style={{ flex: 1, fontSize: 12.5, color: C.mut, lineHeight: 18 }}>
+              <Text style={{ flex: 1, ...T.caption, color: C.mut, lineHeight: 18 }}>
                 I agree to the{' '}
                 <Text
                   style={{ color: C.gold, fontWeight: '700' }}
@@ -481,18 +481,18 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
               </Text>
             </Pressable>
           ) : null}
-          {err ? <Text style={{ fontSize: 12.5, color: C.red, marginBottom: 14, fontWeight: '600' }}>{err}</Text> : null}
-          {notice ? <Text style={{ fontSize: 12.5, color: C.green, marginBottom: 14, fontWeight: '600' }}>{notice}</Text> : null}
+          {err ? <Text style={{ ...T.caption, color: C.red, marginBottom: 14, fontWeight: '600' }}>{err}</Text> : null}
+          {notice ? <Text style={{ ...T.caption, color: C.green, marginBottom: 14, fontWeight: '600' }}>{notice}</Text> : null}
           {resetSent ? (
             <View style={{ marginBottom: 4 }}>
               <Pressable onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 2 }}>
-                <Text style={{ fontSize: 12, color: C.gold, fontWeight: '700' }}>{busy ? 'Sending…' : 'Resend email'}</Text>
+                <Text style={{ ...T.caption, color: C.gold, fontWeight: '700' }}>{busy ? 'Sending…' : 'Resend email'}</Text>
               </Pressable>
               {/* Fallback: only useful if the reset email is customised to
                   include a 6-digit code (needs custom SMTP). Hidden by default
                   so it can't confuse anyone using the standard link email. */}
               <Pressable onPress={() => setShowCodeEntry((v) => !v)} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
-                <Text style={{ fontSize: 11.5, color: C.mut }}>{showCodeEntry ? 'Hide code entry' : 'Email contains a 6-digit code instead?'}</Text>
+                <Text style={{ ...T.caption2, color: C.mut }}>{showCodeEntry ? 'Hide code entry' : 'Email contains a 6-digit code instead?'}</Text>
               </Pressable>
               {showCodeEntry && (
                 <View style={{ marginTop: 10 }}>
@@ -504,7 +504,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                 </View>
               )}
               <Pressable onPress={() => { setResetSent(false); setNotice(''); setShowCodeEntry(false); }} hitSlop={8} style={{ alignItems: 'center', marginTop: 14 }}>
-                <Text style={{ fontSize: 12, color: C.mut, fontWeight: '600' }}>Back to sign in</Text>
+                <Text style={{ ...T.caption, color: C.mut, fontWeight: '600' }}>Back to sign in</Text>
               </Pressable>
             </View>
           ) : (
@@ -517,14 +517,14 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                 shadowColor: C.gold, shadowOpacity: 0.28, shadowRadius: 18,
                 shadowOffset: { width: 0, height: 6 }, elevation: 6,
               }}>
-              <Text style={{ fontSize: 14, fontWeight: '900', color: C.ink, letterSpacing: 1.6, textTransform: 'uppercase' }}>
+              <Text style={{ ...T.footnote, fontWeight: '900', color: C.ink, letterSpacing: 1.6, textTransform: 'uppercase' }}>
                 {busy ? 'Working…' : mode === 'signup' ? 'Create account' : 'Sign in'}
               </Text>
             </Pressable>
           )}
           {isConfigured && mode === 'signin' ? (
             <Pressable onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
-              <Text style={{ fontSize: 12, color: C.mut, fontWeight: '600' }}>Forgot password?</Text>
+              <Text style={{ ...T.caption, color: C.mut, fontWeight: '600' }}>Forgot password?</Text>
             </Pressable>
           ) : null}
           {appleAvailable && isConfigured ? (
@@ -537,15 +537,15 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
               <Pressable onPress={doApple} disabled={busy}
                 style={{ minHeight: TOUCH, borderRadius: RADIUS.md, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}>
                 <Text style={{ fontSize: 17, fontWeight: '700', color: '#000', marginRight: 6 }}></Text>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#000' }}>Continue with Apple</Text>
+                <Text style={{ ...T.subheadline, fontWeight: '700', color: '#000' }}>Continue with Apple</Text>
               </Pressable>
             </View>
           ) : null}
           <Pressable onPress={() => onAuthed(null, 'Player', false)} hitSlop={8}
             accessibilityRole="button" accessibilityLabel="Continue as guest"
             style={{ alignItems: 'center', marginTop: 26, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12.5, color: C.mut, fontWeight: '700' }}>Continue as guest</Text>
-            <Text style={{ fontSize: 10.5, color: C.faint, marginTop: 3 }}>Saves to this device only</Text>
+            <Text style={{ ...T.caption, color: C.mut, fontWeight: '700' }}>Continue as guest</Text>
+            <Text style={{ ...T.micro, color: C.faint, marginTop: 3 }}>Saves to this device only</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -577,7 +577,7 @@ export function PhysicalProfileForm({ data, onSave, onCancel, embedded }) {
       <View style={[s.row, { backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, borderRadius: 10 }]}>
         <TextInput value={val} onChangeText={set} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.dim}
           style={{ flex: 1, paddingHorizontal: 10, paddingVertical: 12, color: C.text, fontSize: 16, fontVariant: ['tabular-nums'] }} />
-        <Text style={{ paddingRight: 10, color: C.dim, fontSize: 12, fontWeight: '700' }}>{suffix}</Text>
+        <Text style={{ paddingRight: 10, color: C.dim, ...T.caption, fontWeight: '700' }}>{suffix}</Text>
       </View>
     </View>
   );
@@ -600,10 +600,10 @@ export function PhysicalProfileForm({ data, onSave, onCancel, embedded }) {
       {pick('Sex', SEX_OPTS, sex, setSex)}
       {pick('Activity level', ACTIVITY_OPTS, activity, setActivity)}
       {pick('Training experience', EXPERIENCE_OPTS, experience, setExperience)}
-      {err ? <Text style={{ fontSize: 12, color: C.red, marginTop: 10 }}>{err}</Text> : null}
+      {err ? <Text style={{ ...T.caption, color: C.red, marginTop: 10 }}>{err}</Text> : null}
       <GoldBtn onPress={save} style={{ marginTop: 14 }}>Save physical profile</GoldBtn>
       {onCancel && <GhostBtn onPress={onCancel} style={{ marginTop: 8 }}>Cancel</GhostBtn>}
-      <Text style={{ fontSize: 13, color: C.mut, marginTop: 10, fontWeight: '700' }}>
+      <Text style={{ ...T.footnote, color: C.mut, marginTop: 10, fontWeight: '700' }}>
         Used for realistic lift checks. Edit anytime.
       </Text>
     </View>
@@ -617,8 +617,8 @@ export function PhysicalProfileForm({ data, onSave, onCancel, embedded }) {
           arrow — so the old brand flashed up mid sign-in. */}
       <View style={{ alignItems: 'center', marginBottom: 18 }}>
         <LevlMark size={44} />
-        <Text style={{ fontSize: 16, color: C.text, marginTop: 10, fontWeight: '800' }}>Build your player profile</Text>
-        <Text style={{ fontSize: 15, color: C.mut, marginTop: 6, textAlign: 'center', fontWeight: '700' }}>
+        <Text style={{ ...T.callout, color: C.text, marginTop: 10, fontWeight: '800' }}>Build your player profile</Text>
+        <Text style={{ ...T.subheadline, color: C.mut, marginTop: 6, textAlign: 'center', fontWeight: '700' }}>
           Three details keep your lift checks accurate.
         </Text>
       </View>
@@ -654,7 +654,7 @@ export function AccountTransfer({ makeCode, importCode }) {
           <ChunkyBtn onPress={copy} small tone={copied ? 'green' : 'gold'} style={{ marginTop: 6 }}>
             {copied ? 'Copied ✓' : 'Copy code'}
           </ChunkyBtn>
-          <Text style={{ fontSize: 13, color: C.mut, marginTop: 7, fontWeight: '700' }}>
+          <Text style={{ ...T.footnote, color: C.mut, marginTop: 7, fontWeight: '700' }}>
             Paste this code on your other device.
           </Text>
         </View>
@@ -670,7 +670,7 @@ export function AccountTransfer({ makeCode, importCode }) {
               <Text style={s.goldBtnTxt}>Restore from code</Text>
             </Pressable>
           </View>
-          <Text style={{ fontSize: 10, color: C.dim, marginTop: 6 }}>This replaces the current save on this device.</Text>
+          <Text style={{ ...T.micro, color: C.dim, marginTop: 6 }}>This replaces the current save on this device.</Text>
         </View>
       )}
     </View>

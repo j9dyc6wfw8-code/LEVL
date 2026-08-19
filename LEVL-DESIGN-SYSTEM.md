@@ -61,15 +61,13 @@ below, because they are the record of what actually changed on screen.
 | FriendsScreen | 54 | 0 | 1 |
 | CheckInDetail / Camera | 10 | 0 | 1 |
 | WorkoutAttachment | 8 | 0 | 1 |
-| AuthScreens | 1 | 0 | **29** ⚠️ not migrated |
+| AuthScreens | 23 | 0 | 7 |
 
 Counted with `grep -o '\.\.\.T\.\w*'` and `grep -c 'fontSize: [0-9]'`, so the
 `T.` column includes `T.numeric` pairings and the literal column misses
 ProgressTab's one `fontSize: big ? 26 : 22` ternary. Recount the same way.
 
-**`AuthScreens` is the one screen still on literals** — 29 of them. It was never
-in this migration's scope; only its single `TYPE.micro` was cleared so `TYPE`
-could be deleted. It is the obvious next screen, and it has no hazard sites.
+Every screen is now on `T`.
 
 Every row is off `TYPE`. Apart from AuthScreens, the literals that remain are
 deliberate and listed in the migration log below.
@@ -167,6 +165,7 @@ Mapping when migrating:
 | 12, 12.5 | `T.caption` |
 | 11, 11.5 | `T.caption2` |
 | 10, 10.5, 9.5, 9 | `T.micro` — **added this pass**. Do NOT use `T.label` here: it uppercases and would rewrite your copy. |
+| — | **Do not migrate a `TextInput`'s fontSize.** Every reading-size token carries a `lineHeight`, and on iOS that fights TextInput's own vertical centring — it clips or offsets the caret and text. AuthScreens' three inputs, including both credential fields, keep their literals for this reason. Same for any `Text` clamped with `numberOfLines` around data you cannot afford to truncate. |
 | 8, 8.5 | **nothing** — these sit below `T.micro`'s 10pt floor. LoadoutCard's slot and colour labels live here, inside half-width columns where "ARMOUR" already wraps mid-word at 8.5. Raising them to 10 makes that worse, so they stay literal until the layout is fixed. |
 | Any number | pair with `T.numeric` for tabular figures |
 

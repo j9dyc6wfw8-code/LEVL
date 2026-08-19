@@ -90,6 +90,20 @@ function GearRow({ equipped }) {
   );
 }
 
+// Two swatches per row, not four.
+//
+// This was one row of four, and the labels broke mid-word: ColourRow only ever
+// renders inside a half-width CompareColumn, so four flex cells are ~40pt each
+// on a 402pt phone (~36pt on an SE), while "ARMOUR" measures 45pt at the 8.5pt
+// it used to be set in. "ARMOUR" and "ENERGY" wrapped to "ARMOU"+"R" and
+// "ENERG"+"Y", and overflowed into each other on the way.
+//
+// Type could not fix that. Dropping the letterSpacing still leaves ARMOUR at
+// 41pt against a 40pt cell, and shrinking further was already below the scale's
+// 10pt floor. adjustsFontSizeToFit would have sized each of the four labels
+// differently, which is worse than the wrap. So the layout gives way instead:
+// two per row is ~79pt a cell, which fits the longest label with 29pt spare
+// (24pt on an SE) and lets these labels sit on T.micro like everything else.
 function ColourRow({ avatar }) {
   const av = avatar || {};
   const dots = [
@@ -99,14 +113,18 @@ function ColourRow({ avatar }) {
     ['Energy', pal(ACCENTS, av.accent)],
   ];
   return (
-    <View style={[s.row, { marginTop: 4, justifyContent: 'space-between' }]}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 10, marginTop: 8 }}>
       {dots.map(([label, color]) => (
-        <View key={label} style={{ alignItems: 'center', flex: 1 }}>
+        <View key={label} style={{ width: '50%', alignItems: 'center' }}>
           <View style={{
             width: 26, height: 26, borderRadius: 13, backgroundColor: color,
             borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.18)',
           }} />
-          <Text style={{ fontSize: 8.5, fontWeight: '800', color: C.dim, marginTop: 4, letterSpacing: 0.6 }}>
+          {/* Belt and braces: at an accessibility text size this truncates
+              rather than going back to breaking the word in half. */}
+          <Text
+            style={{ ...T.micro, fontWeight: '800', color: C.dim, marginTop: 4 }}
+            numberOfLines={1}>
             {label.toUpperCase()}
           </Text>
         </View>
@@ -250,7 +268,7 @@ function CompareColumn({ avatar, equipped, name, tint, label }) {
               borderRadius: RADIUS.sm, backgroundColor: C.panel2,
               borderWidth: 1, borderColor: C.line, borderLeftWidth: 3, borderLeftColor: rarity.color,
             }}>
-              <Text style={{ fontSize: 8, fontWeight: '800', color: C.dim, letterSpacing: 0.8 }}>{slotLabel}</Text>
+              <Text style={{ ...T.micro, fontWeight: '800', color: C.dim, letterSpacing: 0.8 }}>{slotLabel}</Text>
               <Text style={{ ...T.caption2, fontWeight: '800', color: C.text, marginTop: 1 }} numberOfLines={1}>
                 {item.emoji} {item.name}
               </Text>
