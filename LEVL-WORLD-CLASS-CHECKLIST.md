@@ -275,3 +275,50 @@ These were closed in the pre-launch audit and must never come back.
 - `13289fd7` docs: competitive and user research
 - `dc1c33ce` feat: plate breakdown during logging
 - `(next)` ux: remove taps from every weight and reps entry
+
+---
+
+## 📱 SIMULATOR FINDINGS — 19 August 2026
+
+Built and ran LEVL on an iPhone 17 Pro simulator (Xcode 26.6, Debug + Metro).
+Build succeeded in 128s; all 1,505 warnings come from third-party pods
+(libwebp, libdav1d), none from LEVL's own code.
+
+### Verified working ✅
+
+| Change | Evidence |
+|---|---|
+| Intro slide 4 "Proof, not claims" | Shield SVG renders correctly, green tint carries to the progress dot |
+| Password minimum 8 | Placeholder reads "At least 8 characters" |
+| Profile gate removed (item 27) | Guest → straight into Train, no six-field form |
+| Plate hint (item 6) | "BAR 25 · 15 per side" at 100 kg — matches the engine test exactly |
+| Plate hint correctly absent | Dumbbell Bench Press at 100 kg shows no hint — `usesBarbell` works |
+
+### Found by looking, not readable from source 🔍
+
+1. **Auth screen: guest option sits half-cut below the fold at rest.** The
+   content is taller than the viewport on a 6.3" screen, so "Saves to this
+   device only" is bisected by the screen edge until you scroll. It IS
+   reachable — this is a first-paint appearance problem, not a broken control.
+   **Fix needs a layout decision** (tighten the logo block or the 26pt margin
+   above the guest button), not more padding. I tried padding first and it was
+   the wrong diagnosis; reverted.
+2. **Intro slide 4 body wraps to three lines** where the other slides use two.
+   The brief asks for one idea, one line. Copy could tighten.
+3. **LEVL already warns "Enter the weight of ONE dumbbell, not the pair."**
+   That is the barbell/dumbbell confusion Hevy users complain about — another
+   feature I would wrongly have called missing.
+
+### Could NOT verify ⚠️
+
+- **Exercise list scroll depth.** Injected swipes do not scroll the nested list
+  inside the modal sheet, so I could not walk to exercise #100 on device. The
+  uncapping is proven at data level (127 reachable vs 60) and by tests, but not
+  visually. **Add to the manual test plan.**
+- Keyboard behaviour — the text action types directly without raising the
+  keyboard, so keyboard-avoidance is still unverified.
+
+### Still genuinely needs hardware
+
+Dual-camera Check In · push delivery · Live Activity / Dynamic Island ·
+HealthKit · real frame rates and cold-start timing (a Mac flatters all three).
