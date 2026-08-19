@@ -54,7 +54,7 @@ everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
 | **DuelTab** | 35 | 0 | **0** ✅ migrated |
 | AuthScreens | 0 | 1 | 29 |
 | **PacksTab** | 23 | 0 | **2** ✅ migrated |
-| LoadoutCard | 0 | 0 | 19 |
+| **LoadoutCard** | 13 | 0 | **6** ✅ migrated |
 | ShopTab | 12 | 36 | 3 |
 | FriendsScreen | 0 | 52 | 3 |
 | CheckInDetail / Camera | 10 | 0 | 1 |
@@ -64,7 +64,7 @@ Three populations:
 
 1. **Migrated to `T`** — everything built from Build 28 onward (social, check-ins)
 2. **On `TYPE`** — FriendsScreen, ShopTab, AppGuide (DuelTab left this group)
-3. **On neither** — LoadoutCard only (TrainTab, ProgressTab, DuelTab and PacksTab now on `T`)
+3. **On neither** — none left; every screen is on `T` or still on `TYPE`
 
 **ShopTab is the worst case: both scales in one file.**
 
@@ -117,7 +117,7 @@ Suggested order, worst first:
 1. ~~`TrainTab`~~ ✅ **done** — 145 of 151 migrated; 6 off-scale sizes (18, 24, 26, 56) left deliberately
 2. ~~`ProgressTab`~~ ✅ **done** — 42 of 46 migrated; 44, 19×3 and a 26/22 ternary left as off-scale hero numerals
 3. ~~`DuelTab`~~ ✅ **done** — all 34 migrated, plus the one `TYPE.body` holdout; no off-scale sizes on this screen
-4. ~~`PacksTab`~~ ✅ **done** — 23 of 25; the 26pt reward numeral and an 18pt chevron left off-scale. `LoadoutCard` — 19
+4. ~~`PacksTab`~~ ✅ **done** — 23 of 25. ~~`LoadoutCard`~~ ✅ **done** — 13 of 19; see the sub-micro note below
 5. `ShopTab` — resolve the mixed scale
 6. `FriendsScreen` — `TYPE` → `T`
 7. Delete `TYPE` from `theme.js`
@@ -136,7 +136,8 @@ Mapping when migrating:
 | 13, 13.5, 14, 14.5 | `T.footnote` |
 | 12, 12.5 | `T.caption` |
 | 11, 11.5 | `T.caption2` |
-| 10, 10.5, 9.5, 9, 8.5 | `T.micro` — **added this pass**. Do NOT use `T.label` here: it uppercases and would rewrite your copy. |
+| 10, 10.5, 9.5, 9 | `T.micro` — **added this pass**. Do NOT use `T.label` here: it uppercases and would rewrite your copy. |
+| 8, 8.5 | **nothing** — these sit below `T.micro`'s 10pt floor. LoadoutCard's slot and colour labels live here, inside half-width columns where "ARMOUR" already wraps mid-word at 8.5. Raising them to 10 makes that worse, so they stay literal until the layout is fixed. |
 | Any number | pair with `T.numeric` for tabular figures |
 
 Numbers are LEVL's core content — weights, reps, XP, ranks, scores. **Every
