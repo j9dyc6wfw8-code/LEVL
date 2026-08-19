@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import workoutSession from '../services/workoutSession';
-import { C, s, MONO, alpha } from '../theme';
+import { C, s, MONO, alpha, T } from '../theme';
 import { Card, Lbl, Chip, PBar, NumField, GoldBtn, GreenBtn, FadeIn, CountUp, Sheet, ScreenHeader, Segmented } from '../components/ui';
 import MuscleIcon from '../components/MuscleIcon';
 import CardioGlyph from '../components/CardioGlyph';
@@ -537,11 +537,11 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 <MuscleIcon group={catMeta(sel.c).glyph} color={catMeta(sel.c).color} size={26} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 16, fontWeight: '800', color: C.text }}>{sel.n}</Text>
-                <Text style={{ fontSize: 12, fontWeight: '700', marginTop: 2, color: STAT_META[sel.p].color, fontVariant: ['tabular-nums'] }}>
+                <Text style={{ ...T.callout, fontWeight: '800', color: C.text }}>{sel.n}</Text>
+                <Text style={{ ...T.caption, ...T.numeric, fontWeight: '700', marginTop: 2, color: STAT_META[sel.p].color }}>
                   {sel.p}{sel.s ? ' + ' + sel.s : ''} · {sel.c}
                 </Text>
-                {best > 0 && <Text style={{ fontSize: 12, color: C.gold, marginTop: 2, fontVariant: ['tabular-nums'] }}>Best e1RM: {best} {unit}</Text>}
+                {best > 0 && <Text style={{ ...T.caption, ...T.numeric, color: C.gold, marginTop: 2 }}>Best e1RM: {best} {unit}</Text>}
               </View>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
@@ -553,10 +553,10 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                   backgroundColor: catMeta(sel.c).color + '1e',
                   borderWidth: 1, borderColor: catMeta(sel.c).color + '66',
                 }}>
-                <Text style={{ color: catMeta(sel.c).color, fontSize: 12, fontWeight: '800' }}>How to</Text>
+                <Text style={{ ...T.caption, color: catMeta(sel.c).color, fontWeight: '800' }}>How to</Text>
               </Pressable>
               <Pressable onPress={() => setPickerOpen(true)} style={s.smallGhost}>
-                <Text style={{ color: C.mut, fontSize: 12 }}>Change</Text>
+                <Text style={{ ...T.caption, color: C.mut }}>Change</Text>
               </Pressable>
             </View>
           </View>
@@ -648,15 +648,15 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 borderRadius: 8, backgroundColor: C.panel2,
                 flexDirection: 'row', alignItems: 'center',
               }}>
-              <Text style={{ fontSize: 10.5, fontWeight: '800', color: C.dim, letterSpacing: 0.8 }}>
+              <Text style={{ ...T.micro, fontWeight: '800', color: C.dim, letterSpacing: 0.8 }}>
                 BAR
               </Text>
-              <Text style={{ fontSize: 12.5, fontWeight: '700', color: C.mut, marginLeft: 8, flex: 1 }}
+              <Text style={{ ...T.caption, fontWeight: '700', color: C.mut, marginLeft: 8, flex: 1 }}
                 numberOfLines={1}>
                 {plateHint.text}
               </Text>
               {plateHint.short > 0 ? (
-                <Text style={{ fontSize: 11, fontWeight: '700', color: C.orange }}>
+                <Text style={{ ...T.caption2, fontWeight: '700', color: C.orange }}>
                   {plateHint.short} {unit} short
                 </Text>
               ) : null}

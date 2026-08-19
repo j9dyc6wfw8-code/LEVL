@@ -25,6 +25,26 @@ function readableAuthError(msg) {
   }
   if (m.includes('rate limit')) return 'Too many attempts. Wait an hour, then try again.';
   if (m.includes('audience') || m.includes('id_token')) return 'Apple sign-in isn\'t finished setting up yet. Use email for now.';
+
+  /* Apple's own failure strings, which are written for developers and reached
+   * the user verbatim. Signing in on a device with no Apple Account produced
+   * "The authorization attempt failed for an unknown reason" — technically
+   * accurate, useless to the person reading it, and it names no way forward.
+   * Seen in a simulator; it is not obvious from the source that these strings
+   * ever surface, because appleAuth only special-cases cancellation. */
+  if (m.includes('unknown reason') || m.includes('authorization attempt failed')) {
+    return 'Apple couldn\'t sign you in. Check you\'re signed into an Apple Account in iOS Settings, or use email instead.';
+  }
+  if (m.includes('not handled') || m.includes('not interactive')) {
+    return 'Apple sign-in couldn\'t start. Try again, or use email instead.';
+  }
+  if (m.includes('no identity token')) {
+    return 'Apple didn\'t return the details we need. Try again, or use email instead.';
+  }
+  if (m.includes('unavailable on this build')) {
+    return 'Apple sign-in isn\'t available here. Use email instead.';
+  }
+
   return msg || 'Something went wrong — try again.';
 }
 

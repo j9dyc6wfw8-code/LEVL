@@ -117,7 +117,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 
 ## STAGE 22–33 — Errors, empty states, haptics, input, a11y, copy
 
-- [ ] **22.1** Error experience audit
+- [~] **22.1** Errors — Apple sign-in surfaced Apple's raw developer string ("The authorization attempt failed for an unknown reason"). Mapped to human copy naming a way forward. Found in the simulator. Rest of the audit outstanding.
 - [ ] **23.1** Empty states answer what/why/now
 - [~] **24.1** Haptics — 7-verb vocabulary already exists and is documented; per-call-site audit outstanding
 - [—] **25.1** Sound — not adding any; no value case for a gym app

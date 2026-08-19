@@ -200,6 +200,16 @@ export const T = {
   // because LEVL's identity leans on them — but confined to section headers,
   // never body copy.
   label:        { fontSize: 11, fontWeight: '600', letterSpacing: 0.9, textTransform: 'uppercase' },
+  /* THE STEP THAT WAS MISSING, and the reason screens fell back to literals.
+   *
+   * T stopped at 11 (caption2), but badges, pills and unit suffixes genuinely
+   * need something smaller — the app was using 10, 10.5 and 9 in 40-odd places
+   * because there was nothing to reach for. The only alternative at that size
+   * was `label`, which UPPERCASES, so using it would have rewritten the copy.
+   *
+   * Matches the old TYPE.micro exactly, so screens migrating off TYPE keep
+   * rendering identically. NOT for reading text — badges and units only. */
+  micro:        { fontSize: 10, fontWeight: '600', letterSpacing: 0.4 },
   // Numerals: pair with any step above, e.g. {...T.title2, ...T.numeric}
   numeric:      { fontVariant: ['tabular-nums'] },
 };
