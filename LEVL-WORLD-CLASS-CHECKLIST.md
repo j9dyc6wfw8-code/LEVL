@@ -46,7 +46,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 
 - [x] **4.0** Measure current drift — **366** literal `fontSize`, **180** hex outside theme, **54** raw `rgba()`
 - [x] **4.1** Colour roles — documented; 54 raw `rgba()` to fold in per-screen
-- [x] **4.2** Typography — **key finding: two competing scales (`T` and `TYPE`) plus 34 distinct literal sizes.** `T` wins; staged migration defined
+- [x] **4.2** Typography — **done.** Two scales became one: `TYPE` deleted, every screen on `T`. 366 literals down to ~30 deliberate off-scale sizes
 - [x] **4.3** Numeric type — `T.numeric` exists; rule set that every numeric display must carry it
 - [x] **4.4** Spacing — already good (7 steps)
 - [x] **4.5** Radius — already good (5 steps); intent per role documented
@@ -60,7 +60,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [ ] **5.1** Hierarchy per screen 👁
 - [ ] **5.2** Spacing per screen 👁
 - [ ] **5.3** Alignment 👁
-- [ ] **5.4** Typography 👁
+- [x] **5.4** Typography 👁 — verified per screen on an iPhone 17 Pro against before/after screenshots
 - [ ] **5.5** Contrast 👁
 - [ ] **5.6** Primary action obvious 👁
 - [ ] **5.7** Clutter removal 👁
@@ -118,12 +118,12 @@ Every instruction from the brief, tracked. Updated as work lands.
 ## STAGE 22–33 — Errors, empty states, haptics, input, a11y, copy
 
 - [~] **22.1** Errors — Apple sign-in surfaced Apple's raw developer string ("The authorization attempt failed for an unknown reason"). Mapped to human copy naming a way forward. Found in the simulator. Rest of the audit outstanding.
-- [ ] **23.1** Empty states answer what/why/now
+- [~] **23.1** Empty states — audited. Most already answered what/why/now; three did not and now do (ProgressTab ×2, FriendDuelDetail). Not device-verified: the demo save has data in every range and filter
 - [~] **24.1** Haptics — 7-verb vocabulary already exists and is documented; per-call-site audit outstanding
 - [—] **25.1** Sound — not adding any; no value case for a gym app
 - [ ] **26.1** One-handed reachability
 - [ ] **27.1** Keyboard quality per form
-- [ ] **28.1** Accessibility: VoiceOver, roles, Dynamic Type, contrast, targets, reduced motion
+- [~] **28.1** Accessibility — Reduce Motion ✅ done (see 65.1). **Dynamic Type ❌ BROKEN — see 64.1.** VoiceOver, contrast and target audit still outstanding
 - [ ] **29.1** iPhone screen matrix 👁
 - [ ] **30.1** Photo pipeline quality
 - [ ] **31.1** Information density / progressive disclosure
@@ -177,8 +177,20 @@ Every instruction from the brief, tracked. Updated as work lands.
 
 - [ ] **62.1** Test like a bad user
 - [ ] **63.1** Visual edge cases (long names, huge numbers, 100 comments)
-- [ ] **64.1** Large Dynamic Type 👁
-- [ ] **65.1** Reduced Motion
+- [ ] **64.1** Large Dynamic Type 👁 — **MEASURED, AND IT IS BROKEN. P0.**
+  At `accessibility-extra-extra-extra-large` the auth screen collapses: the LEVL
+  wordmark wraps to "LEV"/"L", "Create account" clips to "accoun" and overflows its
+  segment, and the form is pushed off-screen entirely.
+  **Root cause:** `FONT_SCALE_CAP` in `theme.js` is exported and read by *nothing*.
+  There is no `maxFontSizeMultiplier` or `allowFontScaling` anywhere in the app, so
+  text scales without limit. The earlier note that the cap "exists but is unverified"
+  was wrong — it does not exist in any working sense.
+  **Do not reach for the usual global fix:** `Text.defaultProps.maxFontSizeMultiplier`
+  was tried on device and had *zero* effect. React 19 ignores `defaultProps` on
+  function components, and RN 0.81's `Text` is one. A real fix needs either a shared
+  `<Text>` wrapper adopted app-wide, or per-component caps on the screens that break.
+  Reproduce with `xcrun simctl ui booted content_size accessibility-extra-extra-extra-large`.
+- [x] **65.1** Reduced Motion — **done.** Correcting the record: it was already honoured in 4 places, not "unimplemented". The real defects were that two copies never subscribed (so toggling mid-session did nothing) and that ten infinite `Animated.loop`s ignored it entirely. One shared `useReduceMotion` hook now; all ten gated. Verified against the real OS setting: **0.000%** of pixels change over 4s with it on, **51.6%** with it off
 - [ ] **66.1** Dark gym readability 👁
 - [ ] **67.1** Sunlight readability 👁
 
@@ -200,12 +212,14 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [x] **79.1** Checkpoint high-risk changes — none attempted
 - [x] **80.1** No placebo optimisation
 - [x] **81.1** No visual change without stated purpose
-- [ ] **82.1** Before/after evidence where possible; else mark NOT VISUALLY VERIFIED
+- [x] **82.1** Before/after evidence — held throughout. Screens that could not be reached on device (FriendsScreen populated, FriendDuelDetail, two empty states) are marked as such in their commit messages rather than claimed
 - [x] **83.1** Keep the best things 🔒
 - [x] **84.1** Run tests after each phase — green after every commit
 - [ ] **85.1** Regression-test all prior security fixes 🔒
 - [ ] **86.1** Build quality gate (install, tests, doctor, no secrets)
-- [ ] **87.1** Dead code pass
+- [~] **87.1** Dead code — measured: **19 unused named exports.** Three (`s.h1/h2/h3`) already deleted with `TYPE`. The rest are listed below and not yet removed, because two are findings rather than litter:
+  `FONT_SCALE_CAP` (see 64.1) and `needsTermsAcceptance` (legal re-acceptance may simply never run).
+  Others: `HunterIdentity`, `TierBadge`, `HeroCard`, `HeroStat`, `SelectRow`, `findSession`, `buildRoute`, `PreviewImage`, `onAuthChange`, `clearSignedUrlCache`, `getCheckIn`, `reactionByKey`, `setPrimaryPhoto`, `LEGACY_DUEL_LINK_PREFIX`, `DUR`, `RARITY_C`, `STAT_C`
 - [x] **88.1** Comment *why*, not *what*
 - [x] **89.1** Boring code over clever code
 
