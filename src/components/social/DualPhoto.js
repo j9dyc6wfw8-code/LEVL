@@ -13,8 +13,9 @@
 // sits outside the image.
 // ============================================================================
 
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { View, Text, Pressable, Animated, StyleSheet, AccessibilityInfo } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { View, Text, Pressable, Animated, StyleSheet } from 'react-native';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { Image } from 'expo-image';
 import { C, RADIUS } from '../../theme';
 import haptics from '../../services/haptics';
@@ -36,14 +37,8 @@ export default function DualPhoto({
   style,
 }) {
   const [flipped, setFlipped] = useState(false);
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const reduceMotion = useReduceMotion();
   const scale = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled()
-      .then(setReduceMotion)
-      .catch(() => {});
-  }, []);
 
   // The poster's choice decides the starting arrangement; the viewer's tap
   // flips it locally without changing anybody's post.
