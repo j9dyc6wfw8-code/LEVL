@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, Animated, Easing, Modal, StyleSheet, AccessibilityInfo, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon, Polyline, Line, Circle, Rect, Path, G, Text as SvgText } from 'react-native-svg';
-import { C, s, GRAD, RADIUS, TYPE, MOTION, alpha } from '../theme';
+import { C, s, GRAD, T, RADIUS, MOTION, alpha } from '../theme';
 import haptics from '../services/haptics';
 
 /* expo-blur is already a dependency AND already linked in ios/Podfile.lock, so
@@ -397,11 +397,11 @@ export function Unavailable({ title, body }) {
       }}>
         <Text style={{ fontSize: 19, fontWeight: '800', color: C.orange }}>!</Text>
       </View>
-      <Text style={{ ...TYPE.heading, color: C.text, textAlign: 'center' }}>
+      <Text style={{ ...T.callout, fontWeight: '600', color: C.text, textAlign: 'center' }}>
         {title || 'Temporarily unavailable'}
       </Text>
       <Text style={{
-        ...TYPE.caption, color: C.mut, textAlign: 'center',
+        ...T.caption, color: C.mut, textAlign: 'center',
         marginTop: 6, lineHeight: 18, maxWidth: 300,
       }}>
         {body || 'We have switched this off for a moment while we fix something. Everything else still works, and nothing you have logged is affected.'}
@@ -615,8 +615,8 @@ export function Stagger({ children, step }) {
 export function EmptyState({ title, body, action }) {
   return (
     <View style={[s.card, { alignItems: 'center', paddingVertical: 28 }]}>
-      <Text style={{ ...TYPE.heading, color: C.text, marginBottom: 6, textAlign: 'center' }}>{title}</Text>
-      <Text style={{ ...TYPE.caption, color: C.mut, textAlign: 'center', lineHeight: 18, maxWidth: 280 }}>{body}</Text>
+      <Text style={{ ...T.callout, fontWeight: '600', color: C.text, marginBottom: 6, textAlign: 'center' }}>{title}</Text>
+      <Text style={{ ...T.caption, color: C.mut, textAlign: 'center', lineHeight: 18, maxWidth: 280 }}>{body}</Text>
       {action ? <View style={{ marginTop: 16, alignSelf: 'stretch' }}>{action}</View> : null}
     </View>
   );
