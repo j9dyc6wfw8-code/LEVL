@@ -375,8 +375,8 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 marginTop: 10, padding: 13, borderRadius: 14,
                 backgroundColor: C.cyanSoft, borderWidth: 1, borderColor: C.cyan + '55',
               }}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: C.text }}>Save a routine once, run it any time.</Text>
-                <Text style={{ fontSize: 13.5, fontWeight: '600', color: C.mut, marginTop: 4, lineHeight: 19 }}>
+                <Text style={{ ...T.subheadline, fontWeight: '800', color: C.text }}>Save a routine once, run it any time.</Text>
+                <Text style={{ ...T.footnote, fontWeight: '600', color: C.mut, marginTop: 4, lineHeight: 19 }}>
                   Tap CREATE, name it, add your moves.
                 </Text>
               </View>
@@ -387,26 +387,26 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 marginTop: 10, minHeight: 76, borderRadius: 14, borderWidth: 1, borderStyle: 'dashed',
                 borderColor: C.line, alignItems: 'center', justifyContent: 'center', padding: 12,
               }}>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: C.gold }}>Create your first Workout Day</Text>
-                <Text style={{ fontSize: 13, color: C.mut, marginTop: 3 }}>Try Push, Pull or Legs.</Text>
+                <Text style={{ ...T.subheadline, fontWeight: '800', color: C.gold }}>Create your first Workout Day</Text>
+                <Text style={{ ...T.footnote, color: C.mut, marginTop: 3 }}>Try Push, Pull or Legs.</Text>
               </Pressable>
             ) : (
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
                 {days.map((d) => (
                   <View key={d.id} style={{ width: 190, backgroundColor: C.panel2, borderRadius: 14, borderWidth: 1, borderColor: C.line, marginRight: 10, overflow: 'hidden' }}>
                     <Pressable onPress={() => startDay(d)} style={{ padding: 13, minHeight: 108 }}>
-                      <Text style={{ fontSize: 17, fontWeight: '800', color: C.text }} numberOfLines={1}>{d.name}</Text>
-                      <Text style={{ fontSize: 11, color: C.cyan, fontWeight: '800', marginTop: 3, fontVariant: ['tabular-nums'] }}>{(d.exercises || []).length} EXERCISES</Text>
-                      <Text style={{ fontSize: 12, color: C.mut, marginTop: 7, lineHeight: 17 }} numberOfLines={2}>
+                      <Text style={{ ...T.headline, fontWeight: '800', color: C.text }} numberOfLines={1}>{d.name}</Text>
+                      <Text style={{ ...T.caption2, color: C.cyan, fontWeight: '800', marginTop: 3, fontVariant: ['tabular-nums'] }}>{(d.exercises || []).length} EXERCISES</Text>
+                      <Text style={{ ...T.caption, color: C.mut, marginTop: 7, lineHeight: 17 }} numberOfLines={2}>
                         {(d.exercises || []).map(exName).filter(Boolean).join(' · ')}
                       </Text>
                     </Pressable>
                     <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.line }}>
                       <Pressable onPress={() => startDay(d)} style={{ flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: C.goldSoft }}>
-                        <Text style={{ fontSize: 11, fontWeight: '800', color: C.gold }}>START</Text>
+                        <Text style={{ ...T.caption2, fontWeight: '800', color: C.gold }}>START</Text>
                       </Pressable>
                       <Pressable onPress={() => { setEditDay(d); setBuilderOpen(true); }} style={{ width: 64, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: C.line }}>
-                        <Text style={{ fontSize: 11, fontWeight: '700', color: C.mut }}>EDIT</Text>
+                        <Text style={{ ...T.caption2, fontWeight: '700', color: C.mut }}>EDIT</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -426,12 +426,12 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
           <Card style={{ borderWidth: 1, borderColor: C.gold, marginBottom: 10 }}>
             <View style={s.between}>
               <View style={{ flex: 1, marginRight: 12 }}>
-                <Text style={{ fontSize: 10, fontWeight: '800', color: C.gold, letterSpacing: 1.1 }}>WORKOUT DAY</Text>
+                <Text style={{ ...T.micro, fontWeight: '800', color: C.gold, letterSpacing: 1.1 }}>WORKOUT DAY</Text>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: C.text, marginTop: 3 }}>{dayMode.day.name}</Text>
               </View>
               {/* Progress is DONE / total. It used to be idx+1 / total, which
                   claimed exercise 1 was complete the instant you started. */}
-              <Text style={{ fontSize: 13, color: C.gold, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ ...T.footnote, color: C.gold, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 {doneCount}/{list.length} done
               </Text>
             </View>
@@ -467,7 +467,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                     <Text
                       numberOfLines={1}
                       style={{
-                        fontSize: 12, fontWeight: '800', maxWidth: 132,
+                        ...T.caption, fontWeight: '800', maxWidth: 132,
                         color: isNow ? C.ink : isDone ? C.green : C.mut,
                       }}>
                       {isDone ? '✓ ' : (i + 1) + '. '}{name}
@@ -490,11 +490,11 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                   backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
                   opacity: dayMode.idx === 0 ? 0.4 : 1,
                 }}>
-                <Text style={{ fontSize: 15, color: C.mut, fontWeight: '800' }}>‹</Text>
+                <Text style={{ ...T.subheadline, color: C.mut, fontWeight: '800' }}>‹</Text>
               </Pressable>
 
               <Pressable onPress={advanceDay} style={{ flex: 1, minHeight: 42, borderRadius: 11, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ fontSize: 12, fontWeight: '800', color: C.ink }}>
+                <Text style={{ ...T.caption, fontWeight: '800', color: C.ink }}>
                   {allDone ? 'FINISH DAY' : 'DONE — NEXT  ›'}
                 </Text>
               </Pressable>
@@ -512,14 +512,14 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                   backgroundColor: endArmed ? C.redSoft : 'transparent',
                   borderWidth: 1, borderColor: endArmed ? C.red : 'transparent',
                 }}>
-                <Text style={{ fontSize: 12, color: endArmed ? C.red : C.mut, fontWeight: '800' }}>
+                <Text style={{ ...T.caption, color: endArmed ? C.red : C.mut, fontWeight: '800' }}>
                   {endArmed ? 'SURE?' : 'END'}
                 </Text>
               </Pressable>
             </View>
 
             {endArmed ? (
-              <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 8, lineHeight: 16 }}>
+              <Text style={{ ...T.caption2, color: C.dim, marginTop: 8, lineHeight: 16 }}>
                 Ends the day. Sets you've already logged are kept — tap anywhere else to cancel.
               </Text>
             ) : null}
@@ -581,10 +581,10 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
               }}>
               <View style={s.between}>
-                <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 1.2, color: C.dim }}>
+                <Text style={{ ...T.micro, fontWeight: '800', letterSpacing: 1.2, color: C.dim }}>
                   LAST TIME · {lastAgo.toUpperCase()}
                 </Text>
-                <Text style={{ fontSize: 11, fontWeight: '700', color: C.gold }}>Tap to load</Text>
+                <Text style={{ ...T.caption2, fontWeight: '700', color: C.gold }}>Tap to load</Text>
               </View>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8 }}>
                 {lastSession.sets.slice(0, 6).map((l, i) => {
@@ -597,7 +597,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                       borderWidth: 1, borderColor: isTop ? C.gold : C.lineSoft,
                     }}>
                       <Text style={{
-                        fontSize: 12.5, fontWeight: '700', fontVariant: ['tabular-nums'],
+                        ...T.caption, fontWeight: '700', fontVariant: ['tabular-nums'],
                         color: isTop ? C.gold : C.mut,
                       }}>
                         {l.w > 0 ? l.w + unit : 'BW'} × {l.r}
@@ -607,7 +607,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 })}
                 {lastSession.sets.length > 6 ? (
                   <View style={{ paddingHorizontal: 9, paddingVertical: 5 }}>
-                    <Text style={{ fontSize: 12.5, color: C.dim, fontWeight: '700' }}>
+                    <Text style={{ ...T.caption, color: C.dim, fontWeight: '700' }}>
                       +{lastSession.sets.length - 6}
                     </Text>
                   </View>
@@ -619,7 +619,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
               marginTop: 14, padding: 12, borderRadius: 12,
               backgroundColor: C.panel2, borderWidth: 1, borderStyle: 'dashed', borderColor: C.line,
             }}>
-              <Text style={{ fontSize: 12.5, color: C.dim }}>
+              <Text style={{ ...T.caption, color: C.dim }}>
                 First time logging this — today becomes the number to beat.
               </Text>
             </View>
@@ -679,25 +679,25 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                     backgroundColor: rpe === e.v ? C.goldSoft : C.panel2,
                     borderWidth: 1, borderColor: rpe === e.v ? C.gold : C.line,
                   }}>
-                  <Text style={{ fontWeight: '800', fontSize: 11.5, color: rpe === e.v ? C.gold : C.mut }}>{e.label}</Text>
-                  <Text style={{ fontSize: 9, color: rpe === e.v ? C.gold : C.dim, fontVariant: ['tabular-nums'], marginTop: 2 }}>{e.v}</Text>
+                  <Text style={{ ...T.caption2, fontWeight: '800', color: rpe === e.v ? C.gold : C.mut }}>{e.label}</Text>
+                  <Text style={{ ...T.micro, color: rpe === e.v ? C.gold : C.dim, fontVariant: ['tabular-nums'], marginTop: 2 }}>{e.v}</Text>
                 </Pressable>
               ))}
             </View>
-            <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 7, lineHeight: 16 }}>
+            <Text style={{ ...T.caption2, color: C.dim, marginTop: 7, lineHeight: 16 }}>
               {EFFORT.find((e) => e.v === rpe) ? EFFORT.find((e) => e.v === rpe).hint : ''}
             </Text>
           </View>
           {/* how to enter the load for this specific movement */}
           {loadNote(sel.n) ? (
             <View style={{ marginTop: 12, padding: 10, borderRadius: 10, backgroundColor: C.goldSoft, borderWidth: 1, borderColor: C.gold }}>
-              <Text style={{ fontSize: 13, color: C.gold, fontWeight: '800', lineHeight: 18 }}>{loadNote(sel.n)}</Text>
+              <Text style={{ ...T.footnote, color: C.gold, fontWeight: '800', lineHeight: 18 }}>{loadNote(sel.n)}</Text>
             </View>
           ) : null}
           {/* Only shown when the movement has no note of its own — otherwise
               two load hints stacked and contradicted each other in tone. */}
           {!loadNote(sel.n) ? (
-            <Text style={{ fontSize: 12.5, color: C.dim, marginTop: 9 }}>
+            <Text style={{ ...T.caption, color: C.dim, marginTop: 9 }}>
               Bodyweight? Enter added load only. Timed hold? Seconds go in reps.
             </Text>
           ) : null}
@@ -709,18 +709,18 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
               <Pressable onPress={() => setSets((v) => Math.max(1, v - 1))} hitSlop={8}
                 accessibilityLabel="Fewer sets"
                 style={{ width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line }}>
-                <Text style={{ fontSize: 22, fontWeight: '900', color: C.gold, marginTop: -2 }}>−</Text>
+                <Text style={{ ...T.title2, fontWeight: '900', color: C.gold, marginTop: -2 }}>−</Text>
               </Pressable>
               <View style={{ flex: 1, alignItems: 'center' }}>
                 <Text style={{ fontSize: 26, fontWeight: '900', color: C.text, fontVariant: ['tabular-nums'] }}>{sets}</Text>
-                <Text style={{ fontSize: 11, color: C.dim, marginTop: 1 }}>
+                <Text style={{ ...T.caption2, color: C.dim, marginTop: 1 }}>
                   {sets === 1 ? 'single set' : 'identical sets · logged ~3 min apart'}
                 </Text>
               </View>
               <Pressable onPress={() => setSets((v) => Math.min(10, v + 1))} hitSlop={8}
                 accessibilityLabel="More sets"
                 style={{ width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line }}>
-                <Text style={{ fontSize: 22, fontWeight: '900', color: C.gold, marginTop: -2 }}>+</Text>
+                <Text style={{ ...T.title2, fontWeight: '900', color: C.gold, marginTop: -2 }}>+</Text>
               </Pressable>
             </View>
           </View>
@@ -741,20 +741,20 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
         <FadeIn key={last.seq}>
         <Card style={last.isPR ? { backgroundColor: C.goldSoft, borderWidth: 1, borderColor: C.gold } : null}>
           <View style={s.between}>
-            <Text style={{ fontSize: 14, fontWeight: '800', color: last.isPR ? C.gold : C.green }}>
+            <Text style={{ ...T.footnote, fontWeight: '800', color: last.isPR ? C.gold : C.green }}>
               {last.isPR ? 'NEW PERSONAL RECORD' : 'Set logged'}
             </Text>
-            <CountUp value={last.xp + (last.bonus || 0)} prefix="+" suffix=" XP" duration={600} style={{ fontSize: 14, fontWeight: '700', color: C.gold, fontVariant: ['tabular-nums'] }} />
+            <CountUp value={last.xp + (last.bonus || 0)} prefix="+" suffix=" XP" duration={600} style={{ ...T.footnote, fontWeight: '700', color: C.gold, fontVariant: ['tabular-nums'] }} />
           </View>
           {last.e1 > 0 && (
             <View style={{ marginTop: 10 }}>
-              <Text style={{ fontSize: 12, color: C.mut }}>
+              <Text style={{ ...T.caption, color: C.mut }}>
                 Estimated 1RM: <Text style={{ color: C.text, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{last.e1} {unit}</Text>
                 {last.isPR && last.prev > 0 ? <Text style={{ color: C.dim }}> (was {last.prev})</Text> : null}
               </Text>
             </View>
           )}
-          {last.bonus > 0 && <Text style={{ fontSize: 12, color: C.purp, marginTop: 8 }}>First session today: +{last.bonus} XP → Discipline & Vitality</Text>}
+          {last.bonus > 0 && <Text style={{ ...T.caption, color: C.purp, marginTop: 8 }}>First session today: +{last.bonus} XP → Discipline & Vitality</Text>}
 
           {/* Correct it now, while you are still standing at the rack. Anything
               older is edited from Progress → History. */}
@@ -769,7 +769,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 alignItems: 'center', justifyContent: 'center',
                 backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
               }}>
-              <Text style={{ fontSize: 12.5, fontWeight: '700', color: C.mut }}>
+              <Text style={{ ...T.caption, fontWeight: '700', color: C.mut }}>
                 Wrong numbers? Edit or delete this set
               </Text>
             </Pressable>
@@ -824,12 +824,12 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                     <MuscleIcon group={cm.glyph} color={cm.color} size={22} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, letterSpacing: -0.2 }}>{e.n}</Text>
-                    <Text style={{ fontSize: 11, color: cm.color, marginTop: 1, fontWeight: '700' }}>{e.c}{e.v ? ' · ' + e.v : ''}</Text>
+                    <Text style={{ ...T.callout, fontWeight: '700', color: C.text, letterSpacing: -0.2 }}>{e.n}</Text>
+                    <Text style={{ ...T.caption2, color: cm.color, marginTop: 1, fontWeight: '700' }}>{e.c}{e.v ? ' · ' + e.v : ''}</Text>
                   </View>
                 </View>
                 <View style={{ paddingVertical: 2.5, paddingHorizontal: 7, borderRadius: 6, backgroundColor: STAT_META[e.p].color + '1a' }}>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: STAT_META[e.p].color, letterSpacing: 0.4 }}>
+                  <Text style={{ ...T.micro, fontWeight: '700', color: STAT_META[e.p].color, letterSpacing: 0.4 }}>
                     {e.p}{e.s ? ' +' + e.s : ''}
                   </Text>
                 </View>
@@ -837,7 +837,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
             </Pressable>
             );
           })}
-          {list.length === 0 && <Text style={{ fontSize: 14, color: C.dim, paddingVertical: 20, textAlign: 'center' }}>No matches — try another term.</Text>}
+          {list.length === 0 && <Text style={{ ...T.footnote, color: C.dim, paddingVertical: 20, textAlign: 'center' }}>No matches — try another term.</Text>}
         </ScrollView>
       </Sheet>
 
@@ -918,7 +918,7 @@ function RestTimer({ defaultSeconds, onChangeDefault }) {
             alignItems: 'center', justifyContent: 'center',
             backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
           }}>
-          <Text style={{ fontSize: 13, fontWeight: '800', color: C.mut }}>+30s</Text>
+          <Text style={{ ...T.footnote, fontWeight: '800', color: C.mut }}>+30s</Text>
         </Pressable>
         <Pressable
           onPress={() => workoutSession.endRest()}
@@ -929,13 +929,13 @@ function RestTimer({ defaultSeconds, onChangeDefault }) {
             alignItems: 'center', justifyContent: 'center',
             backgroundColor: C.greenSoft, borderWidth: 1, borderColor: C.green,
           }}>
-          <Text style={{ fontSize: 13, fontWeight: '800', color: C.green }}>Skip rest</Text>
+          <Text style={{ ...T.footnote, fontWeight: '800', color: C.green }}>Skip rest</Text>
         </Pressable>
       </View>
 
       {onChangeDefault ? (
         <View style={[s.row, { marginTop: 12, alignItems: 'center' }]}>
-          <Text style={{ fontSize: 11.5, color: C.dim, flex: 1 }}>
+          <Text style={{ ...T.caption2, color: C.dim, flex: 1 }}>
             Default rest
           </Text>
           {[60, 90, 120, 180].map((sec) => {
@@ -954,7 +954,7 @@ function RestTimer({ defaultSeconds, onChangeDefault }) {
                   borderWidth: 1, borderColor: on ? C.gold : C.line,
                 }}>
                 <Text style={{
-                  fontSize: 11.5, fontWeight: '800', fontVariant: ['tabular-nums'],
+                  ...T.caption2, fontWeight: '800', fontVariant: ['tabular-nums'],
                   color: on ? C.gold : C.dim,
                 }}>
                   {sec < 120 ? sec + 's' : (sec / 60) + 'm'}
@@ -1146,9 +1146,9 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
           <View style={[s.between, { alignItems: 'flex-end' }]}>
             <View>
               <Lbl style={{ marginBottom: 4 }}>Last 7 days</Lbl>
-              <Text style={{ fontSize: 21, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'], letterSpacing: -0.4 }}>
+              <Text style={{ ...T.title2, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'], letterSpacing: -0.4 }}>
                 {Math.round(week.mins7)}
-                <Text style={{ fontSize: 13, color: C.mut, fontWeight: '700' }}> min</Text>
+                <Text style={{ ...T.footnote, color: C.mut, fontWeight: '700' }}> min</Text>
               </Text>
             </View>
             {/* the bars, oldest → today */}
@@ -1165,7 +1165,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                 );
               })}
             </View>
-            <Text style={{ fontSize: 12, color: C.dim, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+            <Text style={{ ...T.caption, color: C.dim, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
               {week.sessions} session{week.sessions === 1 ? '' : 's'}
             </Text>
           </View>
@@ -1188,7 +1188,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                     backgroundColor: C.panel2, borderWidth: 1, borderColor: alpha(tint, 0.45),
                   }}>
                   <CardioGlyph name={ct.n} size={17} color={tint} strokeWidth={1.7} />
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: C.text, marginLeft: 8 }} numberOfLines={1}>{ct.n}</Text>
+                  <Text style={{ ...T.footnote, fontWeight: '700', color: C.text, marginLeft: 8 }} numberOfLines={1}>{ct.n}</Text>
                 </Pressable>
               );
             })}
@@ -1209,7 +1209,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
               a11y: f.label + ', ' + f.items.length + ' activities',
             }))}
           />
-          <Text style={{ fontSize: 12.5, color: C.dim, marginTop: 9, marginBottom: 12, lineHeight: 17 }}>
+          <Text style={{ ...T.caption, color: C.dim, marginTop: 9, marginBottom: 12, lineHeight: 17 }}>
             {fam.blurb}
           </Text>
 
@@ -1236,24 +1236,24 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                   <CardioGlyph name={ct.n} size={22} color={fam.tint} />
                 </View>
                 <View style={{ flex: 1, paddingRight: 8 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: C.text, letterSpacing: -0.2 }} numberOfLines={1}>
+                  <Text style={{ ...T.subheadline, fontWeight: '700', color: C.text, letterSpacing: -0.2 }} numberOfLines={1}>
                     {ct.n}
                   </Text>
                   <View style={[s.row, { marginTop: 3 }]}>
-                    <Text style={{ fontSize: 11.5, fontWeight: '700', color: STAT_META[ct.p].color }}>
+                    <Text style={{ ...T.caption2, fontWeight: '700', color: STAT_META[ct.p].color }}>
                       {STAT_META[ct.p].name}
                     </Text>
                     {ct.s ? (
                       <>
-                        <Text style={{ fontSize: 11.5, color: C.faint, marginHorizontal: 5 }}>+</Text>
-                        <Text style={{ fontSize: 11.5, fontWeight: '700', color: STAT_META[ct.s].color }}>
+                        <Text style={{ ...T.caption2, color: C.faint, marginHorizontal: 5 }}>+</Text>
+                        <Text style={{ ...T.caption2, fontWeight: '700', color: STAT_META[ct.s].color }}>
                           {STAT_META[ct.s].name}
                         </Text>
                       </>
                     ) : null}
                   </View>
                 </View>
-                <Text style={{ fontSize: 19, color: C.faint, fontWeight: '600' }}>›</Text>
+                <Text style={{ ...T.title3, color: C.faint, fontWeight: '600' }}>›</Text>
               </Pressable>
             ))}
           </Card>
@@ -1274,10 +1274,10 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                   <CardioGlyph name={type.n} size={24} color={familyOf(type).tint} strokeWidth={1.7} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 16.5, fontWeight: '800', color: C.text, letterSpacing: -0.3 }} numberOfLines={2}>
+                  <Text style={{ ...T.callout, fontWeight: '800', color: C.text, letterSpacing: -0.3 }} numberOfLines={2}>
                     {type.n}
                   </Text>
-                  <Text style={{ fontSize: 11.5, fontWeight: '700', color: C.dim, marginTop: 2 }}>
+                  <Text style={{ ...T.caption2, fontWeight: '700', color: C.dim, marginTop: 2 }}>
                     {STAT_META[type.p].name}{type.s ? ' · ' + STAT_META[type.s].name : ''}
                   </Text>
                 </View>
@@ -1285,7 +1285,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
               <Pressable onPress={() => { setType(null); setLast(null); }} hitSlop={8}
                 accessibilityRole="button" accessibilityLabel="Choose a different activity"
                 style={s.smallGhost}>
-                <Text style={{ color: C.mut, fontSize: 12 }}>Change</Text>
+                <Text style={{ color: C.mut, ...T.caption }}>Change</Text>
               </Pressable>
             </View>
 
@@ -1308,10 +1308,10 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                         borderWidth: 1, borderColor: on ? C.gold : C.line,
                       }}>
                       <Text style={{
-                        fontSize: 14, fontWeight: '800', fontVariant: ['tabular-nums'],
+                        ...T.footnote, fontWeight: '800', fontVariant: ['tabular-nums'],
                         color: on ? C.ink : C.text,
                       }}>{m}</Text>
-                      <Text style={{ fontSize: 9, fontWeight: '700', color: on ? alpha(C.ink, 0.6) : C.dim }}>MIN</Text>
+                      <Text style={{ ...T.micro, fontWeight: '700', color: on ? alpha(C.ink, 0.6) : C.dim }}>MIN</Text>
                     </Pressable>
                   );
                 })}
@@ -1326,7 +1326,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                 ) : null}
               </View>
               {pace ? (
-                <Text style={{ fontSize: 12.5, color: C.cyan, fontWeight: '700', marginTop: 8, fontVariant: ['tabular-nums'] }}>
+                <Text style={{ ...T.caption, color: C.cyan, fontWeight: '700', marginTop: 8, fontVariant: ['tabular-nums'] }}>
                   That is {pace}
                 </Text>
               ) : null}
@@ -1341,7 +1341,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
             <View style={s.between}>
               <Lbl style={{ marginBottom: 0 }}>How hard was it?</Lbl>
               {minsN > 0 ? (
-                <Text style={{ fontSize: 10.5, color: C.dim, fontWeight: '700' }}>XP AT {Math.round(minsN)} MIN</Text>
+                <Text style={{ ...T.micro, color: C.dim, fontWeight: '700' }}>XP AT {Math.round(minsN)} MIN</Text>
               ) : null}
             </View>
             <View style={{ marginTop: 10 }}>
@@ -1365,16 +1365,16 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                       backgroundColor: on ? tint : C.line,
                     }} />
                     <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 14.5, fontWeight: '800', color: on ? tint : C.text }}>
+                      <Text style={{ ...T.footnote, fontWeight: '800', color: on ? tint : C.text }}>
                         {it.label}
                       </Text>
-                      <Text style={{ fontSize: 11.5, color: on ? C.mut : C.dim, marginTop: 2, lineHeight: 16 }}>
+                      <Text style={{ ...T.caption2, color: on ? C.mut : C.dim, marginTop: 2, lineHeight: 16 }}>
                         {INTENSITY_NOTE[it.k] || ''}
                       </Text>
                     </View>
                     {minsN > 0 ? (
                       <Text style={{
-                        fontSize: 13, fontWeight: '800', marginLeft: 10,
+                        ...T.footnote, fontWeight: '800', marginLeft: 10,
                         fontVariant: ['tabular-nums'], color: on ? tint : C.dim,
                       }}>
                         +{xpAt(it.k)}
@@ -1391,7 +1391,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
             <View style={[s.between, { alignItems: 'flex-end' }]}>
               <View style={{ flex: 1, paddingRight: 12 }}>
                 <Lbl style={{ marginBottom: 4 }}>Ready to log</Lbl>
-                <Text style={{ fontSize: 14, color: ready ? C.text : C.dim, fontWeight: '700', fontVariant: ['tabular-nums'], lineHeight: 19 }}>
+                <Text style={{ ...T.footnote, color: ready ? C.text : C.dim, fontWeight: '700', fontVariant: ['tabular-nums'], lineHeight: 19 }}>
                   {ready
                     ? [
                         type.n,
@@ -1405,14 +1405,14 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
               {ready ? (
                 <Text style={{ fontSize: 24, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'], letterSpacing: -0.5 }}>
                   +{xpAt(inten)}
-                  <Text style={{ fontSize: 12, color: C.mut, fontWeight: '700' }}> XP</Text>
+                  <Text style={{ ...T.caption, color: C.mut, fontWeight: '700' }}> XP</Text>
                 </Text>
               ) : null}
             </View>
             <GreenBtn onPress={log} style={{ marginTop: 14 }}>
               {ready ? 'Log ' + Math.round(minsN) + ' min session' : 'Log session'}
             </GreenBtn>
-            <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 9, lineHeight: 16 }}>
+            <Text style={{ ...T.caption2, color: C.dim, marginTop: 9, lineHeight: 16 }}>
               XP is an estimate — the daily cap still applies. Edit or delete any
               session afterwards from Progress → History.
             </Text>
@@ -1425,15 +1425,15 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
         <FadeIn key={last.seq}>
           <Card style={{ borderWidth: 1, borderColor: C.green }}>
             <View style={s.between}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: C.green }}>
+              <Text style={{ ...T.footnote, fontWeight: '800', color: C.green }}>
                 Session logged
               </Text>
               <CountUp value={last.xp + (last.bonus || 0)} prefix="+" suffix=" XP" duration={600}
-                style={{ fontSize: 14, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'] }} />
+                style={{ ...T.footnote, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'] }} />
             </View>
             <View style={[s.row, { marginTop: 7 }]}>
               <CardioGlyph name={last.name} size={16} color={C.mut} />
-              <Text style={{ fontSize: 13, color: C.mut, marginLeft: 7, flex: 1, fontVariant: ['tabular-nums'] }}>
+              <Text style={{ ...T.footnote, color: C.mut, marginLeft: 7, flex: 1, fontVariant: ['tabular-nums'] }}>
                 {[
                   last.name,
                   Math.round(last.mins) + ' min',
@@ -1443,7 +1443,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
               </Text>
             </View>
             {last.bonus > 0 ? (
-              <Text style={{ fontSize: 12, color: C.purp, marginTop: 8 }}>
+              <Text style={{ ...T.caption, color: C.purp, marginTop: 8 }}>
                 First session today: +{last.bonus} XP → Discipline &amp; Vitality
               </Text>
             ) : null}
@@ -1458,7 +1458,7 @@ function CardioView({ data, onLog, onEditEntry, onDeleteEntry }) {
                   alignItems: 'center', justifyContent: 'center',
                   backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
                 }}>
-                <Text style={{ fontSize: 12.5, fontWeight: '700', color: C.mut }}>
+                <Text style={{ ...T.caption, fontWeight: '700', color: C.mut }}>
                   Wrong numbers? Edit or delete this session
                 </Text>
               </Pressable>
@@ -1588,7 +1588,7 @@ export function CalcView({ data, dv }) {
         <Lbl>1RM Workbench</Lbl>
         {quickPicks.length > 0 && (
           <>
-            <Text style={{ fontSize: 11.5, color: C.dim, marginBottom: 8 }}>Tap one of your best sets to load it</Text>
+            <Text style={{ ...T.caption2, color: C.dim, marginBottom: 8 }}>Tap one of your best sets to load it</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }}>
               {quickPicks.map((p) => {
                 const on = srcName === p.ex && String(p.w) === w && String(p.r) === r;
@@ -1598,10 +1598,10 @@ export function CalcView({ data, dv }) {
                       paddingHorizontal: 12, paddingVertical: 9, borderRadius: 999, marginRight: 8,
                       backgroundColor: on ? C.gold : C.panel2, borderWidth: 1, borderColor: on ? C.gold : C.line,
                     }}>
-                    <Text numberOfLines={1} style={{ fontSize: 11.5, fontWeight: '700', color: on ? C.ink : C.text, maxWidth: 150 }}>
+                    <Text numberOfLines={1} style={{ ...T.caption2, fontWeight: '700', color: on ? C.ink : C.text, maxWidth: 150 }}>
                       {p.ex}
                     </Text>
-                    <Text style={{ fontSize: 10.5, color: on ? C.ink : C.dim, fontVariant: ['tabular-nums'], marginTop: 1 }}>
+                    <Text style={{ ...T.micro, color: on ? C.ink : C.dim, fontVariant: ['tabular-nums'], marginTop: 1 }}>
                       {p.w}{unit} × {p.r}
                     </Text>
                   </Pressable>
@@ -1619,7 +1619,7 @@ export function CalcView({ data, dv }) {
 
       {!results ? (
         <Card>
-          <Text style={{ fontSize: 15, color: C.text, fontWeight: '700', lineHeight: 21 }}>
+          <Text style={{ ...T.subheadline, color: C.text, fontWeight: '700', lineHeight: 21 }}>
             One set in. Get your max, plates and warm-up.
           </Text>
         </Card>
@@ -1630,13 +1630,13 @@ export function CalcView({ data, dv }) {
             <Card style={{ borderColor: C.gold, borderWidth: 1 }}>
               <View style={s.between}>
                 <Lbl style={{ marginBottom: 0 }}>Estimated 1RM</Lbl>
-                <Text style={{ fontSize: 11, color: C.dim, fontVariant: ['tabular-nums'] }}>4-formula mean</Text>
+                <Text style={{ ...T.caption2, color: C.dim, fontVariant: ['tabular-nums'] }}>4-formula mean</Text>
               </View>
               <View style={{ alignItems: 'center', marginTop: 6 }}>
                 <CountUp value={Math.round(e1)} duration={700}
                   style={{ fontSize: 56, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'], letterSpacing: -1 }} />
-                <Text style={{ fontSize: 13, color: C.mut, marginTop: -4 }}>{unit}</Text>
-                <Text style={{ fontSize: 11.5, color: C.dim, fontVariant: ['tabular-nums'], marginTop: 6 }}>
+                <Text style={{ ...T.footnote, color: C.mut, marginTop: -4 }}>{unit}</Text>
+                <Text style={{ ...T.caption2, color: C.dim, fontVariant: ['tabular-nums'], marginTop: 6 }}>
                   range {results.lo.toFixed(1)} – {results.hi.toFixed(1)} {unit}
                 </Text>
               </View>
@@ -1647,7 +1647,7 @@ export function CalcView({ data, dv }) {
                   backgroundColor: prDelta > 0 ? 'rgba(62,207,142,0.12)' : C.panel2,
                   borderWidth: 1, borderColor: prDelta > 0 ? C.green : C.line,
                 }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: prDelta > 0 ? C.green : C.mut }}>
+                  <Text style={{ ...T.caption, fontWeight: '700', color: prDelta > 0 ? C.green : C.mut }}>
                     {prDelta > 0
                       ? `New PR pace — ${prDelta}${unit} above your best`
                       : `${Math.abs(prDelta)}${unit} off your best (${dv.best[srcName].e1rm}${unit})`}
@@ -1662,14 +1662,14 @@ export function CalcView({ data, dv }) {
                   const rel = (f.v - results.lo) / spread;
                   return (
                     <View key={f.key} style={[s.between, { marginTop: 7, alignItems: 'center' }]}>
-                      <Text style={{ width: 74, fontSize: 11.5, color: C.mut }}>{f.key}</Text>
+                      <Text style={{ width: 74, ...T.caption2, color: C.mut }}>{f.key}</Text>
                       <View style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: C.panel2, marginHorizontal: 8, justifyContent: 'center' }}>
                         <View style={{
                           position: 'absolute', left: `${rel * 92}%`, width: 8, height: 8,
                           borderRadius: 4, backgroundColor: C.gold,
                         }} />
                       </View>
-                      <Text style={{ width: 62, textAlign: 'right', fontSize: 12, color: C.text, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
+                      <Text style={{ width: 62, textAlign: 'right', ...T.caption, color: C.text, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
                         {f.v.toFixed(1)}
                       </Text>
                     </View>
@@ -1683,15 +1683,15 @@ export function CalcView({ data, dv }) {
           <Card>
             <View style={s.between}>
               <Lbl style={{ marginBottom: 0 }}>Percentage explorer</Lbl>
-              <Text style={{ fontSize: 12, color: C.gold, fontVariant: ['tabular-nums'], fontWeight: '700' }}>{pct}%</Text>
+              <Text style={{ ...T.caption, color: C.gold, fontVariant: ['tabular-nums'], fontWeight: '700' }}>{pct}%</Text>
             </View>
             <View style={[s.row, { alignItems: 'center', marginTop: 10 }]}>
               <Stepper label="−" onPress={() => setPct((v) => Math.max(30, v - 2.5))} />
               <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ fontSize: 34, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'] }}>
-                  {pctWeight}<Text style={{ fontSize: 14, color: C.mut }}> {unit}</Text>
+                <Text style={{ ...T.display, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'] }}>
+                  {pctWeight}<Text style={{ ...T.footnote, color: C.mut }}> {unit}</Text>
                 </Text>
-                <Text style={{ fontSize: 11, color: C.dim, marginTop: 2 }}>
+                <Text style={{ ...T.caption2, color: C.dim, marginTop: 2 }}>
                   ≈ {repsAtPct(pct)} reps at this load
                 </Text>
               </View>
@@ -1705,7 +1705,7 @@ export function CalcView({ data, dv }) {
                     backgroundColor: pct === p ? C.gold : 'transparent',
                     borderWidth: 1, borderColor: pct === p ? C.gold : C.line,
                   }}>
-                  <Text style={{ fontSize: 12, fontWeight: '700', color: pct === p ? C.ink : C.mut, fontVariant: ['tabular-nums'] }}>{p}%</Text>
+                  <Text style={{ ...T.caption, fontWeight: '700', color: pct === p ? C.ink : C.mut, fontVariant: ['tabular-nums'] }}>{p}%</Text>
                 </Pressable>
               ))}
             </ScrollView>
@@ -1715,10 +1715,10 @@ export function CalcView({ data, dv }) {
           <Card>
             <View style={s.between}>
               <Lbl style={{ marginBottom: 0 }}>Load the bar</Lbl>
-              <Text style={{ fontSize: 11, color: C.dim, fontVariant: ['tabular-nums'] }}>{plates.bar}{unit} bar · per side</Text>
+              <Text style={{ ...T.caption2, color: C.dim, fontVariant: ['tabular-nums'] }}>{plates.bar}{unit} bar · per side</Text>
             </View>
             {plates.perSide.length === 0 ? (
-              <Text style={{ fontSize: 12.5, color: C.dim, marginTop: 10 }}>
+              <Text style={{ ...T.caption, color: C.dim, marginTop: 10 }}>
                 {pctWeight <= plates.bar ? 'Empty bar is enough at this percentage.' : 'Not loadable with standard plates.'}
               </Text>
             ) : (
@@ -1745,14 +1745,14 @@ export function CalcView({ data, dv }) {
                       backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
                     }}>
                       <View style={{ width: 9, height: 9, borderRadius: 2, backgroundColor: g.color, marginRight: 6 }} />
-                      <Text style={{ fontSize: 12, color: C.text, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
+                      <Text style={{ ...T.caption, color: C.text, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
                         {g.n} × {g.w}{unit}
                       </Text>
                     </View>
                   ))}
                 </View>
                 {!plates.ok && plates.remainder > 0 && (
-                  <Text style={{ fontSize: 11.5, color: C.orange, marginTop: 2 }}>
+                  <Text style={{ ...T.caption2, color: C.orange, marginTop: 2 }}>
                     {plates.remainder}{unit} per side unreachable — nearest is {roundLoad(pctWeight - plates.remainder * 2, unit)}{unit}.
                   </Text>
                 )}
@@ -1765,11 +1765,11 @@ export function CalcView({ data, dv }) {
             <Lbl>Warm-up to {pctWeight} {unit}</Lbl>
             {warmups.map((s2, i) => (
               <View key={i} style={[s.between, { marginTop: 9, alignItems: 'center' }]}>
-                <Text style={{ width: 26, fontSize: 12, color: C.dim, fontVariant: ['tabular-nums'] }}>{i + 1}</Text>
+                <Text style={{ width: 26, ...T.caption, color: C.dim, fontVariant: ['tabular-nums'] }}>{i + 1}</Text>
                 <View style={{ flex: 1, height: 8, borderRadius: 4, backgroundColor: C.panel2, marginRight: 10 }}>
                   <View style={{ width: `${[40, 55, 70, 85][i]}%`, height: 8, borderRadius: 4, backgroundColor: C.gold, opacity: 0.35 + i * 0.16 }} />
                 </View>
-                <Text style={{ width: 108, textAlign: 'right', fontSize: 13, color: C.text, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
+                <Text style={{ width: 108, textAlign: 'right', ...T.footnote, color: C.text, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
                   {s2.w} {unit} × {s2.reps}
                 </Text>
               </View>
@@ -1787,14 +1787,14 @@ export function CalcView({ data, dv }) {
                 <View key={reps} style={[s.between, {
                   paddingVertical: 7, paddingHorizontal: 8, borderRadius: 8, marginTop: 2,
                 }]}>
-                  <Text style={{ width: 58, color: tint, fontSize: 13, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
+                  <Text style={{ width: 58, color: tint, ...T.footnote, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
                     {reps} rep{reps > 1 ? 's' : ''}
                   </Text>
                   <View style={{ flex: 1, height: 6, borderRadius: 3, backgroundColor: C.panel2, marginHorizontal: 8 }}>
                     <View style={{ width: `${p}%`, height: 6, borderRadius: 3, backgroundColor: tint }} />
                   </View>
-                  <Text style={{ width: 40, textAlign: 'right', color: C.dim, fontSize: 11.5, fontVariant: ['tabular-nums'] }}>{Math.round(p)}%</Text>
-                  <Text style={{ width: 82, textAlign: 'right', fontWeight: '700', color: C.text, fontSize: 13, fontVariant: ['tabular-nums'] }}>
+                  <Text style={{ width: 40, textAlign: 'right', color: C.dim, ...T.caption2, fontVariant: ['tabular-nums'] }}>{Math.round(p)}%</Text>
+                  <Text style={{ ...T.footnote, width: 82, textAlign: 'right', fontWeight: '700', color: C.text, fontVariant: ['tabular-nums'] }}>
                     {roundLoad(weightForReps(e1, reps), unit)} {unit}
                   </Text>
                 </View>
@@ -1805,7 +1805,7 @@ export function CalcView({ data, dv }) {
       )}
 
       <Card>
-        <Text style={{ fontSize: 14, color: C.mut, fontWeight: '700' }}>
+        <Text style={{ ...T.footnote, color: C.mut, fontWeight: '700' }}>
           Best accuracy: 12 reps or fewer.
         </Text>
       </Card>
@@ -1836,7 +1836,7 @@ function Stepper({ label, onPress }) {
         width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center',
         backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
       }}>
-      <Text style={{ fontSize: 22, fontWeight: '700', color: C.gold, marginTop: -2 }}>{label}</Text>
+      <Text style={{ ...T.title2, fontWeight: '700', color: C.gold, marginTop: -2 }}>{label}</Text>
     </Pressable>
   );
 }
@@ -1864,13 +1864,13 @@ export default function TrainTab({ data, dv, onLift, onLiftBatch, onCardio, onSa
       <Card style={[s.hero, { padding: 12 }]}>
         <Segmented options={SEGS} value={seg} onChange={setSeg} />
         <View style={[s.row, { marginTop: 10 }]}>
-          <Text style={{ fontSize: 10, color: near ? C.gold : C.dim, fontWeight: '700', fontVariant: ['tabular-nums'], marginRight: 8 }}>
+          <Text style={{ ...T.micro, color: near ? C.gold : C.dim, fontWeight: '700', fontVariant: ['tabular-nums'], marginRight: 8 }}>
             {Math.round(xpToday)}/{INTEGRITY.DAILY_XP_CAP} XP today
           </Text>
           <View style={{ flex: 1 }}><PBar pct={capPct} color={near ? C.gold : C.green} height={5} /></View>
         </View>
         {near && (
-          <Text style={{ fontSize: 13, color: C.gold, marginTop: 7, fontWeight: '700' }}>
+          <Text style={{ ...T.footnote, color: C.gold, marginTop: 7, fontWeight: '700' }}>
             XP cap nearly reached. Your sets still save.
           </Text>
         )}
@@ -1918,12 +1918,12 @@ function TodayStrip({ data, onOpenAnalytics }) {
       <View style={s.between}>
         <Lbl style={{ marginBottom: 0 }}>Today</Lbl>
         {title ? (
-          <Text style={{ fontSize: 12, fontWeight: '700', color: C.gold }}>{title}</Text>
+          <Text style={{ ...T.caption, fontWeight: '700', color: C.gold }}>{title}</Text>
         ) : null}
       </View>
 
       {sessions.length ? (
-        <Text style={{ fontSize: 14, color: C.mut, marginTop: 8, fontVariant: ['tabular-nums'] }}>
+        <Text style={{ ...T.footnote, color: C.mut, marginTop: 8, fontVariant: ['tabular-nums'] }}>
           {[
             `${totals.sets} sets`,
             volume,
@@ -1932,7 +1932,7 @@ function TodayStrip({ data, onOpenAnalytics }) {
           ].filter(Boolean).join(' · ')}
         </Text>
       ) : (
-        <Text style={{ fontSize: 14, color: C.dim, marginTop: 8 }}>
+        <Text style={{ ...T.footnote, color: C.dim, marginTop: 8 }}>
           Nothing logged yet today.
         </Text>
       )}
@@ -1948,8 +1948,8 @@ function TodayStrip({ data, onOpenAnalytics }) {
             backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
           }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: C.text }}>Progress &amp; analytics</Text>
-            <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 1 }}>
+            <Text style={{ ...T.footnote, fontWeight: '700', color: C.text }}>Progress &amp; analytics</Text>
+            <Text style={{ ...T.caption2, color: C.dim, marginTop: 1 }}>
               Strength curves, volume, history, calculators
             </Text>
           </View>
@@ -2008,18 +2008,18 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <Text style={{ fontSize: 15, fontWeight: '800', color: C.text, marginBottom: 7 }}>1. Name your workout</Text>
+        <Text style={{ ...T.subheadline, fontWeight: '800', color: C.text, marginBottom: 7 }}>1. Name your workout</Text>
         <TextInput value={name} onChangeText={setName} placeholder="Push, Pull, Legs…"
           placeholderTextColor={C.dim} style={[s.input, { marginBottom: 10 }]} />
-        <Text style={{ fontSize: 15, fontWeight: '800', color: C.text, marginTop: 4, marginBottom: 7 }}>2. Add exercises</Text>
+        <Text style={{ ...T.subheadline, fontWeight: '800', color: C.text, marginTop: 4, marginBottom: 7 }}>2. Add exercises</Text>
         {chosen.length > 0 && (
           <View style={{ marginBottom: 8 }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: C.cyan, marginBottom: 7 }}>{chosen.length} SELECTED</Text>
+            <Text style={{ ...T.caption2, fontWeight: '800', color: C.cyan, marginBottom: 7 }}>{chosen.length} SELECTED</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {chosen.map((e) => (
                 <Pressable key={e.n} onPress={() => setChosen((c) => c.filter((x) => x.n !== e.n))}
                   style={{ backgroundColor: C.gold, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, marginRight: 6, marginBottom: 6 }}>
-                  <Text style={{ fontSize: 11, fontWeight: '700', color: C.ink }}>{e.n}  ✕</Text>
+                  <Text style={{ ...T.caption2, fontWeight: '700', color: C.ink }}>{e.n}  ✕</Text>
                 </Pressable>
               ))}
             </View>
@@ -2036,8 +2036,8 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
             return (
               <Pressable key={e.n} onPress={() => toggle(e)}
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line }}>
-                <Text style={{ fontSize: 15, color: on ? C.gold : C.text, fontWeight: on ? '800' : '500' }}>{e.n}</Text>
-                <Text style={{ fontSize: 16, color: on ? C.gold : C.dim }}>{on ? '✓' : '+'}</Text>
+                <Text style={{ ...T.subheadline, color: on ? C.gold : C.text, fontWeight: on ? '800' : '500' }}>{e.n}</Text>
+                <Text style={{ ...T.callout, color: on ? C.gold : C.dim }}>{on ? '✓' : '+'}</Text>
               </Pressable>
             );
           })}
@@ -2045,7 +2045,7 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
         {isEdit && (
           <Pressable onPress={() => { onDelete(initial.id); onClose(); }} hitSlop={8}
             style={{ alignItems: 'center', marginTop: 16 }}>
-            <Text style={{ fontSize: 12, color: C.red, fontWeight: '700' }}>Delete day</Text>
+            <Text style={{ ...T.caption, color: C.red, fontWeight: '700' }}>Delete day</Text>
           </Pressable>
         )}
       </ScrollView>
@@ -2062,7 +2062,7 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
         paddingHorizontal: 16, paddingTop: 12, paddingBottom: 16,
         borderTopWidth: 1, borderTopColor: C.lineSoft, backgroundColor: C.bgElev,
       }}>
-        <Text style={{ fontSize: 12, color: C.dim, marginBottom: 8 }}>
+        <Text style={{ ...T.caption, color: C.dim, marginBottom: 8 }}>
           {!name.trim() && !chosen.length
             ? 'Name it, then tap exercises to add them.'
             : !name.trim()
@@ -2100,11 +2100,11 @@ function ExerciseInfoSheet({ ex, meta, onClose }) {
             <MuscleIcon group={meta.glyph} color={meta.color} size={34} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontSize: 12, fontWeight: '800', color: meta.color, letterSpacing: 0.6 }}>
+            <Text style={{ ...T.caption, fontWeight: '800', color: meta.color, letterSpacing: 0.6 }}>
               {meta.title.toUpperCase()}
             </Text>
             {info && info.trains ? (
-              <Text style={{ fontSize: 13.5, color: C.mut, marginTop: 3, lineHeight: 19 }}>
+              <Text style={{ ...T.footnote, color: C.mut, marginTop: 3, lineHeight: 19 }}>
                 Trains {info.trains}.
               </Text>
             ) : null}
@@ -2113,7 +2113,7 @@ function ExerciseInfoSheet({ ex, meta, onClose }) {
                 paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6,
                 backgroundColor: STAT_META[ex.p].color + '1e',
               }}>
-                <Text style={{ fontSize: 10.5, fontWeight: '800', color: STAT_META[ex.p].color }}>
+                <Text style={{ ...T.micro, fontWeight: '800', color: STAT_META[ex.p].color }}>
                   {STAT_META[ex.p].name}
                 </Text>
               </View>
@@ -2122,7 +2122,7 @@ function ExerciseInfoSheet({ ex, meta, onClose }) {
                   paddingVertical: 3, paddingHorizontal: 8, borderRadius: 6, marginLeft: 6,
                   backgroundColor: STAT_META[ex.s].color + '1e',
                 }}>
-                  <Text style={{ fontSize: 10.5, fontWeight: '800', color: STAT_META[ex.s].color }}>
+                  <Text style={{ ...T.micro, fontWeight: '800', color: STAT_META[ex.s].color }}>
                     {STAT_META[ex.s].name}
                   </Text>
                 </View>
@@ -2136,14 +2136,14 @@ function ExerciseInfoSheet({ ex, meta, onClose }) {
             padding: 11, borderRadius: 10, marginBottom: 14,
             backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
           }}>
-            <Text style={{ fontSize: 10, fontWeight: '800', color: C.dim, letterSpacing: 1 }}>VARIATIONS</Text>
-            <Text style={{ fontSize: 13, color: C.text, marginTop: 3 }}>{ex.v}</Text>
+            <Text style={{ ...T.micro, fontWeight: '800', color: C.dim, letterSpacing: 1 }}>VARIATIONS</Text>
+            <Text style={{ ...T.footnote, color: C.text, marginTop: 3 }}>{ex.v}</Text>
           </View>
         ) : null}
 
         {info && info.cues ? (
           <View>
-            <Text style={{ fontSize: 10, fontWeight: '800', color: C.dim, letterSpacing: 1, marginBottom: 9 }}>
+            <Text style={{ ...T.micro, fontWeight: '800', color: C.dim, letterSpacing: 1, marginBottom: 9 }}>
               HOW TO DO IT
             </Text>
             {info.cues.map((cue, i) => (
@@ -2153,9 +2153,9 @@ function ExerciseInfoSheet({ ex, meta, onClose }) {
                   backgroundColor: meta.color + '22', borderWidth: 1, borderColor: meta.color + '55',
                   alignItems: 'center', justifyContent: 'center',
                 }}>
-                  <Text style={{ fontSize: 10.5, fontWeight: '900', color: meta.color, fontVariant: ['tabular-nums'] }}>{i + 1}</Text>
+                  <Text style={{ ...T.micro, fontWeight: '900', color: meta.color, fontVariant: ['tabular-nums'] }}>{i + 1}</Text>
                 </View>
-                <Text style={{ flex: 1, fontSize: 13.5, color: C.text, lineHeight: 19 }}>{cue}</Text>
+                <Text style={{ flex: 1, ...T.footnote, color: C.text, lineHeight: 19 }}>{cue}</Text>
               </View>
             ))}
           </View>
@@ -2166,7 +2166,7 @@ function ExerciseInfoSheet({ ex, meta, onClose }) {
             marginTop: 4, padding: 10, borderRadius: 10,
             backgroundColor: C.goldSoft, borderWidth: 1, borderColor: C.gold,
           }}>
-            <Text style={{ fontSize: 12.5, color: C.gold, fontWeight: '800', lineHeight: 17 }}>{loadNote(ex.n)}</Text>
+            <Text style={{ ...T.caption, color: C.gold, fontWeight: '800', lineHeight: 17 }}>{loadNote(ex.n)}</Text>
           </View>
         ) : null}
       </View>
@@ -2221,7 +2221,7 @@ export function EntryEditor({ entry, unit, onSave, onDelete, onClose }) {
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18 }}
         keyboardShouldPersistTaps="handled">
-        <Text style={{ fontSize: 12, color: C.dim, marginBottom: 14, fontVariant: ['tabular-nums'] }}>
+        <Text style={{ ...T.caption, color: C.dim, marginBottom: 14, fontVariant: ['tabular-nums'] }}>
           Logged {fmtShort(entry.t)} · was worth {entry.xp || 0} XP
         </Text>
 
@@ -2262,7 +2262,7 @@ export function EntryEditor({ entry, unit, onSave, onDelete, onClose }) {
                       backgroundColor: rpe === e.v ? C.goldSoft : C.panel2,
                       borderWidth: 1, borderColor: rpe === e.v ? C.gold : C.line,
                     }}>
-                    <Text style={{ fontWeight: '800', fontSize: 11, color: rpe === e.v ? C.gold : C.mut }}>{e.label}</Text>
+                    <Text style={{ ...T.caption2, fontWeight: '800', color: rpe === e.v ? C.gold : C.mut }}>{e.label}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -2270,7 +2270,7 @@ export function EntryEditor({ entry, unit, onSave, onDelete, onClose }) {
           </View>
         )}
 
-        <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 14, lineHeight: 16 }}>
+        <Text style={{ ...T.caption2, color: C.dim, marginTop: 14, lineHeight: 16 }}>
           Saving re-scores this entry at its original time — XP and stats are
           recalculated, never stacked on top of the old values.
         </Text>
@@ -2289,12 +2289,12 @@ export function EntryEditor({ entry, unit, onSave, onDelete, onClose }) {
             backgroundColor: armed ? alpha(C.red, 0.14) : 'transparent',
             borderWidth: 1, borderColor: armed ? C.red : C.line,
           }}>
-          <Text style={{ fontSize: 13, fontWeight: '800', color: armed ? C.red : C.mut }}>
+          <Text style={{ ...T.footnote, fontWeight: '800', color: armed ? C.red : C.mut }}>
             {armed ? 'Tap again to delete' : 'Delete this entry'}
           </Text>
         </Pressable>
         {armed ? (
-          <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 8, textAlign: 'center' }}>
+          <Text style={{ ...T.caption2, color: C.dim, marginTop: 8, textAlign: 'center' }}>
             Its XP and stat gains are refunded.
           </Text>
         ) : null}

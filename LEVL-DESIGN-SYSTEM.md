@@ -49,7 +49,7 @@ everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
 
 | Screen | `T.` | `TYPE.` | raw literals |
 |---|---:|---:|---:|
-| **TrainTab** | 13 | 0 | **132** ← migration started |
+| **TrainTab** | 139 | 0 | **6** ✅ migrated |
 | ProgressTab | 0 | 0 | 46 |
 | DuelTab | 0 | 1 | 34 |
 | AuthScreens | 0 | 1 | 29 |
@@ -114,7 +114,7 @@ multi-line paragraphs**, where a changed lineHeight compounds per line. So:
 Migrate **one screen per change**, and look at it on a phone before the next.
 Suggested order, worst first:
 
-1. `TrainTab` — **132 left** (19 done: set-entry card + Train surface)
+1. ~~`TrainTab`~~ ✅ **done** — 145 of 151 migrated; 6 off-scale sizes (18, 24, 26, 56) left deliberately
 2. `ProgressTab` — 46
 3. `DuelTab` — 34
 4. `PacksTab` — 25, `LoadoutCard` — 19
