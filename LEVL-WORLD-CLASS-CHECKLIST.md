@@ -38,19 +38,19 @@ Every instruction from the brief, tracked. Updated as work lands.
 
 ## STAGE 3 — Design philosophy
 
-- [ ] **3.1** Write the LEVL design philosophy
-- [ ] **3.2** Define what to avoid (random gradients, glow, clutter…)
+- [x] **3.1** Design philosophy — [LEVL-DESIGN-SYSTEM.md](LEVL-DESIGN-SYSTEM.md)
+- [x] **3.2** What to avoid — documented (no hex in screens, no raw rgba, no invented spacing, no overshoot on routine actions)
 - [ ] **3.3** Ensure one-design-team coherence
 
 ## STAGE 4 — Design system
 
 - [x] **4.0** Measure current drift — **366** literal `fontSize`, **180** hex outside theme, **54** raw `rgba()`
-- [ ] **4.1** Colour roles
-- [ ] **4.2** Typography hierarchy
-- [ ] **4.3** Numeric/stat type treatment
-- [ ] **4.4** Spacing scale
-- [ ] **4.5** Radius scale
-- [ ] **4.6** Shadow/elevation
+- [x] **4.1** Colour roles — documented; 54 raw `rgba()` to fold in per-screen
+- [x] **4.2** Typography — **key finding: two competing scales (`T` and `TYPE`) plus 34 distinct literal sizes.** `T` wins; staged migration defined
+- [x] **4.3** Numeric type — `T.numeric` exists; rule set that every numeric display must carry it
+- [x] **4.4** Spacing — already good (7 steps)
+- [x] **4.5** Radius — already good (5 steps); intent per role documented
+- [x] **4.6** Shadow — already good (3 roles, platform-aware)
 - [ ] **4.7** Button states (primary/secondary/destructive/ghost/disabled/loading)
 - [ ] **4.8** Card usage rules
 - [ ] **4.9** Icon family audit
@@ -104,7 +104,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 
 ## STAGE 15–21 — Motion, performance, startup, network, offline
 
-- [ ] **15.1** Define motion principles (instant / transition / reward)
+- [x] **15.1** Motion principles — already defined in theme.js; documented and endorsed
 - [ ] **15.2** Audit easing, duration, springs
 - [ ] **16.1** Find JS/UI thread stalls 👁
 - [x] **16.2** List virtualization audit — only 1 `FlatList` (SocialTab, well configured); no unbounded lists found
@@ -119,7 +119,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 
 - [ ] **22.1** Error experience audit
 - [ ] **23.1** Empty states answer what/why/now
-- [ ] **24.1** Haptic design pass
+- [~] **24.1** Haptics — 7-verb vocabulary already exists and is documented; per-call-site audit outstanding
 - [—] **25.1** Sound — not adding any; no value case for a gym app
 - [ ] **26.1** One-handed reachability
 - [ ] **27.1** Keyboard quality per form
@@ -128,7 +128,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [ ] **30.1** Photo pipeline quality
 - [ ] **31.1** Information density / progressive disclosure
 - [ ] **32.1** Remove weak UI
-- [ ] **33.1** Copywriting pass + canonical terminology list
+- [~] **33.1** Canonical terminology list — written; per-string copy pass outstanding
 
 ## STAGE 34–36, 74 — Research  ← **IN PROGRESS**
 
@@ -212,7 +212,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 ## STAGE 90–93 — Documents to produce
 
 - [ ] **90.1** `LEVL-WORLD-CLASS-PASS.md`
-- [ ] **91.1** `LEVL-DESIGN-SYSTEM.md`
+- [x] **91.1** `LEVL-DESIGN-SYSTEM.md` — written
 - [ ] **92.1** `LEVL-PERFORMANCE.md`
 - [ ] **93.1** `LEVL-POLISH-TEST.md`
 
@@ -254,7 +254,7 @@ These were closed in the pre-launch audit and must never come back.
 |---|---|
 | 1. Protect state | ✅ complete |
 | 2. Study product | 🔄 partial |
-| 3–5. Design philosophy & UI review | ⬜ not started |
+| 3–5. Design philosophy & UI review | 🔄 system documented; per-screen review needs a device |
 | 6–8. TRAIN & Verified | 🔄 1 fix landed |
 | 9–14. Compete/Social/Hunter/Forge | ⬜ not started |
 | 15–21. Motion & performance | 🔄 list audit done |
@@ -271,4 +271,7 @@ These were closed in the pre-launch audit and must never come back.
 
 **Commits so far**
 - `d3ab85d9` fix: exercise browser hid 67 and 87 exercises
+- `1d9cfaae` ux: fewer taps per weight/reps entry
+- `13289fd7` docs: competitive and user research
+- `dc1c33ce` feat: plate breakdown during logging
 - `(next)` ux: remove taps from every weight and reps entry
