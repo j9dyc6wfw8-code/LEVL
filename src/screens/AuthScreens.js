@@ -399,22 +399,22 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
       <AuthBackdrop />
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 40 }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 28 }}
         keyboardShouldPersistTaps="handled">
-        <View style={{ alignItems: 'center', marginBottom: 34 }}>
+        <View style={{ alignItems: 'center', marginBottom: 28 }}>
           <BrandMark />
           {/* the wordmark carries the weight — wide tracking, nothing competing */}
           <Text style={{
             fontSize: 40, color: C.text, fontWeight: '900', letterSpacing: 14,
-            textTransform: 'uppercase', marginTop: 18, marginRight: -14,
+            textTransform: 'uppercase', marginTop: 16, marginRight: -14,
           }}>LEVL</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
             <View style={{ width: 46, height: 1, backgroundColor: 'rgba(255,201,51,0.28)' }} />
             <Text style={{ color: C.gold, fontSize: 6.5, marginHorizontal: 10 }}>◆</Text>
             <View style={{ width: 46, height: 1, backgroundColor: 'rgba(255,201,51,0.28)' }} />
           </View>
           <Text style={{
-            ...T.caption2, color: C.dim, marginTop: 16, textAlign: 'center',
+            ...T.caption2, color: C.dim, marginTop: 12, textAlign: 'center',
             fontWeight: '700', letterSpacing: 2.6, textTransform: 'uppercase',
           }}>
             {mode === 'signup' ? 'Begin the climb' : 'Welcome back'}
@@ -543,7 +543,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
           ) : null}
           <Pressable onPress={() => onAuthed(null, 'Player', false)} hitSlop={8}
             accessibilityRole="button" accessibilityLabel="Continue as guest"
-            style={{ alignItems: 'center', marginTop: 26, paddingVertical: 8 }}>
+            style={{ alignItems: 'center', marginTop: 20, paddingVertical: 8 }}>
             <Text style={{ ...T.caption, color: C.mut, fontWeight: '700' }}>Continue as guest</Text>
             <Text style={{ ...T.micro, color: C.faint, marginTop: 3 }}>Saves to this device only</Text>
           </Pressable>
