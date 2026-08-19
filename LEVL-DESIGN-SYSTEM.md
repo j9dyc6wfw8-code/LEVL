@@ -55,7 +55,7 @@ everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
 | AuthScreens | 0 | 1 | 29 |
 | **PacksTab** | 23 | 0 | **2** ✅ migrated |
 | **LoadoutCard** | 13 | 0 | **6** ✅ migrated |
-| ShopTab | 12 | 36 | 3 |
+| **ShopTab** | 47 | 0 | **1** ✅ migrated |
 | FriendsScreen | 0 | 52 | 3 |
 | CheckInDetail / Camera | 10 | 0 | 1 |
 | WorkoutAttachment | 8 | 0 | 1 |
@@ -63,10 +63,10 @@ everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
 Three populations:
 
 1. **Migrated to `T`** — everything built from Build 28 onward (social, check-ins)
-2. **On `TYPE`** — FriendsScreen, ShopTab, AppGuide (DuelTab left this group)
+2. **On `TYPE`** — FriendsScreen and AppGuide (DuelTab and ShopTab have left this group)
 3. **On neither** — none left; every screen is on `T` or still on `TYPE`
 
-**ShopTab is the worst case: both scales in one file.**
+~~**ShopTab is the worst case: both scales in one file.**~~ Resolved — it is wholly on `T`.
 
 **TrainTab is the most consequential:** it is the screen people open hundreds of
 times a month, and it is the least systematised in the app.
@@ -118,9 +118,27 @@ Suggested order, worst first:
 2. ~~`ProgressTab`~~ ✅ **done** — 42 of 46 migrated; 44, 19×3 and a 26/22 ternary left as off-scale hero numerals
 3. ~~`DuelTab`~~ ✅ **done** — all 34 migrated, plus the one `TYPE.body` holdout; no off-scale sizes on this screen
 4. ~~`PacksTab`~~ ✅ **done** — 23 of 25. ~~`LoadoutCard`~~ ✅ **done** — 13 of 19; see the sub-micro note below
-5. `ShopTab` — resolve the mixed scale
+5. ~~`ShopTab`~~ ✅ **done** — mixed scale resolved; see the TYPE→T table below
 6. `FriendsScreen` — `TYPE` → `T`
 7. Delete `TYPE` from `theme.js`
+
+### Mapping `TYPE` → `T`
+
+The two scales are not aliases. Measured, step by step:
+
+| `TYPE` | value | → `T` | value | what actually changes |
+|---|---|---|---|---|
+| `micro` | 10 / 600 / +0.4 | `micro` | 10 / 600 / +0.4 | **nothing — byte-identical** |
+| `caption` | 12 / 400 / lh 17 | `caption` | 12 / 400 / lh 16 | 1pt tighter line |
+| `title` | 22 / 700 / −0.4 | `title2` | 22 / 700 / +0.35 | letter-spacing flips sign |
+| `display` | 34 / 700 / −0.8 | `display` | 34 / 700 / +0.37 | letter-spacing flips sign |
+| `heading` | 16 / **600** / lh 21 | `callout` | 16 / **400** / lh 21 | **weight drops — restate `fontWeight: '600'`** |
+| `body` | **14** / **500** / lh 20 | `footnote` | **13** / **400** / lh 18 | **1pt smaller and lighter** |
+| `label` | 10 / 600 / +1.4 | `label` | 11 / 600 / +0.9 | 1pt larger, tighter tracking |
+
+Only `micro` is a free swap. `heading` needs its weight restated or every card
+title on the screen quietly lightens; `body` has no exact home in `T` at all,
+which is the single biggest reason the two scales were never reconciled.
 
 Mapping when migrating:
 
