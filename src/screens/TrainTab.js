@@ -11,6 +11,7 @@ import { todaysSessions, formatVolume } from '../engine/session';
 import {
   EXERCISES, CATEGORIES, CARDIO_TYPES, INTENSITIES, STAT_META, INTEGRITY,
   weightForReps, pctForReps, roundLoad, dayKeyOf,
+  usesBarbell,
   loadNote, fmtShort, intensityKeyOf,
   // The engine's own cardio XP formula. Imported rather than re-implemented, so
   // the number the composer previews can never drift from the number awarded.
@@ -229,6 +230,27 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
     if (days < 30) return Math.round(days / 7) + 'w ago';
     return Math.round(days / 30) + 'mo ago';
   }, [lastSession]);
+
+  // Only computed for barbell movements with a real load on them. platesFor is
+  // the existing implementation further down this file — the one the 1RM
+  // workbench already uses — rather than a second copy.
+  const plateHint = useMemo(() => {
+    if (!sel || !usesBarbell(sel.n)) return null;
+    const wN = parseFloat(w) || 0;
+    const p = platesFor(wN, unit);
+    if (!p || !p.perSide.length) return null;
+    // perSide is a flat list with repeats; collapse it to "2×25 · 10".
+    const counts = [];
+    p.perSide.forEach((pl) => {
+      const hit = counts.find((c) => c.w === pl.w);
+      if (hit) hit.n += 1; else counts.push({ w: pl.w, n: 1 });
+    });
+    return {
+      text: counts.map((c) => (c.n > 1 ? c.n + '×' + c.w : String(c.w))).join(' · ') + ' per side',
+      short: p.remainder > 0 ? +(p.remainder * 2).toFixed(2) : 0,
+      speak: counts.map((c) => c.n + ' times ' + c.w).join(', ') + ' per side',
+    };
+  }, [sel, w, unit]);
 
   const log = () => {
     const wN = parseFloat(w) || 0, rN = parseInt(r, 10) || 0;
@@ -608,6 +630,38 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
             <View style={{ width: 10 }} />
             <NumField label="Reps" value={r} onChange={setR} suffix="reps" />
           </View>
+
+          {/* WHAT GOES ON THE BAR.
+              Arithmetic done under fatigue between sets, which is exactly when
+              it goes wrong — and a mis-loaded bar is a wrong logged set for
+              ever. Only shown for actual barbell movements (usesBarbell
+              excludes the dumbbell and cable variants), and only once there is
+              a weight to break down, so it never nags on an empty field.
+              When the standard plates cannot make the number it says so rather
+              than quietly rounding. */}
+          {plateHint ? (
+            <View
+              accessible
+              accessibilityLabel={'Load ' + plateHint.speak}
+              style={{
+                marginTop: 8, paddingVertical: 7, paddingHorizontal: 10,
+                borderRadius: 8, backgroundColor: C.panel2,
+                flexDirection: 'row', alignItems: 'center',
+              }}>
+              <Text style={{ fontSize: 10.5, fontWeight: '800', color: C.dim, letterSpacing: 0.8 }}>
+                BAR
+              </Text>
+              <Text style={{ fontSize: 12.5, fontWeight: '700', color: C.mut, marginLeft: 8, flex: 1 }}
+                numberOfLines={1}>
+                {plateHint.text}
+              </Text>
+              {plateHint.short > 0 ? (
+                <Text style={{ fontSize: 11, fontWeight: '700', color: C.orange }}>
+                  {plateHint.short} {unit} short
+                </Text>
+              ) : null}
+            </View>
+          ) : null}
           {/* Effort. The stored values are still 6–10 (XP depends on them), but a
               beginner can't answer "RPE 8" — they can answer "how hard was that?".
               Words first, the number kept small for people who know the scale. */}

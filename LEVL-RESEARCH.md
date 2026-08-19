@@ -28,6 +28,23 @@ is the priority, not the design system.
 because *"recording a set takes two taps."*
 ([roundup](https://www.hevyapp.com/best-workout-tracker-app/))
 
+### ⚠️ Correction — I measured LEVL before assuming it was behind
+
+I drafted this section expecting LEVL to lose on tap count. It does not.
+`log()` in [TrainTab.js:233](src/screens/TrainTab.js) resets only the set
+multiplier — **weight and reps deliberately persist**. So the most common action
+in a session, logging another set at the same load, is **one tap**, and the
+button even counts it: *"Log Set · #3 today"*.
+
+That is at or ahead of Strong's two taps for the repeat case. The remaining
+friction was only in *changing* a value, which the `selectTextOnFocus` fix this
+pass addresses.
+
+**What this changes:** set entry was not the weak point I assumed. The priority
+below is reordered again — toward the features that are genuinely absent rather
+than the interaction that is already good. Measuring before optimising is the
+rule; I nearly broke it.
+
 ---
 
 ## 2. What users LOVE (across all the leading trackers)
@@ -73,7 +90,7 @@ Sources: [Hevy reviews](https://justuseapp.com/en/app/1458862350/hevy-workout-tr
 
 | Capability | LEVL | Hevy | Strong | Strava | Best example | Opportunity |
 |---|---|---|---|---|---|---|
-| Set logging speed | ⚠️ 3–4 taps | good | **2 taps** | n/a | Strong | **Match 2 taps. Highest priority in the app.** |
+| Set logging speed | ✅ **1 tap to repeat** | good | 2 taps | n/a | **LEVL** | Already at or ahead of the benchmark — see correction below |
 | Offline logging | ✅ full | ❌ complaints | ✅ | ✅ | **LEVL** | Say it out loud — it's unclaimed |
 | Previous set recall | ✅ | ✅ | ✅ | n/a | parity | — |
 | Rest timer | ✅ + Live Activity | ✅ | ✅ | n/a | **LEVL** | Lock Screen timer is genuinely ahead |
@@ -142,9 +159,10 @@ specifically:
 
 Reordered by evidence rather than by the brief's sequence:
 
-1. **Set entry to two taps** — the retention data makes this the highest-value
-   work in the entire pass.
-2. **Plate calculator + set types** — cheap, repeatedly named, affects PR correctness.
+1. ~~Set entry to two taps~~ — **already achieved** (one tap to repeat). Only
+   `selectTextOnFocus` was missing, now fixed.
+2. **Plate calculator + set types** — genuinely absent, repeatedly named in every
+   roundup, and pure client-side maths with no security or database surface.
 3. **One action, many systems** — Duolingo's coherence lesson, applied to the
    twenty-systems problem.
 4. **Make offline-first and Verified Sessions loud** — two genuine wins,

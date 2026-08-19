@@ -207,5 +207,19 @@ console.log('\n8. rank protection — a layoff costs you rank slowly, not instan
   ok('protection does not grant XP', at3.level === E.computeDerived(fresh(), now).level);
 }
 
+console.log('\n9. barbell detection — decides whether a plate hint is meaningful');
+{
+  ok('barbell lifts detected', E.usesBarbell('Barbell Bench Press') && E.usesBarbell('Back Squat')
+     && E.usesBarbell('Deadlift') && E.usesBarbell('Rack Pull'));
+  ok('dumbbell excluded', !E.usesBarbell('Dumbbell Curl'));
+  // The one that makes a naive substring check wrong: this contains
+  // 'romanian deadlift' but there is no bar in sight.
+  ok('dumbbell variant of a barbell lift excluded', !E.usesBarbell('Dumbbell Romanian Deadlift'));
+  ok('cable and machine excluded', !E.usesBarbell('Cable Fly') && !E.usesBarbell('Machine Press'));
+  ok('non-barbell accessories excluded', !E.usesBarbell('Lateral Raise') && !E.usesBarbell('Plank'));
+  ok('empty and null are safe', !E.usesBarbell('') && !E.usesBarbell(null) && !E.usesBarbell(undefined));
+  ok('case insensitive', E.usesBarbell('BARBELL CURL') && E.usesBarbell('barbell curl'));
+}
+
 console.log('\n' + (fail ? 'FAILED ' + fail + ' / ' + (pass + fail) : 'ALL ' + pass + ' CHECKS PASSED'));
 process.exit(fail ? 1 : 0);
