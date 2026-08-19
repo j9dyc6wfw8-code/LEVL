@@ -125,6 +125,12 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
     if (okAdd) setAdded((m) => ({ ...m, [id]: true }));
   };
 
+  /* Is this request's answer in flight? Tolerates a caller that does not supply
+   * isPending rather than throwing — this screen takes `fr` as a prop, so a
+   * missing helper is a caller's omission and must not blank the whole screen.
+   * The render sweep caught precisely that, which is what it is for. */
+  const answering = (id) => !!(fr.isPending && fr.isPending(id));
+
   // Opens the live profile sheet. The sheet subscribes to Realtime itself, so
   // their stats and sessions keep updating while it's open.
   const openProfile = (id) => setViewingId(id);
@@ -321,16 +327,26 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                   {req.profile ? `Lv ${req.profile.level} · ${req.profile.rank}` : 'wants to be friends'}
                 </Text>
               </View>
+              {/* Disabled while the answer is in flight. Without this a second
+                  tap hits accept_friend_request() again, finds nothing pending
+                  because the first call already accepted it, and shows an error
+                  for something that worked. */}
               <Pressable onPress={() => fr.accept(req.senderId)} hitSlop={6}
+                disabled={answering(req.senderId)}
                 accessibilityRole="button"
                 accessibilityLabel={'Accept friend request from ' + nameOf(req.profile)}
-                style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, backgroundColor: C.greenSoft, borderWidth: 1, borderColor: C.green, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ ...TYPE.caption, fontWeight: '700', color: C.green }}>Accept</Text>
+                accessibilityState={{ disabled: answering(req.senderId), busy: answering(req.senderId) }}
+                style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, backgroundColor: C.greenSoft, borderWidth: 1, borderColor: C.green, alignItems: 'center', justifyContent: 'center', opacity: answering(req.senderId) ? 0.5 : 1 }}>
+                <Text style={{ ...TYPE.caption, fontWeight: '700', color: C.green }}>
+                  {answering(req.senderId) ? 'Adding…' : 'Accept'}
+                </Text>
               </Pressable>
               <Pressable onPress={() => fr.decline(req.senderId)} hitSlop={6}
+                disabled={answering(req.senderId)}
                 accessibilityRole="button"
                 accessibilityLabel={'Decline friend request from ' + nameOf(req.profile)}
-                style={{ minHeight: 36, paddingHorizontal: 12, marginLeft: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
+                accessibilityState={{ disabled: answering(req.senderId) }}
+                style={{ minHeight: 36, paddingHorizontal: 12, marginLeft: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center', opacity: answering(req.senderId) ? 0.5 : 1 }}>
                 <Text style={{ ...TYPE.caption, fontWeight: '700', color: C.dim }}>✕</Text>
               </Pressable>
             </View>

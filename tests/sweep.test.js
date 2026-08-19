@@ -287,6 +287,21 @@ check('WorkoutAttachment/absent', el(Cm('social/WorkoutAttachment.js').default, 
     fr: fullFriends, duels: fullDuels, onChallenge: null, onOpenDuel: fn,
     initialUserId: null, onOpenArchive: fn,
   }));
+  /* A request whose answer is in flight: the Accept button reads "Adding…" and
+     is disabled, so a second tap cannot fire the RPC again. Both branches of
+     isPending are exercised here — u5 answering, u6 idle. */
+  check('FriendsScreen/answering a request', el(S('FriendsScreen.js').default, {
+    fr: { ...fullFriends, isPending: (id) => id === 'u5' },
+    duels: fullDuels, onChallenge: fn, onOpenDuel: fn,
+    initialUserId: null, onOpenArchive: fn,
+  }));
+  /* And the case that broke the sweep when this feature landed: a caller that
+     never supplies isPending at all must still render, not blank the screen. */
+  check('FriendsScreen/no isPending supplied', el(S('FriendsScreen.js').default, {
+    fr: { ...fullFriends, isPending: undefined },
+    duels: fullDuels, onChallenge: fn, onOpenDuel: fn,
+    initialUserId: null, onOpenArchive: fn,
+  }));
 }
 
 {

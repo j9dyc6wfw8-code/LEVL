@@ -98,26 +98,47 @@ export function useFriends(accountKey) {
     return !e;
   }, []);
 
-  const accept = useCallback(async (senderId) => {
-    const { error: e } = await acceptRequest(senderId);
-    if (e && !e.offline) setError(e.message);
-    if (!e) await refresh();
-    return !e;
+  /* IN-FLIGHT GUARD.
+   *
+   * Accept and decline had none, and the failure was worse than a wasted
+   * request. accept_friend_request() is correctly strict: it requires a PENDING
+   * request, so the second of a double-tap finds the row already accepted and
+   * raises "No pending request from that person." The user tapped once as far
+   * as they are concerned, it worked, and they were shown an error.
+   *
+   * Tracked per id rather than one global flag so answering one request never
+   * freezes the others in the list. The duel buttons already used a single
+   * boolean; this is the same idea with the right granularity.
+   */
+  const [pendingIds, setPendingIds] = useState([]);
+  const isPending = useCallback((id) => pendingIds.indexOf(id) >= 0, [pendingIds]);
+
+  // Ref as well as state: two taps in the same frame both read the old state,
+  // so the state alone cannot reject the second one.
+  const inFlight = useRef(new Set());
+  const guarded = useCallback(async (id, run) => {
+    if (!id || inFlight.current.has(id)) return false;
+    inFlight.current.add(id);
+    setPendingIds((p) => (p.indexOf(id) >= 0 ? p : [...p, id]));
+    try {
+      const { error: e } = await run();
+      if (e && !e.offline) setError(e.message);
+      if (!e) await refresh();
+      return !e;
+    } finally {
+      inFlight.current.delete(id);
+      setPendingIds((p) => p.filter((x) => x !== id));
+    }
   }, [refresh]);
 
-  const decline = useCallback(async (senderId) => {
-    const { error: e } = await declineRequest(senderId);
-    if (e && !e.offline) setError(e.message);
-    if (!e) await refresh();
-    return !e;
-  }, [refresh]);
+  const accept = useCallback(
+    (senderId) => guarded(senderId, () => acceptRequest(senderId)), [guarded]);
 
-  const unfriend = useCallback(async (userId) => {
-    const { error: e } = await removeFriend(userId);
-    if (e && !e.offline) setError(e.message);
-    if (!e) await refresh();
-    return !e;
-  }, [refresh]);
+  const decline = useCallback(
+    (senderId) => guarded(senderId, () => declineRequest(senderId)), [guarded]);
+
+  const unfriend = useCallback(
+    (userId) => guarded(userId, () => removeFriend(userId)), [guarded]);
 
   const viewProfile = useCallback(async (userId) => {
     if (!isConfigured) return { profile: null, workouts: [] };
@@ -130,6 +151,7 @@ export function useFriends(accountKey) {
 
   return {
     friends, requests, feed, loading, error,
+    isPending,
     available: !!accountKey,
     refresh, search, add, accept, decline, unfriend, viewProfile,
   };

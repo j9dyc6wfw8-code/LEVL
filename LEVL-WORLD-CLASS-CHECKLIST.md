@@ -158,13 +158,13 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [ ] **48.1** Business logic boundaries
 - [ ] **49.1** Type safety strategy (incremental, not a rewrite)
 - [~] **50.1** Input validation client + server — server side hardened in the prior pass 🔒
-- [ ] **51.1** Concurrency / double-tap / duplicate actions
+- [~] **51.1** Concurrency — friend accept/decline had **no** in-flight guard; double-tap showed an error for an action that worked. Fixed per-id. Duels and set logging were already guarded. Remaining call sites unaudited.
 - [ ] **52.1** Optimistic UI where safe
 - [ ] **53.1** Data fetching / refetch / cache
 - [x] **54.1** List performance audit — done, see 16.2
 - [ ] **55.1** Image pipeline
 - [ ] **56.1** Memory and lifecycle cleanup
-- [ ] **57.1** Crash resistance / defensive data
+- [~] **57.1** Crash resistance — FriendsScreen now tolerates a missing `isPending` prop rather than blanking; broader defensive pass outstanding
 - [ ] **58.1** Error boundaries
 
 ## STAGE 59–61 — Observability, analytics, budgets
