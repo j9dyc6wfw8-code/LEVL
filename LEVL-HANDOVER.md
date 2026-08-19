@@ -2,7 +2,7 @@
 
 Everything a new session needs. Written 19 August 2026.
 
-**Branch:** `world-class-polish` — 12 commits ahead of `main`, **not pushed**
+**Branch:** `world-class-polish` — 23 commits ahead of `main`, **not pushed**
 **Tests:** 55 engine / 224 render / 191 interactive — all green
 **expo-doctor:** 17/18 (the one failure is expected — see below)
 
@@ -48,6 +48,8 @@ Six migrations are live: `close_legacy_holes`, `content_moderation`,
   screens fell back to literals. `T.label` was the only option at that size and
   it uppercases, so migrating to it would have rewritten copy.
 - **TrainTab typography: 151 literals → 6.** Verified pixel-identical on device.
+- **The typography migration is finished.** Every screen is on `T`, and `TYPE`
+  is deleted from `theme.js`. See §5.
 
 ### Written
 
@@ -89,31 +91,45 @@ nothing. Reverted. The real fix is tightening the layout above it.
 
 ---
 
-## 5. The typography migration method (proven, repeatable)
+## 5. Typography — done, and what the method was
 
-TrainTab is done. Five screens remain. **Follow this exactly:**
+**Complete.** `T` is the only type scale; `TYPE` is deleted from `theme.js`.
+Eleven commits, one screen each, each verified on an iPhone 17 Pro against
+before screenshots.
 
-1. **Check hazard A** — style objects with `fontWeight` BEFORE `fontSize`.
-   Spreading a token there silently overwrites the weight. Reorder by hand first.
-   ```bash
-   python3 -c "
-   import re; s=open('src/screens/FILE.js').read()
-   objs=re.findall(r'\{[^{}]*fontSize: [0-9.]+[^{}]*\}', s)
-   print([o for o in objs if re.search(r'fontWeight[^,]*,[^}]*fontSize', o)])"
-   ```
-2. **Check hazard B** — same but for `lineHeight` before `fontSize`.
-3. **Transform** `fontSize: N` → `...T.token` using the map in the design system doc.
-4. **Run `npm test`.**
-5. **Screenshot before/after on the simulator and compare.**
+| Screen | was | now |
+|---|---|---|
+| ProgressTab | 46 literals | 4 + 1 ternary, all off-scale hero numerals |
+| DuelTab | 34 literals + 1 TYPE | 0 |
+| PacksTab | 25 literals | 2 off-scale |
+| LoadoutCard | 19 literals | 6, for three different stated reasons |
+| ShopTab | 36 TYPE + 3 literals | 1 off-scale |
+| FriendsScreen | 52 TYPE + 3 literals | 1 off-scale |
+| ui.js, FriendDuelDetail, NotificationCenter, +5 | 45 TYPE | 0 |
 
-Expect single-line labels to be pixel-identical and multi-line copy to shift a
-few points from gained line-height. That is measured, not assumed.
+### The two things worth carrying forward
 
-**Remaining:** ProgressTab (46), DuelTab (34), PacksTab (25), LoadoutCard (19),
-ShopTab (mixed `T` + `TYPE` — worst case), FriendsScreen (`TYPE` → `T`), then
-delete `TYPE` from `theme.js`.
+**1. The hazard check needs to walk braces, not match a regex.**
+The original check was `\{[^{}]*fontSize: [0-9.]+[^{}]*\}`, and it silently
+misses any style object containing a nested `{...}` — an Animated
+`interpolate({...})`, a ternary returning an object. PacksTab had exactly that,
+and it was a real `fontWeight`-before-`fontSize` site in the pack reveal. Walk
+backwards from each `fontSize` to its own opening brace, strip nested braces,
+then look for an earlier `fontWeight` or `lineHeight`. Re-run over every
+migrated file, nothing was clobbered.
 
----
+**2. `TYPE` and `T` were never aliases.** Only `micro` is a free swap. The full
+measured table is in [LEVL-DESIGN-SYSTEM.md](LEVL-DESIGN-SYSTEM.md); the trap is
+`TYPE.heading` (16/**600**) → `T.callout` (16/**400**), which silently lightens
+every card title unless the 600 is restated after the spread.
+
+### What is left
+
+- **AuthScreens still has 29 raw literals.** Never in scope; only its one
+  `TYPE.micro` was cleared so `TYPE` could go. No hazard sites. Obvious next.
+- **LoadoutCard's `ARMOUR`/`ENERGY` labels wrap mid-word** in the duel build
+  columns. Pre-existing, unchanged by this pass, and the reason two 8/8.5pt
+  sites were left below `T.micro`'s 10pt floor rather than raised into it.
 
 ## 6. Running the app
 
@@ -148,7 +164,7 @@ exercise-picker modal sheet.
 
 ## 8. Still outstanding for the human
 
-1. **Push these 12 commits** — they exist only on this laptop
+1. **Push these 23 commits** — they exist only on this laptop
 2. **Merge to `main` and build** — `eas build --platform ios --profile production`
 3. **App Store Connect** — privacy URL, 12+ rating, App Privacy answers, and a
    **demo account seeded with friends, Check Ins and an active duel**
@@ -162,7 +178,7 @@ exercise-picker modal sheet.
 
 | # | Work | Why |
 |---|---|---|
-| 1 | Finish the typography migration | Method proven; 5 screens left |
+| 1 | AuthScreens' 29 literals, and the guest option below the fold | Same screen, two jobs |
 | 2 | Auth screen layout — guest option below the fold | Real, seen on device |
 | 3 | Error and empty-state audit (items 22–23) | Code-verifiable |
 | 4 | Reduce Motion support | Not implemented at all |
