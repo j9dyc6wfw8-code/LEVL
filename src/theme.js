@@ -1,7 +1,7 @@
 // LEVL — design system
 // Premium dark theme built around the original gold-on-charcoal identity.
 // Everything the app already imports (C.*, s.*, MONO) is preserved; new scales
-// (SPACING, TYPE, RADIUS, SHADOW, RARITY, GRAD) are added on top.
+// (SPACING, RADIUS, SHADOW, RARITY, GRAD) are added on top.
 import { StyleSheet, Platform } from 'react-native';
 
 /* ----------------------------- color tokens -----------------------------
@@ -207,8 +207,7 @@ export const T = {
    * because there was nothing to reach for. The only alternative at that size
    * was `label`, which UPPERCASES, so using it would have rewritten the copy.
    *
-   * Matches the old TYPE.micro exactly, so screens migrating off TYPE keep
-   * rendering identically. NOT for reading text — badges and units only. */
+   * NOT for reading text — badges and units only. */
   micro:        { fontSize: 10, fontWeight: '600', letterSpacing: 0.4 },
   // Numerals: pair with any step above, e.g. {...T.title2, ...T.numeric}
   numeric:      { fontVariant: ['tabular-nums'] },
@@ -220,21 +219,6 @@ export const T = {
  * still grows, it just stops before it breaks the layout. */
 export const FONT_SCALE_CAP = { tight: 1.25, normal: 1.5 };
 
-// TYPE SCALE — the original six steps. Kept verbatim so every existing screen
-// renders identically; new work should reach for T above.
-export const TYPE = {
-  // Weights sit one step lighter than the old scale: heavy blacks read as
-  // "bulky" at phone sizes; 800 at display size still lands with authority.
-  // Line-height on reading steps (heading/body/caption) gives text room to
-  // breathe — the single cheapest "flowy" upgrade there is.
-  display: { fontSize: 34, fontWeight: '700', letterSpacing: -0.8 },   // trophy numbers
-  title:   { fontSize: 22, fontWeight: '700', letterSpacing: -0.4 },   // screen heroes
-  heading: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2, lineHeight: 21 }, // card titles
-  body:    { fontSize: 14, fontWeight: '500', letterSpacing: -0.1, lineHeight: 20 }, // primary text
-  caption: { fontSize: 12, fontWeight: '400', lineHeight: 17 },        // secondary text
-  micro:   { fontSize: 10, fontWeight: '600', letterSpacing: 0.4 },    // badges, tags
-  label:   { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase' }, // section headers
-};
 
 // RADIUS SCALE — five steps, no more.
 // (defined above; screens should use these, never raw numbers)
@@ -283,9 +267,6 @@ export const s = StyleSheet.create({
   txt: { color: C.text, fontSize: 14 },
   mut: { color: C.mut }, dim: { color: C.dim }, gold: { color: C.gold },
   mono: { fontVariant: ['tabular-nums'] },
-  h1: { ...TYPE.title, color: C.text },
-  h2: { ...TYPE.heading, color: C.text },
-  h3: { ...TYPE.body, fontWeight: '700', color: C.text },
 
   row: { flexDirection: 'row', alignItems: 'center' },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

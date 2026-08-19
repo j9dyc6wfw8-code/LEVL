@@ -8,14 +8,14 @@ Measured from the repository on 19 August 2026, not asserted.
 
 ## The honest headline
 
-**LEVL is not missing a design system. It has a good one that three screens
-never adopted.**
+**LEVL is not missing a design system. It had a good one that three screens
+never adopted — and now they all do.**
 
 Spacing, radius, shadow, touch targets, motion springs and haptics are all
 defined, documented and sensible in [src/theme.js](src/theme.js). The gap is
-typography, and it is a specific, fixable gap: **there are two type scales, a
+typography, and it was a specific, fixable gap: **there were two type scales, a
 migration between them was started and abandoned, and the app's most-used screen
-uses neither.**
+used neither.** That is now closed — see §1.
 
 | Token family | State |
 |---|---|
@@ -26,50 +26,61 @@ uses neither.**
 | Motion | ✅ 3 springs with a stated rule |
 | Haptics | ✅ 7-verb vocabulary |
 | Colour | ✅ documented roles, ⚠️ 54 raw `rgba()` outside the theme |
-| **Typography** | ⚠️ two scales, migration restarted; `T.micro` added to close the gap that stalled it |
+| Typography | ✅ one scale, `T`. `TYPE` deleted; `T.micro` added to close the gap that stalled the migration |
 
 ---
 
 ## 1. Typography — the actual problem
 
-### Two scales exist
+### Two scales existed. Now there is one.
 
 ```js
-T     // 12 steps, Apple HIG-aligned:  34 28 22 20 17 17 16 15 13 12 11 11
-TYPE  //  7 steps, LEVL original:      34 22 16 14 12 10 10
+T     // 13 steps, Apple HIG-aligned:  34 28 22 20 17 17 16 15 13 12 11 11 10
 ```
 
-`theme.js` says of `TYPE`: *"Kept verbatim so every existing screen renders
-identically; new work should reach for T above."*
+`TYPE` — the original 7-step LEVL scale — **has been deleted from `theme.js`.**
+It survived because `theme.js` said of it: *"Kept verbatim so every existing
+screen renders identically; new work should reach for T above."* Nobody ever
+finished the second half of that sentence.
 
-That migration never finished. They agree at 34, 22 and 12 and diverge
-everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
+The two agreed at 34, 22 and 12 and diverged everywhere else; `TYPE.body` was
+14, a size `T` does not have at all, which is the single clearest reason the
+migration stalled twice. The measured step-by-step differences are recorded
+below, because they are the record of what actually changed on screen.
 
 ### Measured adoption
 
 | Screen | `T.` | `TYPE.` | raw literals |
 |---|---:|---:|---:|
-| **TrainTab** | 139 | 0 | **6** ✅ migrated |
-| **ProgressTab** | 42 | 0 | **5** ✅ migrated |
-| **DuelTab** | 35 | 0 | **0** ✅ migrated |
-| AuthScreens | 0 | 1 | 29 |
-| **PacksTab** | 23 | 0 | **2** ✅ migrated |
-| **LoadoutCard** | 13 | 0 | **6** ✅ migrated |
-| **ShopTab** | 47 | 0 | **1** ✅ migrated |
-| **FriendsScreen** | 54 | 0 | **1** ✅ migrated |
+| TrainTab | 147 | 0 | 6 |
+| ProgressTab | 42 | 0 | 4 + 1 ternary |
+| DuelTab | 35 | 0 | **0** |
+| PacksTab | 23 | 0 | 2 |
+| LoadoutCard | 13 | 0 | 6 |
+| ShopTab | 50 | 0 | 1 |
+| FriendsScreen | 54 | 0 | 1 |
 | CheckInDetail / Camera | 10 | 0 | 1 |
 | WorkoutAttachment | 8 | 0 | 1 |
+| AuthScreens | 1 | 0 | **29** ⚠️ not migrated |
 
-Three populations:
+Counted with `grep -o '\.\.\.T\.\w*'` and `grep -c 'fontSize: [0-9]'`, so the
+`T.` column includes `T.numeric` pairings and the literal column misses
+ProgressTab's one `fontSize: big ? 26 : 22` ternary. Recount the same way.
 
-1. **Migrated to `T`** — everything built from Build 28 onward (social, check-ins)
-2. **On `TYPE`** — AppGuide, plus eight component/screen files the original audit missed (see §1.1)
-3. **On neither** — none left; every screen is on `T` or still on `TYPE`
+**`AuthScreens` is the one screen still on literals** — 29 of them. It was never
+in this migration's scope; only its single `TYPE.micro` was cleared so `TYPE`
+could be deleted. It is the obvious next screen, and it has no hazard sites.
 
-~~**ShopTab is the worst case: both scales in one file.**~~ Resolved — it is wholly on `T`.
+Every row is off `TYPE`. Apart from AuthScreens, the literals that remain are
+deliberate and listed in the migration log below.
 
-**TrainTab is the most consequential:** it is the screen people open hundreds of
-times a month, and it is the least systematised in the app.
+**The audit above was incomplete, and that matters.** It listed screens only, so
+it missed 45 `TYPE` references living in components and secondary screens —
+`FriendDuelDetail` (25), `NotificationCenter` (9), `ui.js` (4), `NoticeBanner`,
+`AppGuide`, `Hunter`, `AuthScreens`, `Intro`, and three dead `s.h1/h2/h3`
+helpers inside `theme.js` itself with zero call sites app-wide. Deleting `TYPE`
+was blocked on those until they were migrated too. If you audit adoption again,
+count `src/components/` as well as `src/screens/`.
 
 ### 34 distinct sizes are in use
 
@@ -78,11 +89,11 @@ Including `11.5` (37×), `12.5` (22×), `10.5` (12×), `9.5` (11×), `13.5` (9×
 adjustment rather than scale decisions, and they are the single clearest reason
 screens look like they were designed independently.
 
-### The decision
+### The decision, and how it ended
 
-**`T` wins.** It is Apple-aligned, it is where new work already goes, and it has
-the steps the app actually needs. `TYPE` becomes deprecated — kept until the
-last screen leaves it, then deleted.
+**`T` won.** It is Apple-aligned, it is where new work already went, and it has
+the steps the app actually needs. `TYPE` is **deleted** — along with the three
+dead `s.h1/h2/h3` helpers that were its last consumer in `theme.js`.
 
 ### The lineHeight hazard, and what testing it showed
 
@@ -120,7 +131,8 @@ Suggested order, worst first:
 4. ~~`PacksTab`~~ ✅ **done** — 23 of 25. ~~`LoadoutCard`~~ ✅ **done** — 13 of 19; see the sub-micro note below
 5. ~~`ShopTab`~~ ✅ **done** — mixed scale resolved; see the TYPE→T table below
 6. ~~`FriendsScreen`~~ ✅ **done** — 52 TYPE refs and 2 literals
-7. Delete `TYPE` from `theme.js` — **blocked**, see §1.1
+7. ~~Delete `TYPE` from `theme.js`~~ ✅ **done**, after clearing the eight
+   files the audit above had missed and three dead style helpers
 
 ### Mapping `TYPE` → `T`
 
