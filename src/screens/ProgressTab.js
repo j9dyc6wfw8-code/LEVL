@@ -6,7 +6,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { C, s, MONO } from '../theme';
+import { C, s, MONO, T } from '../theme';
 import { Card, Lbl, Chip, LineChart, BarChart, EmptyState, CountUp, ScreenHeader, Segmented } from '../components/ui';
 import { dayKeyOf, fmtShort, DAY, EXERCISES } from '../engine/engine';
 // EntryEditor lives in TrainTab beside the effort scale it shares. The import
@@ -192,7 +192,7 @@ function OverviewView({ data, dv, unit, now, sinceT, range, setRange, exCount })
       <Card>
         <View style={s.between}>
           <Lbl style={{ marginBottom: 0 }}>Consistency</Lbl>
-          <Text style={{ fontSize: 10.5, color: C.dim, fontVariant: ['tabular-nums'] }}>last 12 weeks</Text>
+          <Text style={{ ...T.micro, color: C.dim, fontVariant: ['tabular-nums'] }}>last 12 weeks</Text>
         </View>
         <Heatmap dayXP={dayXP} now={now} />
       </Card>
@@ -209,20 +209,20 @@ function OverviewView({ data, dv, unit, now, sinceT, range, setRange, exCount })
                   backgroundColor: balanceMode === m[0] ? C.goldSoft : 'transparent',
                   borderWidth: 1, borderColor: balanceMode === m[0] ? C.gold : C.line,
                 }}>
-                <Text style={{ fontSize: 10.5, fontWeight: '800', color: balanceMode === m[0] ? C.gold : C.dim }}>{m[1]}</Text>
+                <Text style={{ ...T.micro, fontWeight: '800', color: balanceMode === m[0] ? C.gold : C.dim }}>{m[1]}</Text>
               </Pressable>
             ))}
           </View>
         </View>
         {balance.length === 0 ? (
-          <Text style={{ fontSize: 12, color: C.dim, marginTop: 10 }}>Nothing logged in this range.</Text>
+          <Text style={{ ...T.caption, color: C.dim, marginTop: 10 }}>Nothing logged in this range.</Text>
         ) : (
           <View>
             {balance.slice(0, 6).map((b) => (
               <View key={b.group} style={{ marginTop: 10 }}>
                 <View style={s.between}>
-                  <Text style={{ fontSize: 12.5, color: C.text, fontWeight: '600' }}>{b.group}</Text>
-                  <Text style={{ fontSize: 11.5, color: C.dim, fontVariant: ['tabular-nums'] }}>
+                  <Text style={{ ...T.caption, color: C.text, fontWeight: '600' }}>{b.group}</Text>
+                  <Text style={{ ...T.caption2, color: C.dim, fontVariant: ['tabular-nums'] }}>
                     {b.pct.toFixed(0)}%{balanceMode === 'sets' ? ' · ' + b.vol + ' sets' : ''}
                   </Text>
                 </View>
@@ -232,13 +232,13 @@ function OverviewView({ data, dv, unit, now, sinceT, range, setRange, exCount })
               </View>
             ))}
             {balance.length > 1 ? (
-              <Text style={{ fontSize: 14, color: C.mut, marginTop: 12, fontWeight: '700' }}>
+              <Text style={{ ...T.footnote, color: C.mut, marginTop: 12, fontWeight: '700' }}>
                 {balance[0].pct > 45
                   ? balance[0].group + ' dominates ' + balance[0].pct.toFixed(0) + '%. Balance your volume.'
                   : 'Your training volume looks balanced.'}
               </Text>
             ) : null}
-            <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 10, lineHeight: 17 }}>
+            <Text style={{ ...T.caption2, color: C.dim, marginTop: 10, lineHeight: 17 }}>
               {balanceMode === 'sets'
                 ? 'Sets are the fair comparison — every muscle counts the same.'
                 : 'Kilos moved. Big lifts dominate this, so it flatters chest, back and legs.'}
@@ -253,13 +253,13 @@ function OverviewView({ data, dv, unit, now, sinceT, range, setRange, exCount })
           {topPRs.map((p) => (
             <View key={p.id} style={[s.between, { marginTop: 10, alignItems: 'center' }]}>
               <View style={{ flex: 1 }}>
-                <Text style={{ fontSize: 13, color: C.text, fontWeight: '700' }} numberOfLines={1}>{p.ex}</Text>
-                <Text style={{ fontSize: 11, color: C.dim, fontVariant: ['tabular-nums'], marginTop: 1 }}>
+                <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }} numberOfLines={1}>{p.ex}</Text>
+                <Text style={{ ...T.caption2, color: C.dim, fontVariant: ['tabular-nums'], marginTop: 1 }}>
                   {p.w} {unit} × {p.r} · {fmtShort(p.t)}
                 </Text>
               </View>
-              <Text style={{ fontSize: 15, color: C.gold, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
-                {p.e1rm}<Text style={{ fontSize: 10, color: C.mut }}> {unit}</Text>
+              <Text style={{ ...T.subheadline, color: C.gold, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+                {p.e1rm}<Text style={{ ...T.micro, color: C.mut }}> {unit}</Text>
               </Text>
             </View>
           ))}
@@ -297,7 +297,7 @@ function StrengthView({ data, unit, now, exercisesLogged, exName, setExName }) {
             <View style={s.between}>
               <Lbl style={{ marginBottom: 0 }}>Estimated 1-rep max</Lbl>
               <Text style={{
-                fontSize: 11.5, fontWeight: '700', fontVariant: ['tabular-nums'],
+                ...T.caption2, fontWeight: '700', fontVariant: ['tabular-nums'],
                 color: gain > 0 ? C.green : gain < 0 ? C.red : C.dim,
               }}>
                 {gain > 0 ? '▲ +' + gain + ' ' + unit : gain < 0 ? '▼ ' + gain + ' ' + unit : 'flat'}
@@ -306,8 +306,8 @@ function StrengthView({ data, unit, now, exercisesLogged, exName, setExName }) {
             <View style={{ alignItems: 'center', marginTop: 4, marginBottom: 10 }}>
               <CountUp value={Math.round(model.best)} duration={650}
                 style={{ fontSize: 44, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'] }} />
-              <Text style={{ fontSize: 11, color: C.dim, marginTop: -2 }}>current best · {unit}</Text>
-              <Text style={{ fontSize: 11, color: C.dim, marginTop: 5, textAlign: 'center' }}>
+              <Text style={{ ...T.caption2, color: C.dim, marginTop: -2 }}>current best · {unit}</Text>
+              <Text style={{ ...T.caption2, color: C.dim, marginTop: 5, textAlign: 'center' }}>
                 Your heaviest possible single rep. Estimated — never test it.
               </Text>
             </View>
@@ -320,24 +320,24 @@ function StrengthView({ data, unit, now, exercisesLogged, exName, setExName }) {
               <View>
                 <View style={{ flexDirection: 'row' }}>
                   <View style={{ flex: 1, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 9.5, color: C.dim, fontWeight: '800' }}>+4 WEEKS</Text>
+                    <Text style={{ ...T.micro, color: C.dim, fontWeight: '800' }}>+4 WEEKS</Text>
                     <Text style={{ fontSize: 19, fontWeight: '900', color: '#7c7cf5', fontVariant: ['tabular-nums'], marginTop: 3 }}>{model.p4}</Text>
                   </View>
                   <Divider />
                   <View style={{ flex: 1, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 9.5, color: C.dim, fontWeight: '800' }}>+8 WEEKS</Text>
+                    <Text style={{ ...T.micro, color: C.dim, fontWeight: '800' }}>+8 WEEKS</Text>
                     <Text style={{ fontSize: 19, fontWeight: '900', color: '#7c7cf5', fontVariant: ['tabular-nums'], marginTop: 3 }}>{model.p8}</Text>
                   </View>
                   <Divider />
                   <View style={{ flex: 1, alignItems: 'center' }}>
-                    <Text style={{ fontSize: 9.5, color: C.dim, fontWeight: '800' }}>+12 WEEKS</Text>
+                    <Text style={{ ...T.micro, color: C.dim, fontWeight: '800' }}>+12 WEEKS</Text>
                     <Text style={{ fontSize: 19, fontWeight: '900', color: '#7c7cf5', fontVariant: ['tabular-nums'], marginTop: 3 }}>{model.p12}</Text>
                   </View>
                 </View>
 
                 {/* Plain-language reliability instead of a confidence interval */}
                 <View style={[s.between, { marginTop: 14, alignItems: 'center' }]}>
-                  <Text style={{ fontSize: 11.5, color: C.dim }}>
+                  <Text style={{ ...T.caption2, color: C.dim }}>
                     {model.proj.sessions} sessions over {Math.round(model.proj.spanDays / 7)} weeks
                   </Text>
                   <View style={{
@@ -349,7 +349,7 @@ function StrengthView({ data, unit, now, exercisesLogged, exName, setExName }) {
                       : model.proj.confidence === 'medium' ? C.gold : C.line,
                   }}>
                     <Text style={{
-                      fontSize: 10, fontWeight: '800',
+                      ...T.micro, fontWeight: '800',
                       color: model.proj.confidence === 'high' ? C.green
                         : model.proj.confidence === 'medium' ? C.gold : C.dim,
                     }}>
@@ -363,15 +363,15 @@ function StrengthView({ data, unit, now, exercisesLogged, exName, setExName }) {
                 {model.proj.proximity != null ? (
                   <View style={{ marginTop: 14 }}>
                     <View style={s.between}>
-                      <Text style={{ fontSize: 11.5, color: C.mut }}>Toward your realistic peak</Text>
-                      <Text style={{ fontSize: 11.5, color: C.gold, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
+                      <Text style={{ ...T.caption2, color: C.mut }}>Toward your realistic peak</Text>
+                      <Text style={{ ...T.caption2, color: C.gold, fontVariant: ['tabular-nums'], fontWeight: '700' }}>
                         {Math.round(model.proj.proximity * 100)}%
                       </Text>
                     </View>
                     <View style={{ height: 6, borderRadius: 3, backgroundColor: C.panel2, marginTop: 6 }}>
                       <View style={{ width: Math.max(2, model.proj.proximity * 100) + '%', height: 6, borderRadius: 3, backgroundColor: C.gold }} />
                     </View>
-                    <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 8, lineHeight: 16 }}>
+                    <Text style={{ ...T.caption2, color: C.dim, marginTop: 8, lineHeight: 16 }}>
                       {model.proj.proximity > 0.9
                         ? 'You are near the top of what this lift usually reaches. Gains from here are small and hard won.'
                         : model.proj.proximity > 0.7
@@ -380,15 +380,15 @@ function StrengthView({ data, unit, now, exercisesLogged, exName, setExName }) {
                     </Text>
                   </View>
                 ) : (
-                  <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 12, lineHeight: 16 }}>
+                  <Text style={{ ...T.caption2, color: C.dim, marginTop: 12, lineHeight: 16 }}>
                     Add your bodyweight in You → Physical Profile for a sharper estimate.
                   </Text>
                 )}
               </View>
             ) : (
               <View>
-                <Text style={{ fontSize: 15, fontWeight: '800', color: C.text }}>Not enough to go on yet</Text>
-                <Text style={{ fontSize: 13, color: C.mut, marginTop: 6, lineHeight: 19 }}>
+                <Text style={{ ...T.subheadline, fontWeight: '800', color: C.text }}>Not enough to go on yet</Text>
+                <Text style={{ ...T.footnote, color: C.mut, marginTop: 6, lineHeight: 19 }}>
                   {model.proj && model.proj.reason === 'need_time'
                     ? 'Keep logging this lift for another ' + Math.max(1, 2 - Math.floor((model.proj.haveDays || 0) / 7)) + ' week' + (Math.max(1, 2 - Math.floor((model.proj.haveDays || 0) / 7)) === 1 ? '' : 's') + '. Two weeks of history is the minimum for a forecast worth showing.'
                     : 'Log this lift on ' + Math.max(1, 3 - ((model.proj && model.proj.have) || 0)) + ' more day' + (Math.max(1, 3 - ((model.proj && model.proj.have) || 0)) === 1 ? '' : 's') + '. Two sessions can show a line, but not a trend.'}
@@ -399,7 +399,7 @@ function StrengthView({ data, unit, now, exercisesLogged, exName, setExName }) {
         </View>
       ) : (
         <Card>
-          <Text style={{ fontSize: 15, color: C.text, fontWeight: '700' }}>
+          <Text style={{ ...T.subheadline, color: C.text, fontWeight: '700' }}>
             Log this lift on 2 days to unlock projections.
           </Text>
         </Card>
@@ -431,7 +431,7 @@ function VolumeView({ data, dv, now, sinceT, range, setRange }) {
         <View style={s.between}>
           <Lbl style={{ marginBottom: 0 }}>This week vs last</Lbl>
           <Text style={{
-            fontSize: 12, fontWeight: '700', fontVariant: ['tabular-nums'],
+            ...T.caption, fontWeight: '700', fontVariant: ['tabular-nums'],
             color: delta > 0 ? C.green : delta < 0 ? C.red : C.dim,
           }}>
             {lastWeek === 0 ? '—' : (delta > 0 ? '▲ +' : '▼ ') + Math.abs(delta).toFixed(0) + '%'}
@@ -496,15 +496,15 @@ function HistoryView({ data, unit, onDelete, onEdit }) {
       <Card>
         <View style={s.between}>
           <Lbl style={{ marginBottom: 0 }}>History</Lbl>
-          <Text style={{ fontSize: 10.5, color: C.dim, fontVariant: ['tabular-nums'] }}>{filtered.length} entries</Text>
+          <Text style={{ ...T.micro, color: C.dim, fontVariant: ['tabular-nums'] }}>{filtered.length} entries</Text>
         </View>
         {filtered.length > 0 ? (
-          <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 6, marginBottom: 2 }}>
+          <Text style={{ ...T.caption2, color: C.dim, marginTop: 6, marginBottom: 2 }}>
             Tap any entry to correct or delete it.
           </Text>
         ) : null}
         {filtered.length === 0 ? (
-          <Text style={{ fontSize: 12.5, color: C.dim, marginTop: 12 }}>Nothing matches this filter yet.</Text>
+          <Text style={{ ...T.caption, color: C.dim, marginTop: 12 }}>Nothing matches this filter yet.</Text>
         ) : (
           <View>
             {/* The whole row opens the editor. It used to end in a bare ✕ that
@@ -521,25 +521,25 @@ function HistoryView({ data, unit, onDelete, onEdit }) {
                 <View style={{ flex: 1 }}>
                   <View style={s.row}>
                     {h.kind === 'cardio' ? <View style={{ width: 6, height: 6, borderRadius: 4, backgroundColor: C.green, marginRight: 7 }} /> : null}
-                    <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.text }} numberOfLines={1}>{h.ex || h.name}</Text>
-                    {h.pr ? <Text style={{ fontSize: 9.5, color: C.gold, marginLeft: 6, fontWeight: '800' }}>PR</Text> : null}
-                    {h.flagged ? <Text style={{ fontSize: 9.5, color: C.red, marginLeft: 6, fontWeight: '800' }}>CAPPED</Text> : null}
+                    <Text style={{ ...T.footnote, fontWeight: '700', color: C.text }} numberOfLines={1}>{h.ex || h.name}</Text>
+                    {h.pr ? <Text style={{ ...T.micro, color: C.gold, marginLeft: 6, fontWeight: '800' }}>PR</Text> : null}
+                    {h.flagged ? <Text style={{ ...T.micro, color: C.red, marginLeft: 6, fontWeight: '800' }}>CAPPED</Text> : null}
                   </View>
-                  <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 2, fontVariant: ['tabular-nums'] }}>
+                  <Text style={{ ...T.caption2, color: C.dim, marginTop: 2, fontVariant: ['tabular-nums'] }}>
                     {h.kind === 'cardio'
                       ? h.mins + ' min' + (h.dist ? ' · ' + h.dist + ' km' : '') + (h.intensity ? ' · ' + h.intensity : '') + ' · ' + fmtShort(h.t)
                       : h.w + ' ' + unit + ' × ' + h.r + (h.e1rm ? ' · e1RM ' + h.e1rm : '') + ' · ' + fmtShort(h.t)}
                   </Text>
                 </View>
                 <View style={[s.row, { alignItems: 'center' }]}>
-                  <Text style={{ fontSize: 11.5, color: C.gold, fontVariant: ['tabular-nums'], marginRight: 9 }}>+{h.xp || 0}</Text>
-                  <Text style={{ fontSize: 17, color: C.faint, fontWeight: '600' }}>›</Text>
+                  <Text style={{ ...T.caption2, color: C.gold, fontVariant: ['tabular-nums'], marginRight: 9 }}>+{h.xp || 0}</Text>
+                  <Text style={{ ...T.headline, color: C.faint, fontWeight: '600' }}>›</Text>
                 </View>
               </Pressable>
             ))}
             {filtered.length > limit ? (
               <Pressable onPress={() => setLimit((v) => v + 25)} hitSlop={8} style={{ alignItems: 'center', paddingTop: 14 }}>
-                <Text style={{ fontSize: 12, color: C.gold, fontWeight: '700' }}>
+                <Text style={{ ...T.caption, color: C.gold, fontWeight: '700' }}>
                   Show 25 more ({filtered.length - limit} left)
                 </Text>
               </Pressable>
@@ -573,7 +573,7 @@ function RangeBar({ range, setRange }) {
             backgroundColor: range === rg[0] ? C.goldSoft : 'transparent',
             borderWidth: 1, borderColor: range === rg[0] ? C.gold : C.line,
           }}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: range === rg[0] ? C.gold : C.dim, fontVariant: ['tabular-nums'] }}>{rg[1]}</Text>
+          <Text style={{ ...T.caption2, fontWeight: '700', color: range === rg[0] ? C.gold : C.dim, fontVariant: ['tabular-nums'] }}>{rg[1]}</Text>
         </Pressable>
       ))}
     </View>
@@ -589,7 +589,7 @@ function Metric({ label, value, tint, big, muted }) {
       }}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </Text>
-      <Text style={{ fontSize: 9, fontWeight: '700', color: C.dim, letterSpacing: 0.9, marginTop: 3 }}>{label}</Text>
+      <Text style={{ ...T.micro, fontWeight: '700', color: C.dim, letterSpacing: 0.9, marginTop: 3 }}>{label}</Text>
     </View>
   );
 }
@@ -645,18 +645,18 @@ function Heatmap({ dayXP, now }) {
         ))}
       </View>
       <View style={[s.between, { marginTop: 8, alignItems: 'center' }]}>
-        <Text style={{ fontSize: 11, color: C.dim }}>
+        <Text style={{ ...T.caption2, color: C.dim }}>
           {activeDays} active day{activeDays === 1 ? '' : 's'} logged
         </Text>
         <View style={[s.row, { alignItems: 'center' }]}>
-          <Text style={{ fontSize: 9.5, color: C.dim, marginRight: 5 }}>less</Text>
+          <Text style={{ ...T.micro, color: C.dim, marginRight: 5 }}>less</Text>
           {[C.panel2, 'rgba(245,192,74,0.3)', 'rgba(245,192,74,0.62)', C.gold].map((c, i) => (
             <View key={i} style={{
               width: 9, height: 9, borderRadius: 2, backgroundColor: c, marginRight: 3,
               borderWidth: i === 0 ? 1 : 0, borderColor: C.line,
             }} />
           ))}
-          <Text style={{ fontSize: 9.5, color: C.dim, marginLeft: 2 }}>more</Text>
+          <Text style={{ ...T.micro, color: C.dim, marginLeft: 2 }}>more</Text>
         </View>
       </View>
     </View>
