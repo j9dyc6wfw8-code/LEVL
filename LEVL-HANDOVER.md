@@ -131,6 +131,8 @@ every card title unless the 600 is restated after the spread.
   columns. Pre-existing, unchanged by this pass, and the reason two 8/8.5pt
   sites were left below `T.micro`'s 10pt floor rather than raised into it.
 
+---
+
 ## 6. Running the app
 
 ```bash
