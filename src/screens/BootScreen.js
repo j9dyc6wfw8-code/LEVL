@@ -8,6 +8,7 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, Animated, Easing, Dimensions } from 'react-native';
 import { C } from '../theme';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 import { LevlMark } from '../components/ui';
 
 /* Twelve short, well-attributed lines on training and self-improvement.
@@ -51,7 +52,25 @@ export default function BootScreen({ duration }) {
     }))
   ).current;
 
+  const reduceMotion = useReduceMotion();
+
   useEffect(() => {
+    // The progress bar is feedback, not decoration — it keeps running under
+    // Reduce Motion, or the splash just looks frozen. Everything else here is
+    // atmosphere: glow pulse, ring spin and six drifting embers, all parked.
+    // Embers read 0 opacity at v=0, so parking them hides them outright.
+    if (reduceMotion) {
+      rise.setValue(1);
+      quoteIn.setValue(1);
+      pulse.setValue(0.5);
+      spin.setValue(0);
+      embers.forEach((e) => e.v.setValue(0));
+      const onlyBar = Animated.timing(bar, {
+        toValue: 1, duration: duration || 2500, easing: Easing.inOut(Easing.quad), useNativeDriver: false,
+      });
+      onlyBar.start();
+      return () => onlyBar.stop();
+    }
     const a1 = Animated.timing(rise, {
       toValue: 1, duration: 700, easing: Easing.out(Easing.cubic), useNativeDriver: true,
     });
@@ -84,7 +103,7 @@ export default function BootScreen({ duration }) {
       a1.stop(); a2.stop(); a3.stop(); a4.stop(); a5.stop();
       emberAnims.forEach((a) => a.stop());
     };
-  }, [pulse, spin, rise, quoteIn, bar, embers, duration]);
+  }, [pulse, spin, rise, quoteIn, bar, embers, duration, reduceMotion]);
 
   const glowScale = pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.28] });
   const glowOpacity = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.16, 0.34] });

@@ -15,6 +15,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { C, alpha, s, RADIUS, T, MOTION } from '../theme';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 import { Card, Lbl, Chip, PBar, StatBar, ChunkyBtn, Sheet, EmptyState, ScreenHeader, Segmented } from '../components/ui';
 import { ItemGlyph, ItemTile, PackGlyph, RewardGlyph } from '../components/ItemGlyph';
 import {
@@ -617,15 +618,20 @@ function ShopBay({ data, dv, buy, equip }) {
  */
 function NextReward({ next, level, prevLevel, premium, claims, claimAll }) {
   const pulse = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
   useEffect(() => {
-    if (!claims.length) return;
+    if (!claims.length) return undefined;
+    // Claimable is signalled by icon + brightness + motion precisely so it
+    // survives losing one of them. Hold the bright end rather than the middle:
+    // with the pulse gone, brightness is carrying the state on its own.
+    if (reduceMotion) { pulse.setValue(1); return undefined; }
     const loop = Animated.loop(Animated.sequence([
       Animated.timing(pulse, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
       Animated.timing(pulse, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
     ]));
     loop.start();
     return () => loop.stop();
-  }, [claims.length, pulse]);
+  }, [claims.length, pulse, reduceMotion]);
 
   // Something to claim RIGHT NOW beats any future promise. Lead with it.
   if (claims.length) {

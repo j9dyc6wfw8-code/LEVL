@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing, Dimensions, Linking } from 'react-native';
 import { C, s, MONO, T, RADIUS, TOUCH } from '../theme';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 import { Card, Lbl, Chip, GoldBtn, GhostBtn, ChunkyBtn, LevlMark } from '../components/ui';
 import { copyText, pasteText } from '../services/platform';
 import { isConfigured } from '../services/supabase/client';
@@ -83,8 +84,16 @@ function AuthBackdrop() {
     }))
   ).current;
   const bloom = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
+    // Embers read 0 opacity at v=0, so parking them there removes the drift
+    // entirely. The bloom holds mid-travel: a still glow, not a flat panel.
+    if (reduceMotion) {
+      bloom.setValue(0.5);
+      embers.forEach((e) => e.v.setValue(0));
+      return undefined;
+    }
     const b = Animated.loop(Animated.sequence([
       Animated.timing(bloom, { toValue: 1, duration: 3600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
       Animated.timing(bloom, { toValue: 0, duration: 3600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
@@ -94,7 +103,7 @@ function AuthBackdrop() {
     ));
     b.start(); es.forEach((a) => a.start());
     return () => { b.stop(); es.forEach((a) => a.stop()); };
-  }, [bloom, embers]);
+  }, [bloom, embers, reduceMotion]);
 
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -122,8 +131,17 @@ function BrandMark() {
   const spin = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
+    // The mark still arrives, it just arrives already there: full opacity and
+    // scale, ring parked, glow held mid-pulse.
+    if (reduceMotion) {
+      rise.setValue(1);
+      spin.setValue(0);
+      glow.setValue(0.5);
+      return undefined;
+    }
     const a = Animated.timing(rise, { toValue: 1, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: true });
     const b = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 16000, easing: Easing.linear, useNativeDriver: true }));
     const c = Animated.loop(Animated.sequence([
@@ -132,7 +150,7 @@ function BrandMark() {
     ]));
     a.start(); b.start(); c.start();
     return () => { a.stop(); b.stop(); c.stop(); };
-  }, [spin, glow, rise]);
+  }, [spin, glow, rise, reduceMotion]);
 
   const rot = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   const scale = rise.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] });
