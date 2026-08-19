@@ -134,10 +134,10 @@ Every instruction from the brief, tracked. Updated as work lands.
 
 - [x] **34.1** Research Hevy, Strong et al — done; key finding: Hevy's top logging complaint is *no Next button between input fields*. LEVL had the same gap.
 - [x] **34.2** Duolingo/BeReal/etc — done; XP as a *shared currency* across streak, league and achievements is why their system feels coherent rather than bolted together.
-- [ ] **34.3** Identify better comparisons independently
+- [x] **34.3** Independent comparisons — Jefit (library depth as retention floor), Whoop/Oura (daily verdict with no logging), competitive ladders (the right reference class for rank, not fitness apps)
 - [x] **35.1** What users hate — done; logging friction is the **single strongest predictor** of 30-day retention. Also: choice paralysis, barbell total-weight entry, manual-entry drop-off.
-- [ ] **36.1** Build the competitor gap matrix
-- [ ] **74.1** WHAT USERS LOVE / HATE / LEVL CAN DO BETTER
+- [x] **36.1** Gap matrix — built, [LEVL-RESEARCH.md](LEVL-RESEARCH.md) §4
+- [x] **74.1** Love/hate tables — [LEVL-RESEARCH.md](LEVL-RESEARCH.md) §2–3
 
 ## STAGE 37–45 — Activation, retention, notifications, deep links
 
@@ -259,7 +259,7 @@ These were closed in the pre-launch audit and must never come back.
 | 9–14. Compete/Social/Hunter/Forge | ⬜ not started |
 | 15–21. Motion & performance | 🔄 list audit done |
 | 22–33. Errors → copy | ⬜ not started |
-| **34–36, 74. Research** | 🔄 3 of 6 done — gap matrix + love/hate table next |
+| **34–36, 74. Research** | ✅ complete — [LEVL-RESEARCH.md](LEVL-RESEARCH.md) |
 | 37–45. Activation & retention | ⬜ not started |
 | 46–58. Architecture | 🔄 list audit done |
 | 59–61. Observability | ⬜ not started |
