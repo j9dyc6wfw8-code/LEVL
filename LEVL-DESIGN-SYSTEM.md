@@ -84,6 +84,27 @@ screens look like they were designed independently.
 the steps the app actually needs. `TYPE` becomes deprecated — kept until the
 last screen leaves it, then deleted.
 
+### The lineHeight hazard, and what testing it showed
+
+**79% of TrainTab's literals (113 of 143) map to a token that carries a
+`lineHeight` the original did not have** — `caption`, `caption2`, `footnote`,
+`callout`, `subheadline`, `headline`, `body` all set one. Only `display`,
+`title1`, `title2`, `title3`, `label` and `micro` are free of it.
+
+That looked like a reason not to migrate at all. It was worth measuring rather
+than assuming, so 11 sites on the Train screen were migrated and compared
+against a before screenshot on an iPhone 17 Pro:
+
+**No layout shift.** The tile grid, card boundaries and Power row all landed
+identically.
+
+The reason is that these were single-line labels, where the token's lineHeight
+sits close enough to the natural line box to be absorbed. **The risk is real for
+multi-line paragraphs**, where a changed lineHeight compounds per line. So:
+
+- single-line labels, badges, headings → migrate freely
+- multi-line body copy → migrate one block at a time and look at it
+
 ### The migration rule
 
 **Do not mass-replace.** A literal `fontSize: 12` is not equivalent to

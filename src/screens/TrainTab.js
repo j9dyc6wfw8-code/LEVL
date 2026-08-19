@@ -274,13 +274,13 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
               marginTop: 4, marginBottom: 16, padding: 16, borderRadius: 14,
               backgroundColor: C.panel, borderWidth: 1, borderColor: C.gold,
             }}>
-              <Text style={{ fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: C.gold }}>
+              <Text style={{ ...T.micro, fontWeight: '800', letterSpacing: 1.4, color: C.gold }}>
                 {totalLogged === 0 ? 'START HERE' : 'NEXT STEP'}
               </Text>
-              <Text style={{ fontSize: 21, fontWeight: '900', color: C.text, marginTop: 6, letterSpacing: -0.4 }}>
+              <Text style={{ ...T.title2, fontWeight: '900', color: C.text, marginTop: 6, letterSpacing: -0.4 }}>
                 {totalLogged === 0 ? 'Log one set to begin' : 'Log ' + (3 - totalLogged) + ' more set' + (3 - totalLogged === 1 ? '' : 's')}
               </Text>
-              <Text style={{ fontSize: 13.5, color: C.mut, marginTop: 6, lineHeight: 19 }}>
+              <Text style={{ ...T.footnote, color: C.mut, marginTop: 6, lineHeight: 19 }}>
                 {totalLogged === 0
                   ? 'Pick a muscle, then enter weight and reps.'
                   : 'Five training days unlocks your rank.'}
@@ -318,8 +318,8 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                     alignItems: 'center', justifyContent: 'center',
                   }}>
                   <MuscleIcon group={rg.glyph} color={rg.color} size={figSize} />
-                  <Text style={{ fontSize: 13.5, fontWeight: '800', color: C.text, marginTop: 7 }}>{rg.title}</Text>
-                  <Text style={{ fontSize: 10, fontWeight: '700', color: rg.color, marginTop: 1 }}>{count} moves</Text>
+                  <Text style={{ ...T.footnote, fontWeight: '800', color: C.text, marginTop: 7 }}>{rg.title}</Text>
+                  <Text style={{ ...T.micro, fontWeight: '700', color: rg.color, marginTop: 1 }}>{count} moves</Text>
                 </Pressable>
               );
             })}
@@ -340,10 +340,10 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 }}>
                 <MuscleIcon group={pw.glyph} color={pw.color} size={figSize * 0.8} />
                 <View style={{ flex: 1, marginLeft: 14 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '800', color: C.text }}>Power</Text>
-                  <Text style={{ fontSize: 12, color: C.mut, marginTop: 2 }}>Explosive, whole-body movements</Text>
+                  <Text style={{ ...T.subheadline, fontWeight: '800', color: C.text }}>Power</Text>
+                  <Text style={{ ...T.caption, color: C.mut, marginTop: 2 }}>Explosive, whole-body movements</Text>
                 </View>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: pw.color }}>{count} moves</Text>
+                <Text style={{ ...T.caption2, fontWeight: '800', color: pw.color }}>{count} moves</Text>
               </Pressable>
             );
           })()}
@@ -351,20 +351,20 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
           {/* browse-all fallback */}
           <Pressable onPress={() => { setCat('All'); setQuery(''); setPickerOpen(true); }}
             style={{ marginTop: 4, paddingVertical: 14, borderRadius: 14, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, alignItems: 'center' }}>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: C.gold }}>Browse all {EXERCISES.length} exercises  ›</Text>
+            <Text style={{ ...T.footnote, fontWeight: '700', color: C.gold }}>Browse all {EXERCISES.length} exercises  ›</Text>
           </Pressable>
 
           {/* Workout Days are saved routines, not calendar dates. */}
           <View style={{ marginTop: 18 }}>
             <View style={s.between}>
-              <Text style={{ fontSize: 22, fontWeight: '800', color: C.text }}>Workout Days</Text>
+              <Text style={{ ...T.title2, fontWeight: '800', color: C.text }}>Workout Days</Text>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="Create a Workout Day"
                 onPress={() => { setEditDay(null); setBuilderOpen(true); }}
                 hitSlop={8}
                 style={{ paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: C.goldSoft, borderWidth: 1, borderColor: C.gold }}>
-                <Text style={{ fontSize: 12, color: C.gold, fontWeight: '800' }}>+ CREATE</Text>
+                <Text style={{ ...T.caption, color: C.gold, fontWeight: '800' }}>+ CREATE</Text>
               </Pressable>
             </View>
             {/* The 3-step strip, the headline and the sub-line all explained
