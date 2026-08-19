@@ -56,14 +56,14 @@ everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
 | **PacksTab** | 23 | 0 | **2** ✅ migrated |
 | **LoadoutCard** | 13 | 0 | **6** ✅ migrated |
 | **ShopTab** | 47 | 0 | **1** ✅ migrated |
-| FriendsScreen | 0 | 52 | 3 |
+| **FriendsScreen** | 54 | 0 | **1** ✅ migrated |
 | CheckInDetail / Camera | 10 | 0 | 1 |
 | WorkoutAttachment | 8 | 0 | 1 |
 
 Three populations:
 
 1. **Migrated to `T`** — everything built from Build 28 onward (social, check-ins)
-2. **On `TYPE`** — FriendsScreen and AppGuide (DuelTab and ShopTab have left this group)
+2. **On `TYPE`** — AppGuide, plus eight component/screen files the original audit missed (see §1.1)
 3. **On neither** — none left; every screen is on `T` or still on `TYPE`
 
 ~~**ShopTab is the worst case: both scales in one file.**~~ Resolved — it is wholly on `T`.
@@ -119,8 +119,8 @@ Suggested order, worst first:
 3. ~~`DuelTab`~~ ✅ **done** — all 34 migrated, plus the one `TYPE.body` holdout; no off-scale sizes on this screen
 4. ~~`PacksTab`~~ ✅ **done** — 23 of 25. ~~`LoadoutCard`~~ ✅ **done** — 13 of 19; see the sub-micro note below
 5. ~~`ShopTab`~~ ✅ **done** — mixed scale resolved; see the TYPE→T table below
-6. `FriendsScreen` — `TYPE` → `T`
-7. Delete `TYPE` from `theme.js`
+6. ~~`FriendsScreen`~~ ✅ **done** — 52 TYPE refs and 2 literals
+7. Delete `TYPE` from `theme.js` — **blocked**, see §1.1
 
 ### Mapping `TYPE` → `T`
 

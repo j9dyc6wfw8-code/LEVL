@@ -16,7 +16,7 @@ import React, { useState, useMemo } from 'react';
 // over 100 rows that made this sheet lag.
 import useFriendProfile from '../hooks/useFriendProfile';
 import { View, Text, Pressable, ScrollView, TextInput } from 'react-native';
-import { C, s, TYPE, RADIUS, TOUCH, MONO } from '../theme';
+import { C, s, T, RADIUS, TOUCH, MONO } from '../theme';
 import { MiniHunter } from '../components/Hunter';
 import { HunterShowcase } from '../components/LoadoutCard';
 import { DEFAULT_DATA } from '../engine/engine';
@@ -84,8 +84,8 @@ const nameOf = (p) => (p && (p.display_name || p.username)) || 'this player';
 function StatPill({ label, value, tint }) {
   return (
     <View style={{ alignItems: 'center', flex: 1 }}>
-      <Text style={{ ...TYPE.caption, color: tint || C.text, fontWeight: '700' }}>{value}</Text>
-      <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 1 }}>{label}</Text>
+      <Text style={{ ...T.caption, color: tint || C.text, fontWeight: '700' }}>{value}</Text>
+      <Text style={{ ...T.micro, color: C.dim, marginTop: 1 }}>{label}</Text>
     </View>
   );
 }
@@ -151,22 +151,22 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
           failed query just showed a blank list. Now a failure says so. */}
       {fr.error ? (
         <View style={{ backgroundColor: C.redSoft, borderWidth: 1, borderColor: C.red, borderRadius: RADIUS.md, padding: 12, marginBottom: 12 }}>
-          <Text style={{ ...TYPE.caption, color: C.red, fontWeight: '700' }}>Couldn't load friends</Text>
-          <Text style={{ ...TYPE.micro, color: C.mut, marginTop: 4 }}>{String(fr.error)}</Text>
+          <Text style={{ ...T.caption, color: C.red, fontWeight: '700' }}>Couldn't load friends</Text>
+          <Text style={{ ...T.micro, color: C.mut, marginTop: 4 }}>{String(fr.error)}</Text>
           <Pressable onPress={fr.refresh} hitSlop={6} style={{ marginTop: 8 }}
             accessibilityRole="button" accessibilityLabel="Retry loading friends">
-            <Text style={{ ...TYPE.caption, color: C.gold, fontWeight: '700' }}>Tap to retry</Text>
+            <Text style={{ ...T.caption, color: C.gold, fontWeight: '700' }}>Tap to retry</Text>
           </Pressable>
         </View>
       ) : null}
 
       {duels && duels.error ? (
         <View style={{ backgroundColor: C.redSoft, borderWidth: 1, borderColor: C.red, borderRadius: RADIUS.md, padding: 12, marginBottom: 12 }}>
-          <Text style={{ ...TYPE.body, color: C.red, fontWeight: '700' }}>Duel needs attention.</Text>
-          <Text style={{ ...TYPE.caption, color: C.mut, marginTop: 4 }}>{String(duels.error)}</Text>
+          <Text style={{ ...T.footnote, color: C.red, fontWeight: '700' }}>Duel needs attention.</Text>
+          <Text style={{ ...T.caption, color: C.mut, marginTop: 4 }}>{String(duels.error)}</Text>
           <Pressable onPress={duels.refresh} hitSlop={6} style={{ marginTop: 8 }}
             accessibilityRole="button" accessibilityLabel="Retry loading duels">
-            <Text style={{ ...TYPE.caption, color: C.gold, fontWeight: '700' }}>Try again</Text>
+            <Text style={{ ...T.caption, color: C.gold, fontWeight: '700' }}>Try again</Text>
           </Pressable>
         </View>
       ) : null}
@@ -178,18 +178,18 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             <Card style={{ borderWidth: 1, borderColor: C.green }}>
               <View style={s.between}>
                 <Text style={[s.label, { color: duels.live ? C.green : C.gold }]}>ACTIVE DUEL</Text>
-                <Text style={{ ...TYPE.micro, color: duels.live ? C.green : C.mut }}>{duels.live ? 'LIVE' : 'SYNCING'}</Text>
+                <Text style={{ ...T.micro, color: duels.live ? C.green : C.mut }}>{duels.live ? 'LIVE' : 'SYNCING'}</Text>
               </View>
               <View style={[s.row, { alignItems: 'center', marginTop: 8 }]}>
                 <Avatar profile={active.opponent} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={{ ...TYPE.heading, color: C.text }}>{active.opponent.display_name || active.opponent.username || 'Rival'}</Text>
-                  <Text style={{ ...TYPE.caption, color: C.mut, marginTop: 2 }}>Tap for workouts and weights.</Text>
+                  <Text style={{ ...T.callout, fontWeight: '600', color: C.text }}>{active.opponent.display_name || active.opponent.username || 'Rival'}</Text>
+                  <Text style={{ ...T.caption, color: C.mut, marginTop: 2 }}>Tap for workouts and weights.</Text>
                 </View>
-                <Text style={{ ...TYPE.heading, color: active.myScore >= active.theirScore ? C.green : C.red, fontVariant: ['tabular-nums'] }}>
+                <Text style={{ ...T.callout, fontWeight: '600', color: active.myScore >= active.theirScore ? C.green : C.red, fontVariant: ['tabular-nums'] }}>
                   {active.myScore || 0}–{active.theirScore || 0}
                 </Text>
-                <Text style={{ ...TYPE.title, color: C.gold, marginLeft: 8 }}>›</Text>
+                <Text style={{ ...T.title2, color: C.gold, marginLeft: 8 }}>›</Text>
               </View>
             </Card>
           </Pressable>
@@ -201,7 +201,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
         <Card style={{ borderWidth: 1, borderColor: C.gold }}>
           <Text style={[s.label, { color: C.gold }]}>Duel challenges ({duels.incoming.length})</Text>
           {duels.busy && (
-            <Text style={{ ...TYPE.body, color: C.orange, marginTop: 7, fontWeight: '700' }}>
+            <Text style={{ ...T.footnote, color: C.orange, marginTop: 7, fontWeight: '700' }}>
               Finish your current duel first.
             </Text>
           )}
@@ -209,10 +209,10 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             <View key={d.id} style={[s.row, { marginTop: 12, alignItems: 'center' }]}>
               <Avatar profile={d.opponent} />
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }}>
+                <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>
                   {d.opponent.display_name || d.opponent.username}
                 </Text>
-                <Text style={{ ...TYPE.caption, color: C.dim }}>challenges you · {d.reward} coins</Text>
+                <Text style={{ ...T.caption, color: C.dim }}>challenges you · {d.reward} coins</Text>
               </View>
               <Pressable disabled={duels.busy} onPress={() => duels.accept(d.id)} hitSlop={6}
                 accessibilityRole="button"
@@ -220,7 +220,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                 accessibilityLabel={'Accept duel from ' + nameOf(d.opponent)}
                 accessibilityHint={duels.busy ? 'Unavailable while another duel is active' : undefined}
                 style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, backgroundColor: duels.busy ? C.panel2 : C.goldSoft, borderWidth: 1, borderColor: duels.busy ? C.line : C.gold, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ ...TYPE.caption, fontWeight: '700', color: duels.busy ? C.dim : C.gold }}>Accept</Text>
+                <Text style={{ ...T.caption, fontWeight: '700', color: duels.busy ? C.dim : C.gold }}>Accept</Text>
               </Pressable>
               {/* The label is spelled out because the glyph is a ✕: VoiceOver
                   reads that as "multiplication sign", or skips it entirely. */}
@@ -228,7 +228,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                 accessibilityRole="button"
                 accessibilityLabel={'Decline duel from ' + nameOf(d.opponent)}
                 style={{ minHeight: 36, paddingHorizontal: 12, marginLeft: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ ...TYPE.caption, fontWeight: '700', color: C.dim }}>✕</Text>
+                <Text style={{ ...T.caption, fontWeight: '700', color: C.dim }}>✕</Text>
               </Pressable>
             </View>
           ))}
@@ -239,7 +239,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
         <Card>
           <View style={s.between}>
             <Text style={s.label}>DUEL RECORD</Text>
-            <Text style={{ ...TYPE.heading, color: C.text, fontVariant: ['tabular-nums'] }}>
+            <Text style={{ ...T.callout, fontWeight: '600', color: C.text, fontVariant: ['tabular-nums'] }}>
               <Text style={{ color: C.green }}>{duels.wins}W</Text>
               {'  '}
               <Text style={{ color: C.red }}>{duels.losses}L</Text>
@@ -252,11 +252,11 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             const color = result === 'WIN' ? C.green : result === 'LOSS' ? C.red : C.gold;
             return (
               <View key={d.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 9, borderTopWidth: index === 0 ? 0 : 1, borderTopColor: C.line }}>
-                <Text style={{ ...TYPE.micro, color, fontWeight: '800', width: 42 }}>{result}</Text>
-                <Text numberOfLines={1} style={{ ...TYPE.body, color: C.text, fontWeight: '700', flex: 1 }}>
+                <Text style={{ ...T.micro, color, fontWeight: '800', width: 42 }}>{result}</Text>
+                <Text numberOfLines={1} style={{ ...T.footnote, color: C.text, fontWeight: '700', flex: 1 }}>
                   {d.opponent.display_name || d.opponent.username || 'Rival'}
                 </Text>
-                <Text style={{ ...TYPE.caption, color: C.mut, fontVariant: ['tabular-nums'] }}>{d.myScore || 0}–{d.theirScore || 0}</Text>
+                <Text style={{ ...T.caption, color: C.mut, fontVariant: ['tabular-nums'] }}>{d.myScore || 0}–{d.theirScore || 0}</Text>
               </View>
             );
           })}
@@ -283,7 +283,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
           </Pressable>
         </View>
 
-        {searching ? <Text style={{ ...TYPE.caption, color: C.dim, marginTop: 12 }}>Searching…</Text> : null}
+        {searching ? <Text style={{ ...T.caption, color: C.dim, marginTop: 12 }}>Searching…</Text> : null}
 
         {results.map((p) => (
           <View key={p.id} style={[s.row, { marginTop: 12, alignItems: 'center' }]}>
@@ -291,8 +291,8 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             <Pressable onPress={() => openProfile(p.id)} style={{ flex: 1, marginLeft: 10 }}
               accessibilityRole="button"
               accessibilityLabel={'Open ' + nameOf(p) + "'s profile"}>
-              <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }}>{p.display_name || p.username}</Text>
-              <Text style={{ ...TYPE.caption, color: C.dim }}>@{p.username} · Lv {p.level} · {p.rank}</Text>
+              <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>{p.display_name || p.username}</Text>
+              <Text style={{ ...T.caption, color: C.dim }}>@{p.username} · Lv {p.level} · {p.rank}</Text>
             </Pressable>
             <Pressable
               disabled={!!added[p.id]}
@@ -304,7 +304,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                 ? 'Friend request already sent to ' + nameOf(p)
                 : 'Send a friend request to ' + nameOf(p)}
               style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, alignItems: 'center', justifyContent: 'center', backgroundColor: added[p.id] ? C.panel2 : C.greenSoft, borderWidth: 1, borderColor: added[p.id] ? C.line : C.green }}>
-              <Text style={{ ...TYPE.caption, fontWeight: '700', color: added[p.id] ? C.dim : C.green }}>
+              <Text style={{ ...T.caption, fontWeight: '700', color: added[p.id] ? C.dim : C.green }}>
                 {added[p.id] ? 'Sent' : 'Add'}
               </Text>
             </Pressable>
@@ -320,10 +320,10 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             <View key={req.senderId} style={[s.row, { marginTop: 12, alignItems: 'center' }]}>
               <Avatar profile={req.profile} />
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }}>
+                <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>
                   {(req.profile && (req.profile.display_name || req.profile.username)) || 'Player'}
                 </Text>
-                <Text style={{ ...TYPE.caption, color: C.dim }}>
+                <Text style={{ ...T.caption, color: C.dim }}>
                   {req.profile ? `Lv ${req.profile.level} · ${req.profile.rank}` : 'wants to be friends'}
                 </Text>
               </View>
@@ -337,7 +337,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                 accessibilityLabel={'Accept friend request from ' + nameOf(req.profile)}
                 accessibilityState={{ disabled: answering(req.senderId), busy: answering(req.senderId) }}
                 style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, backgroundColor: C.greenSoft, borderWidth: 1, borderColor: C.green, alignItems: 'center', justifyContent: 'center', opacity: answering(req.senderId) ? 0.5 : 1 }}>
-                <Text style={{ ...TYPE.caption, fontWeight: '700', color: C.green }}>
+                <Text style={{ ...T.caption, fontWeight: '700', color: C.green }}>
                   {answering(req.senderId) ? 'Adding…' : 'Accept'}
                 </Text>
               </Pressable>
@@ -347,7 +347,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                 accessibilityLabel={'Decline friend request from ' + nameOf(req.profile)}
                 accessibilityState={{ disabled: answering(req.senderId) }}
                 style={{ minHeight: 36, paddingHorizontal: 12, marginLeft: 6, borderRadius: RADIUS.pill, borderWidth: 1, borderColor: C.line, alignItems: 'center', justifyContent: 'center', opacity: answering(req.senderId) ? 0.5 : 1 }}>
-                <Text style={{ ...TYPE.caption, fontWeight: '700', color: C.dim }}>✕</Text>
+                <Text style={{ ...T.caption, fontWeight: '700', color: C.dim }}>✕</Text>
               </Pressable>
             </View>
           ))}
@@ -358,7 +358,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
       <Card>
         <Text style={s.label}>Friends ({fr.friends.length})</Text>
         {fr.friends.length === 0 ? (
-          <Text style={{ ...TYPE.caption, color: C.dim, marginTop: 10 }}>
+          <Text style={{ ...T.caption, color: C.dim, marginTop: 10 }}>
             No friends yet. Search a username above to add your first.
           </Text>
         ) : fr.friends.map((f) => (
@@ -379,8 +379,8 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                 )}
               </View>
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }}>{f.display_name || f.username}</Text>
-                <Text style={{ ...TYPE.caption, color: isOnline(f.last_active) ? C.green : C.dim }}>
+                <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>{f.display_name || f.username}</Text>
+                <Text style={{ ...T.caption, color: isOnline(f.last_active) ? C.green : C.dim }}>
                   {presence(f.last_active)}
                 </Text>
               </View>
@@ -392,7 +392,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                     ? 'Cannot challenge ' + nameOf(f) + ' — you already have an active duel'
                     : 'Challenge ' + nameOf(f) + ' to a duel'}
                   style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: RADIUS.pill, backgroundColor: duels && duels.busy ? C.panel2 : C.goldSoft, borderWidth: 1, borderColor: duels && duels.busy ? C.line : C.gold, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ ...TYPE.caption, fontWeight: '700', color: duels && duels.busy ? C.dim : C.gold }}>{duels && duels.busy ? 'Active' : 'Duel'}</Text>
+                  <Text style={{ ...T.caption, fontWeight: '700', color: duels && duels.busy ? C.dim : C.gold }}>{duels && duels.busy ? 'Active' : 'Duel'}</Text>
                 </Pressable>
               )}
             </View>
@@ -421,12 +421,12 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
               <View key={ev.id} style={[s.row, { marginTop: 12, alignItems: 'center' }]}>
                 <Avatar profile={ev.actor} size={32} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={{ ...TYPE.caption, color: C.text }}>
+                  <Text style={{ ...T.caption, color: C.text }}>
                     <Text style={{ fontWeight: '700' }}>{who}</Text>
                     <Text style={{ color: C.mut }}> {line}</Text>
                     {ev.is_pr ? <Text style={{ color: C.gold, fontWeight: '700' }}> · PR</Text> : null}
                   </Text>
-                  <Text style={{ ...TYPE.micro, color: C.dim }}>{ago(ev.date)} ago · +{ev.xp_earned} XP</Text>
+                  <Text style={{ ...T.micro, color: C.dim }}>{ago(ev.date)} ago · +{ev.xp_earned} XP</Text>
                 </View>
               </View>
             );
@@ -473,12 +473,12 @@ const FriendProfileBody = React.memo(function FriendProfileBody({ userId, onClos
 
   if (!userId) return null;
   if (loading && !profile) {
-    return <Text style={{ ...TYPE.body, color: C.dim, padding: 20, textAlign: 'center' }}>Loading…</Text>;
+    return <Text style={{ ...T.footnote, color: C.dim, padding: 20, textAlign: 'center' }}>Loading…</Text>;
   }
   if (!profile) {
     return (
       <View style={{ padding: 20 }}>
-        <Text style={{ ...TYPE.body, color: C.dim, textAlign: 'center' }}>Couldn't load this profile.</Text>
+        <Text style={{ ...T.footnote, color: C.dim, textAlign: 'center' }}>Couldn't load this profile.</Text>
         <View style={{ marginTop: 16 }}><ChunkyBtn tone="slate" onPress={onClose}>CLOSE</ChunkyBtn></View>
       </View>
     );
@@ -518,22 +518,22 @@ const FriendProfileBody = React.memo(function FriendProfileBody({ userId, onClos
       }}>
         <View style={[s.between, { alignItems: 'flex-end' }]}>
           <View style={{ flex: 1 }}>
-            <Text style={{ ...TYPE.label, color: C.dim }}>BEST LIFT</Text>
-            <Text style={{ fontSize: 34, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'], letterSpacing: -0.6 }}>
+            <Text style={{ ...T.label, color: C.dim }}>BEST LIFT</Text>
+            <Text style={{ ...T.display, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'], letterSpacing: -0.6 }}>
               {profile.best_e1rm
                 ? Math.round(profile.best_e1rm) + ' ' + (sum.unit || 'kg')
                 : sum.bestLift ? Math.round(sum.bestLift) + ' ' + (sum.unit || 'kg') : '—'}
             </Text>
             {(profile.best_lift_name || sum.bestName) ? (
-              <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 1 }} numberOfLines={1}>
+              <Text style={{ ...T.micro, color: C.dim, marginTop: 1 }} numberOfLines={1}>
                 {profile.best_lift_name || sum.bestName}
               </Text>
             ) : null}
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-            <Text style={{ ...TYPE.label, color: C.dim }}>STREAK</Text>
+            <Text style={{ ...T.label, color: C.dim }}>STREAK</Text>
             <Text style={{ fontSize: 26, fontWeight: '800', color: C.orange, fontVariant: ['tabular-nums'] }}>
-              {(profile.streak || 0)}<Text style={{ fontSize: 15, color: C.mut }}>d</Text>
+              {(profile.streak || 0)}<Text style={{ ...T.subheadline, fontWeight: '800', color: C.mut }}>d</Text>
             </Text>
           </View>
         </View>
@@ -546,7 +546,7 @@ const FriendProfileBody = React.memo(function FriendProfileBody({ userId, onClos
           <StatPill label="DAYS" value={sum.days} />
           <StatPill label="PRs" value={sum.prs} tint={C.gold} />
         </View>
-        <Text style={{ ...TYPE.micro, color: C.faint, marginTop: 10 }}>
+        <Text style={{ ...T.micro, color: C.faint, marginTop: 10 }}>
           Last {Math.min(workouts.length, 100)} logged sets
         </Text>
       </View>
@@ -564,13 +564,13 @@ const FriendProfileBody = React.memo(function FriendProfileBody({ userId, onClos
               borderWidth: 1, borderColor: mode === k ? C.gold : C.line,
               marginRight: k === 'recent' ? 8 : 0,
             }}>
-            <Text style={{ ...TYPE.caption, fontWeight: '700', color: mode === k ? C.gold : C.dim }}>{label}</Text>
+            <Text style={{ ...T.caption, fontWeight: '700', color: mode === k ? C.gold : C.dim }}>{label}</Text>
           </Pressable>
         ))}
       </View>
 
       {workouts.length === 0 ? (
-        <Text style={{ ...TYPE.caption, color: C.dim, marginTop: 14 }}>
+        <Text style={{ ...T.caption, color: C.dim, marginTop: 14 }}>
           Nothing shared yet — their lifts appear here as soon as they log one.
         </Text>
       ) : mode === 'exercises' ? (
@@ -579,10 +579,10 @@ const FriendProfileBody = React.memo(function FriendProfileBody({ userId, onClos
             marginTop: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.lineSoft,
           }]}>
             <View style={{ flex: 1, marginRight: 10 }}>
-              <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }} numberOfLines={1}>
+              <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }} numberOfLines={1}>
                 {e.name}
               </Text>
-              <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 1 }}>
+              <Text style={{ ...T.micro, color: C.dim, marginTop: 1 }}>
                 {e.sets} set{e.sets > 1 ? 's' : ''}
                 {e.prs ? <Text style={{ color: C.gold }}> · {e.prs} PR{e.prs > 1 ? 's' : ''}</Text> : null}
               </Text>
@@ -590,10 +590,10 @@ const FriendProfileBody = React.memo(function FriendProfileBody({ userId, onClos
             {/* Best weight is the number worth reading here, with its unit —
                 it used to print bare, so kg and lb were indistinguishable. */}
             <View style={{ alignItems: 'flex-end' }}>
-              <Text style={{ ...TYPE.body, color: C.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ ...T.footnote, color: C.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 {e.best ? Math.round(e.best) + ' ' + (e.unit || 'kg') : '—'}
               </Text>
-              <Text style={{ ...TYPE.micro, color: C.green, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ ...T.micro, color: C.green, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
                 +{e.xp.toLocaleString()} XP
               </Text>
             </View>
@@ -605,22 +605,22 @@ const FriendProfileBody = React.memo(function FriendProfileBody({ userId, onClos
             marginTop: 10, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.lineSoft,
           }]}>
             <View style={{ flex: 1, marginRight: 10 }}>
-              <Text style={{ ...TYPE.body, color: C.text, fontWeight: '700' }} numberOfLines={1}>
+              <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }} numberOfLines={1}>
                 {w.exercise}
                 {w.isPR ? <Text style={{ color: C.gold, fontWeight: '800' }}>  PR</Text> : null}
               </Text>
-              <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 1 }}>
+              <Text style={{ ...T.micro, color: C.dim, marginTop: 1 }}>
                 {ago(w.date)} ago{w.rpe ? ' · RPE ' + w.rpe : ''}
               </Text>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
               {/* The actual lift, formatted like a lifter writes it. */}
-              <Text style={{ ...TYPE.body, color: C.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ ...T.footnote, color: C.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 {w.isLift
                   ? Math.round(w.weight) + ' ' + w.unit + ' × ' + w.reps
                   : w.duration ? w.duration + ' min' : '—'}
               </Text>
-              <Text style={{ ...TYPE.micro, color: C.green, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ ...T.micro, color: C.green, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
                 +{w.xp.toLocaleString()} XP
               </Text>
             </View>
