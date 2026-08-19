@@ -248,7 +248,7 @@ function PlayerBreakdown({ title, rows, fallbackUnit, accent }) {
         </Text>
       ) : null}
       {sessions.length === 0 ? (
-        <Text style={{ ...T.caption, color: C.dim, marginTop: 10 }}>No workouts synced in this duel yet.</Text>
+        <Text style={{ ...T.caption, color: C.dim, marginTop: 10 }}>No workouts synced in this duel yet. Sessions you log appear here automatically.</Text>
       ) : sessions.map((session) => {
         const sessionXp = session.rows.reduce((a, r) => a + (Number(r.xp_earned) || 0), 0);
         const sessionSets = session.rows.reduce((a, r) => a + (Number(r.sets) || 1), 0);

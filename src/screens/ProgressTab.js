@@ -215,7 +215,7 @@ function OverviewView({ data, dv, unit, now, sinceT, range, setRange, exCount })
           </View>
         </View>
         {balance.length === 0 ? (
-          <Text style={{ ...T.caption, color: C.dim, marginTop: 10 }}>Nothing logged in this range.</Text>
+          <Text style={{ ...T.caption, color: C.dim, marginTop: 10 }}>Nothing logged in this range. Try a longer one.</Text>
         ) : (
           <View>
             {balance.slice(0, 6).map((b) => (
@@ -504,7 +504,7 @@ function HistoryView({ data, unit, onDelete, onEdit }) {
           </Text>
         ) : null}
         {filtered.length === 0 ? (
-          <Text style={{ ...T.caption, color: C.dim, marginTop: 12 }}>Nothing matches this filter yet.</Text>
+          <Text style={{ ...T.caption, color: C.dim, marginTop: 12 }}>Nothing matches this filter.</Text>
         ) : (
           <View>
             {/* The whole row opens the editor. It used to end in a bare ✕ that
