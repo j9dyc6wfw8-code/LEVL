@@ -513,19 +513,46 @@ export function Collapsible({ title, subtitle, children, defaultOpen }) {
   );
 }
 
-export const NumField = ({ label, value, onChange, suffix, flex }) => (
-  <View style={{ flex: flex || 1 }}>
-    <Lbl>{label}</Lbl>
-    <View style={[s.row, { backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, borderRadius: 10 }]}>
-      <TextInput
-        value={String(value)} onChangeText={onChange} keyboardType="decimal-pad"
-        placeholder="0" placeholderTextColor={C.dim}
-        style={{ flex: 1, paddingHorizontal: 12, paddingVertical: 12, color: C.text, fontSize: 18, fontVariant: ['tabular-nums'] }}
-      />
-      {suffix ? <Text style={{ paddingHorizontal: 12, color: C.dim, fontSize: 12, fontWeight: '700' }}>{suffix}</Text> : null}
+/* The most-repeated interaction in LEVL. A four-set session touches this eight
+ * times; a year of training, thousands. Two changes, both about the tap count:
+ *
+ * selectTextOnFocus — the field arrives PRE-FILLED with the previous set's
+ *   value, which is the right default. But without this, tapping it put a caret
+ *   after "80" and the only way to enter 85 was to backspace twice first. Now
+ *   the value is selected on focus, so typing replaces it. That is two taps
+ *   removed from every corrected entry.
+ *
+ * ref forwarding — weight and reps are two fields the user always crosses in
+ *   the same direction, and nothing could move the focus because the component
+ *   swallowed the ref. Now a caller can hold a ref to reps and jump straight
+ *   there. Worth naming the constraint: keyboardType="decimal-pad" has NO
+ *   return key on iOS, so there is no "Next" to press — the jump has to be
+ *   driven by the caller, and a proper InputAccessoryView toolbar is the
+ *   native answer if this needs to go further.
+ *
+ * The same gap is the top logging complaint about Hevy, and 2026 retention
+ * research puts logging friction as the strongest single predictor of whether
+ * somebody is still tracking at 30 days. This is not cosmetic. */
+export const NumField = React.forwardRef(
+  ({ label, value, onChange, suffix, flex, onSubmitEditing, returnKeyType }, ref) => (
+    <View style={{ flex: flex || 1 }}>
+      <Lbl>{label}</Lbl>
+      <View style={[s.row, { backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, borderRadius: 10 }]}>
+        <TextInput
+          ref={ref}
+          value={String(value)} onChangeText={onChange} keyboardType="decimal-pad"
+          selectTextOnFocus
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={returnKeyType}
+          placeholder="0" placeholderTextColor={C.dim}
+          style={{ flex: 1, paddingHorizontal: 12, paddingVertical: 12, color: C.text, fontSize: 18, fontVariant: ['tabular-nums'] }}
+        />
+        {suffix ? <Text style={{ paddingHorizontal: 12, color: C.dim, fontSize: 12, fontWeight: '700' }}>{suffix}</Text> : null}
+      </View>
     </View>
-  </View>
+  ),
 );
+NumField.displayName = 'NumField';
 
 // Press-scale wrapper — used by ghost/secondary buttons.
 function Pressable3D({ onPress, disabled, style, children }) {
