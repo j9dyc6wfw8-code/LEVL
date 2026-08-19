@@ -51,7 +51,7 @@ everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
 |---|---:|---:|---:|
 | **TrainTab** | 139 | 0 | **6** ✅ migrated |
 | **ProgressTab** | 42 | 0 | **5** ✅ migrated |
-| DuelTab | 0 | 1 | 34 |
+| **DuelTab** | 35 | 0 | **0** ✅ migrated |
 | AuthScreens | 0 | 1 | 29 |
 | PacksTab | 0 | 0 | 25 |
 | LoadoutCard | 0 | 0 | 19 |
@@ -63,8 +63,8 @@ everywhere else — `TYPE.body` is 14, a size that does not exist in `T` at all.
 Three populations:
 
 1. **Migrated to `T`** — everything built from Build 28 onward (social, check-ins)
-2. **On `TYPE`** — FriendsScreen, ShopTab, AppGuide
-3. **On neither** — PacksTab, LoadoutCard, DuelTab (TrainTab and ProgressTab now on `T`)
+2. **On `TYPE`** — FriendsScreen, ShopTab, AppGuide (DuelTab left this group)
+3. **On neither** — PacksTab, LoadoutCard (TrainTab, ProgressTab and DuelTab now on `T`)
 
 **ShopTab is the worst case: both scales in one file.**
 
@@ -116,7 +116,7 @@ Suggested order, worst first:
 
 1. ~~`TrainTab`~~ ✅ **done** — 145 of 151 migrated; 6 off-scale sizes (18, 24, 26, 56) left deliberately
 2. ~~`ProgressTab`~~ ✅ **done** — 42 of 46 migrated; 44, 19×3 and a 26/22 ternary left as off-scale hero numerals
-3. `DuelTab` — 34
+3. ~~`DuelTab`~~ ✅ **done** — all 34 migrated, plus the one `TYPE.body` holdout; no off-scale sizes on this screen
 4. `PacksTab` — 25, `LoadoutCard` — 19
 5. `ShopTab` — resolve the mixed scale
 6. `FriendsScreen` — `TYPE` → `T`
