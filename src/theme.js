@@ -37,8 +37,8 @@ export const C = {
   // --- text (four levels, Apple's model) ---
   text: '#ffffff',
   mut:  '#a7b0c0',
-  dim:  '#6b7488',
-  faint:'#464e60',
+  dim:  '#7b8497',   // WCAG AA on cards: 4.53:1 (was 3.63:1 and failing)
+  faint:'#5d677f',   // 3.01:1 — AA for large/non-essential only (was 2.04:1)
 
   // Ink — the dark text that sits ON a bright accent (gold/green buttons).
   // Never pure black: it keeps the brand's warmth even at 1pt.
