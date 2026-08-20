@@ -125,7 +125,15 @@ Every instruction from the brief, tracked. Updated as work lands.
 
 ## STAGE 22–33 — Errors, empty states, haptics, input, a11y, copy
 
-- [~] **22.1** Errors — Apple sign-in surfaced Apple's raw developer string ("The authorization attempt failed for an unknown reason"). Mapped to human copy naming a way forward. Found in the simulator. Rest of the audit outstanding.
+- [x] **22.1** Errors — **done.** The Apple sign-in string was one instance of a
+  pattern: `error.message || 'friendly copy'` puts the RAW message first, so the
+  friendly text only appeared when the backend returned nothing. Users were
+  seeing `new row violates row-level security policy for table "friendships"`
+  and `duplicate key value violates unique constraint`. 24 sites across friend
+  requests, duels, blocking, comments, usernames, invites, the feed and activity.
+  `src/services/errors.js` inverts it: known causes map to specific copy, unknown
+  ones fall back to the caller's sentence and the raw text goes to `captureError`
+  with `surfaced: false` so developers keep it and users never see it.
 - [~] **23.1** Empty states — audited. Most already answered what/why/now; three did not and now do (ProgressTab ×2, FriendDuelDetail). Not device-verified: the demo save has data in every range and filter
 - [~] **24.1** Haptics — 7-verb vocabulary already exists and is documented; per-call-site audit outstanding
 - [—] **25.1** Sound — not adding any; no value case for a gym app
@@ -157,6 +165,19 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [x] **36.1** Gap matrix — built, [LEVL-RESEARCH.md](LEVL-RESEARCH.md) §4
 - [x] **74.1** Love/hate tables — [LEVL-RESEARCH.md](LEVL-RESEARCH.md) §2–3
 
+### Open finding — terms re-acceptance never runs
+
+`acceptTerms(TERMS_VERSION)` is called in exactly one place: the signup flow.
+`needsTermsAcceptance(profile)` — the function that detects a user sitting on an
+older version — is written, exported, and **called by nothing**. So bumping
+`TERMS_VERSION` in `services/legal.js` re-prompts nobody; existing users stay on
+whatever they accepted at signup.
+
+Latent rather than live: today everyone is on `2026-08-18`. It becomes real the
+first time the terms change. Left unbuilt deliberately — wiring a blocking legal
+sheet needs an account and a version bump to test, and guessing at it unverified
+would be worse than recording it here.
+
 ## STAGE 37–45 — Activation, retention, notifications, deep links
 
 - [~] **37.1** Preserve first-set-logged activation — protected 🔒
@@ -183,8 +204,10 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [ ] **55.1** Image pipeline
 - [ ] **56.1** Memory and lifecycle cleanup
 - [~] **57.1** Crash resistance — FriendsScreen tolerates a missing `isPending`
-  prop; other users' display names can no longer stretch layouts (see 63.1).
-  Deleted users and partial rows still unaudited
+  prop; other users' display names can no longer stretch layouts (see 63.1); a
+  leaderboard row arriving without `fr` no longer takes down the whole Ranks
+  screen (`undefined.toLocaleString()`, 4 sites, now behind one `frOf()` helper).
+  Deleted-user cascades still unaudited
 - [ ] **58.1** Error boundaries
 
 ## STAGE 59–61 — Observability, analytics, budgets
