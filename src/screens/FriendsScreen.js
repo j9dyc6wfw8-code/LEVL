@@ -184,7 +184,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
               <View style={[s.row, { alignItems: 'center', marginTop: 8 }]}>
                 <Avatar profile={active.opponent} />
                 <View style={{ flex: 1, marginLeft: 10 }}>
-                  <Text style={{ ...T.callout, fontWeight: '600', color: C.text }}>{active.opponent.display_name || active.opponent.username || 'Rival'}</Text>
+                  <Text numberOfLines={1} style={{ ...T.callout, fontWeight: '600', color: C.text }}>{active.opponent.display_name || active.opponent.username || 'Rival'}</Text>
                   <Text style={{ ...T.caption, color: C.mut, marginTop: 2 }}>Tap for workouts and weights.</Text>
                 </View>
                 <Text style={{ ...T.callout, fontWeight: '600', color: active.myScore >= active.theirScore ? C.green : C.red, fontVariant: ['tabular-nums'] }}>
@@ -210,7 +210,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             <View key={d.id} style={[s.row, { marginTop: 12, alignItems: 'center' }]}>
               <Avatar profile={d.opponent} />
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>
+                <Text numberOfLines={1} style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>
                   {d.opponent.display_name || d.opponent.username}
                 </Text>
                 <Text style={{ ...T.caption, color: C.dim }}>challenges you · {d.reward} coins</Text>
@@ -292,8 +292,8 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             <Pressable onPress={() => openProfile(p.id)} style={{ flex: 1, marginLeft: 10 }}
               accessibilityRole="button"
               accessibilityLabel={'Open ' + nameOf(p) + "'s profile"}>
-              <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>{p.display_name || p.username}</Text>
-              <Text style={{ ...T.caption, color: C.dim }}>@{p.username} · Lv {p.level} · {p.rank}</Text>
+              <Text numberOfLines={1} style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>{p.display_name || p.username}</Text>
+              <Text numberOfLines={1} style={{ ...T.caption, color: C.dim }}>@{p.username} · Lv {p.level} · {p.rank}</Text>
             </Pressable>
             <Pressable
               disabled={!!added[p.id]}
@@ -321,7 +321,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
             <View key={req.senderId} style={[s.row, { marginTop: 12, alignItems: 'center' }]}>
               <Avatar profile={req.profile} />
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>
+                <Text numberOfLines={1} style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>
                   {(req.profile && (req.profile.display_name || req.profile.username)) || 'Player'}
                 </Text>
                 <Text style={{ ...T.caption, color: C.dim }}>
@@ -380,7 +380,7 @@ export default function FriendsScreen({ fr, duels, onChallenge, onOpenDuel, init
                 )}
               </View>
               <View style={{ flex: 1, marginLeft: 10 }}>
-                <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>{f.display_name || f.username}</Text>
+                <Text numberOfLines={1} style={{ ...T.footnote, color: C.text, fontWeight: '700' }}>{f.display_name || f.username}</Text>
                 <Text style={{ ...T.caption, color: isOnline(f.last_active) ? C.green : C.dim }}>
                   {presence(f.last_active)}
                 </Text>

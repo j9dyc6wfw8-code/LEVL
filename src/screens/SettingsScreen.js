@@ -389,7 +389,7 @@ export default function SettingsScreen({
                 blocked.map((p) => (
                   <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
                     <HunterAvatar avatar={p.avatar} size={30} dim />
-                    <Text style={{ ...T.subheadline, color: C.mut, flex: 1, marginLeft: 10 }}>
+                    <Text numberOfLines={1} style={{ ...T.subheadline, color: C.mut, flex: 1, marginLeft: 10 }}>
                       {p.display_name || p.username}
                     </Text>
                     <Pressable hitSlop={{ top: 5, bottom: 5 }}
