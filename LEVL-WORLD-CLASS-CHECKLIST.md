@@ -61,7 +61,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [ ] **5.2** Spacing per screen 👁
 - [ ] **5.3** Alignment 👁
 - [x] **5.4** Typography 👁 — verified per screen on an iPhone 17 Pro against before/after screenshots
-- [ ] **5.5** Contrast 👁
+- [ ] **5.5** Contrast 👁 — still outstanding; the one accessibility axis not yet measured
 - [ ] **5.6** Primary action obvious 👁
 - [ ] **5.7** Clutter removal 👁
 - [ ] **5.8** Cross-screen consistency 👁
@@ -121,9 +121,19 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [~] **23.1** Empty states — audited. Most already answered what/why/now; three did not and now do (ProgressTab ×2, FriendDuelDetail). Not device-verified: the demo save has data in every range and filter
 - [~] **24.1** Haptics — 7-verb vocabulary already exists and is documented; per-call-site audit outstanding
 - [—] **25.1** Sound — not adding any; no value case for a gym app
-- [ ] **26.1** One-handed reachability
+- [x] **26.1** Touch targets — audited against the app's own `TOUCH = 44`.
+  **15 were under it**, from 42pt down to 32pt; ten of them on TrainTab, the
+  most-used screen (the "How to do X" pill and rest-timer presets at 32pt, START
+  and EDIT at 40pt). Fixed with vertical `hitSlop`, so the compact visual design
+  is unchanged but the tappable area reaches 44pt. Vertical-only is deliberate —
+  all 15 sit in horizontal rows, so sideways expansion would overlap neighbours.
+  One-handed *reachability* (thumb zones) is a separate question, still open 👁
 - [ ] **27.1** Keyboard quality per form
-- [~] **28.1** Accessibility — Reduce Motion ✅ (65.1) and Dynamic Type ✅ (64.1) both done. VoiceOver, contrast and touch-target audit still outstanding
+- [~] **28.1** Accessibility — Reduce Motion ✅ (65.1), Dynamic Type ✅ (64.1),
+  touch targets ✅ (26.1), VoiceOver roles ✅ (162 of 171 interactive elements).
+  **Left:** labels for 12 deliberately-skipped controls (the sheet scrim and
+  Hunter's nine invisible body-part hit areas — these need a design decision and
+  VoiceOver on a device 👁), plus the colour-contrast audit
 - [ ] **29.1** iPhone screen matrix 👁
 - [ ] **30.1** Photo pipeline quality
 - [ ] **31.1** Information density / progressive disclosure
