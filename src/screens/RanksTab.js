@@ -25,8 +25,14 @@ import LiveLeaderboard from './LiveLeaderboard';
 import { isConfigured } from '../services/supabase/client';
 import { BOTS, STAT_META, DEFAULT_DATA, tierForFR, divisionForFR } from '../engine/engine';
 
-const entryTier = (e) => e.tier || tierForFR(e.fr);
-const entryDivision = (e) => (e.division != null ? e.division : divisionForFR(e.fr, entryTier(e)));
+// A rating read off a REMOTE row, not a local one. A leaderboard entry can
+// arrive without `fr` — a profile written before the column existed, a row the
+// select only partly populated, a player who has not been rated yet — and
+// `undefined.toLocaleString()` takes the whole Ranks screen down with it.
+const frOf = (e) => Number(e && e.fr) || 0;
+
+const entryTier = (e) => (e && e.tier) || tierForFR(frOf(e));
+const entryDivision = (e) => (e && e.division != null ? e.division : divisionForFR(frOf(e), entryTier(e)));
 
 function LadderRow({ rank, entry, you, onPress }) {
   const tier = entryTier(entry);
@@ -35,7 +41,7 @@ function LadderRow({ rank, entry, you, onPress }) {
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${entry.name}, rank ${rank}, ${tier.name}, ${entry.fr} FR`}
+      accessibilityLabel={`${entry.name}, rank ${rank}, ${tier.name}, ${frOf(entry)} FR`}
       style={{
         flexDirection: 'row', alignItems: 'center',
         paddingVertical: 9, paddingHorizontal: you ? 8 : 0,
@@ -66,7 +72,7 @@ function LadderRow({ rank, entry, you, onPress }) {
       <TierCrest tier={tier} size={26} />
       <View style={{ alignItems: 'flex-end', marginLeft: 8, minWidth: 62 }}>
         <Text style={{ ...T.footnote, ...T.numeric, fontWeight: '700', color: C.text }}>
-          {entry.fr.toLocaleString()}
+          {frOf(entry).toLocaleString()}
         </Text>
         <Text style={{ ...T.caption2, color: C.faint }}>
           {tier.name.slice(0, 4)}{entryDivision(entry)}
@@ -86,13 +92,13 @@ function CompareModal({ visible, a, b, onClose }) {
           <View style={{ alignItems: 'center', flex: 1 }}>
             <MiniHunter avatar={a.avatar} tierColor={C.gold} size={54} />
             <Text style={{ ...T.subheadline, fontWeight: '700', color: C.gold, marginTop: 6 }} numberOfLines={1}>{a.name}</Text>
-            <Text style={{ ...T.caption2, color: C.mut, ...T.numeric }}>FR {a.fr.toLocaleString()}</Text>
+            <Text style={{ ...T.caption2, color: C.mut, ...T.numeric }}>FR {frOf(a).toLocaleString()}</Text>
           </View>
           <Text style={{ ...T.headline, color: C.dim, marginHorizontal: 8 }}>VS</Text>
           <View style={{ alignItems: 'center', flex: 1 }}>
             <MiniHunter avatar={b.avatar} tierColor={bTier.color} size={54} />
             <Text style={{ ...T.subheadline, fontWeight: '700', color: bTier.color, marginTop: 6 }} numberOfLines={1}>{b.name}</Text>
-            <Text style={{ ...T.caption2, color: C.mut, ...T.numeric }}>FR {b.fr.toLocaleString()}</Text>
+            <Text style={{ ...T.caption2, color: C.mut, ...T.numeric }}>FR {frOf(b).toLocaleString()}</Text>
           </View>
         </View>
 
