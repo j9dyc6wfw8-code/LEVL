@@ -92,27 +92,6 @@ export function alpha(color, a) {
   return color;
 }
 
-/* RARITY LADDER — the learned ARPG convention (Diablo/WoW). Users read this
- * instantly. Never signalled by hue alone: pair with frame, glow and a label,
- * so it survives grayscale and colour-blindness. */
-export const RARITY_C = {
-  common:    { c: '#8e97a8', glow: 'rgba(142,151,168,0.28)', label: 'Common'    },
-  rare:      { c: '#3d9bff', glow: 'rgba(61,155,255,0.38)',  label: 'Rare'      },
-  epic:      { c: '#a66bff', glow: 'rgba(166,107,255,0.42)', label: 'Epic'      },
-  legendary: { c: '#ff8a3d', glow: 'rgba(255,138,61,0.48)',  label: 'Legendary' },
-  mythic:    { c: '#ff4d6d', glow: 'rgba(255,77,109,0.52)',  label: 'Mythic'    },
-};
-
-/* STAT COLOURS — six distinct, vivid hues so the radar/stat sheet reads fast. */
-export const STAT_C = {
-  STR: '#ff5c6e',  // red     — raw force
-  PWR: '#ff8a3d',  // orange  — explosive
-  END: '#2fe39b',  // green   — engine
-  VIT: '#3d9bff',  // blue    — resilience
-  MOB: '#2fe0e0',  // cyan    — range
-  DIS: '#a66bff',  // violet  — discipline
-};
-
 /* Minimum iOS touch target. Apple HIG: 44x44pt. Nothing tappable goes below. */
 export const TOUCH = 44;
 
@@ -134,15 +113,6 @@ export const MOTION = {
   smooth: { friction: 20, tension: 180, useNativeDriver: true },   // ~300ms, settles clean
   bouncy: { friction: 6,  tension: 160, useNativeDriver: true },   // overshoots — celebrations
   gauge:  { friction: 9,  tension: 40,  useNativeDriver: false },  // bars filling (needs layout)
-};
-
-/* Fixed-duration curves, for the few things springs shouldn't do. */
-export const DUR = {
-  instant: 120,   // opacity flicks
-  quick:   200,   // enter
-  exit:    160,   // exits run ~80% of entry — feels decisive
-  hero:    380,   // sheets, big transitions
-  cheer:   600,   // celebration beats
 };
 
 export const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, xxxl: 40 };
