@@ -152,7 +152,7 @@ export default function NotificationCenter({ visible, center, onClose, onOpen })
             </Text>
           </View>
           {unread > 0 ? (
-            <Pressable onPress={center.markAllRead} hitSlop={8} style={{
+            <Pressable accessibilityRole="button" onPress={center.markAllRead} hitSlop={8} style={{
               minHeight: 38, paddingHorizontal: 12, borderRadius: RADIUS.pill,
               backgroundColor: C.goldSoft, borderWidth: 1, borderColor: C.gold,
               alignItems: 'center', justifyContent: 'center',

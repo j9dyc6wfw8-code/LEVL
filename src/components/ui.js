@@ -416,7 +416,7 @@ export function Unavailable({ title, body }) {
 // Replaces nested scroll lists — the page scrolls, the sheet scrolls, never both.
 export function SelectRow({ label, value, placeholder, onPress }) {
   return (
-    <Pressable onPress={onPress} style={{
+    <Pressable accessibilityRole="button" onPress={onPress} style={{
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       backgroundColor: C.sunken, borderWidth: 1, borderColor: C.lineSoft,
       borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 13,
@@ -471,7 +471,7 @@ export function Sheet({ visible, title, onClose, children }) {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 10 }}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, letterSpacing: -0.2 }}>{title}</Text>
-          <Pressable onPress={onClose} hitSlop={10}>
+          <Pressable accessibilityRole="button" onPress={onClose} hitSlop={10}>
             <Text style={{ fontSize: 14, color: C.gold, fontWeight: '600' }}>Done</Text>
           </Pressable>
         </View>
@@ -494,7 +494,7 @@ export function Collapsible({ title, subtitle, children, defaultOpen }) {
   const spin = rot.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
   return (
     <View style={s.card}>
-      <Pressable onPress={toggle} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Pressable accessibilityRole="button" onPress={toggle} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, letterSpacing: -0.2 }}>{title}</Text>
           {subtitle ? <Text style={{ fontSize: 12, color: C.dim, marginTop: 2 }}>{subtitle}</Text> : null}
@@ -559,7 +559,7 @@ NumField.displayName = 'NumField';
 function Pressable3D({ onPress, disabled, style, children }) {
   const sc = useRef(new Animated.Value(1)).current;
   return (
-    <Pressable
+    <Pressable accessibilityRole="button"
       onPressIn={() => !disabled && Animated.spring(sc, { toValue: 0.96, useNativeDriver: true, speed: 50 }).start()}
       onPressOut={() => Animated.spring(sc, { toValue: 1, useNativeDriver: true, speed: 50 }).start()}
       onPress={disabled ? undefined : onPress}>
@@ -647,7 +647,7 @@ export function LevelUpOverlay({ info, onClose }) {
   }, [info, a]);
   if (!info) return null;
   return (
-    <Pressable onPress={onClose} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(5,6,10,0.88)', zIndex: 70, alignItems: 'center', justifyContent: 'center' }}>
+    <Pressable accessibilityRole="button" onPress={onClose} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(5,6,10,0.88)', zIndex: 70, alignItems: 'center', justifyContent: 'center' }}>
       <Animated.View style={{ alignItems: 'center', transform: [{ scale: a }] }}>
         <Text style={{ fontSize: 12, color: C.gold, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase' }}>Level Up</Text>
         <Text style={{ fontSize: 84, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'] }}>{info.to}</Text>

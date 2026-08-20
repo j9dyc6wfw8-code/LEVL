@@ -350,7 +350,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
           })()}
 
           {/* browse-all fallback */}
-          <Pressable onPress={() => { setCat('All'); setQuery(''); setPickerOpen(true); }}
+          <Pressable accessibilityRole="button" onPress={() => { setCat('All'); setQuery(''); setPickerOpen(true); }}
             style={{ marginTop: 4, paddingVertical: 14, borderRadius: 14, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, alignItems: 'center' }}>
             <Text style={{ ...T.footnote, fontWeight: '700', color: C.gold }}>Browse all {EXERCISES.length} exercises  ›</Text>
           </Pressable>
@@ -384,7 +384,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
             ) : null}
 
             {days.length === 0 ? (
-              <Pressable onPress={() => { setEditDay(null); setBuilderOpen(true); }} style={{
+              <Pressable accessibilityRole="button" onPress={() => { setEditDay(null); setBuilderOpen(true); }} style={{
                 marginTop: 10, minHeight: 76, borderRadius: 14, borderWidth: 1, borderStyle: 'dashed',
                 borderColor: C.line, alignItems: 'center', justifyContent: 'center', padding: 12,
               }}>
@@ -395,7 +395,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
                 {days.map((d) => (
                   <View key={d.id} style={{ width: 190, backgroundColor: C.panel2, borderRadius: 14, borderWidth: 1, borderColor: C.line, marginRight: 10, overflow: 'hidden' }}>
-                    <Pressable onPress={() => startDay(d)} style={{ padding: 13, minHeight: 108 }}>
+                    <Pressable accessibilityRole="button" onPress={() => startDay(d)} style={{ padding: 13, minHeight: 108 }}>
                       <Text style={{ ...T.headline, fontWeight: '800', color: C.text }} numberOfLines={1}>{d.name}</Text>
                       <Text style={{ ...T.caption2, color: C.cyan, fontWeight: '800', marginTop: 3, fontVariant: ['tabular-nums'] }}>{(d.exercises || []).length} EXERCISES</Text>
                       <Text style={{ ...T.caption, color: C.mut, marginTop: 7, lineHeight: 17 }} numberOfLines={2}>
@@ -403,10 +403,10 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                       </Text>
                     </Pressable>
                     <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.line }}>
-                      <Pressable hitSlop={{ top: 2, bottom: 2 }} onPress={() => startDay(d)} style={{ flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: C.goldSoft }}>
+                      <Pressable accessibilityRole="button" hitSlop={{ top: 2, bottom: 2 }} onPress={() => startDay(d)} style={{ flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: C.goldSoft }}>
                         <Text style={{ ...T.caption2, fontWeight: '800', color: C.gold }}>START</Text>
                       </Pressable>
-                      <Pressable hitSlop={{ top: 2, bottom: 2 }} onPress={() => { setEditDay(d); setBuilderOpen(true); }} style={{ width: 64, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: C.line }}>
+                      <Pressable accessibilityRole="button" hitSlop={{ top: 2, bottom: 2 }} onPress={() => { setEditDay(d); setBuilderOpen(true); }} style={{ width: 64, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: C.line }}>
                         <Text style={{ ...T.caption2, fontWeight: '700', color: C.mut }}>EDIT</Text>
                       </Pressable>
                     </View>
@@ -494,7 +494,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 <Text style={{ ...T.subheadline, color: C.mut, fontWeight: '800' }}>‹</Text>
               </Pressable>
 
-              <Pressable hitSlop={{ top: 1, bottom: 1 }} onPress={advanceDay} style={{ flex: 1, minHeight: 42, borderRadius: 11, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
+              <Pressable accessibilityRole="button" hitSlop={{ top: 1, bottom: 1 }} onPress={advanceDay} style={{ flex: 1, minHeight: 42, borderRadius: 11, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ ...T.caption, fontWeight: '800', color: C.ink }}>
                   {allDone ? 'FINISH DAY' : 'DONE — NEXT  ›'}
                 </Text>
@@ -556,7 +556,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 }}>
                 <Text style={{ ...T.caption, color: catMeta(sel.c).color, fontWeight: '800' }}>How to</Text>
               </Pressable>
-              <Pressable onPress={() => setPickerOpen(true)} style={s.smallGhost}>
+              <Pressable accessibilityRole="button" onPress={() => setPickerOpen(true)} style={s.smallGhost}>
                 <Text style={{ ...T.caption, color: C.mut }}>Change</Text>
               </Pressable>
             </View>
@@ -707,7 +707,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
           <View style={{ marginTop: 14 }}>
             <Lbl>Sets</Lbl>
             <View style={[s.row, { alignItems: 'center' }]}>
-              <Pressable onPress={() => setSets((v) => Math.max(1, v - 1))} hitSlop={8}
+              <Pressable accessibilityRole="button" onPress={() => setSets((v) => Math.max(1, v - 1))} hitSlop={8}
                 accessibilityLabel="Fewer sets"
                 style={{ width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line }}>
                 <Text style={{ ...T.title2, fontWeight: '900', color: C.gold, marginTop: -2 }}>−</Text>
@@ -718,7 +718,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                   {sets === 1 ? 'single set' : 'identical sets · logged ~3 min apart'}
                 </Text>
               </View>
-              <Pressable onPress={() => setSets((v) => Math.min(10, v + 1))} hitSlop={8}
+              <Pressable accessibilityRole="button" onPress={() => setSets((v) => Math.min(10, v + 1))} hitSlop={8}
                 accessibilityLabel="More sets"
                 style={{ width: 46, height: 46, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line }}>
                 <Text style={{ ...T.title2, fontWeight: '900', color: C.gold, marginTop: -2 }}>+</Text>
@@ -811,7 +811,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
           {list.map((e) => {
             const cm = catMeta(e.c);
             return (
-            <Pressable key={e.n}
+            <Pressable accessibilityRole="button" key={e.n}
               onPress={() => { setSel(e); setLast(null); setPickerOpen(false); setQuery(''); }}
               style={{ paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line }}>
               <View style={s.between}>
@@ -1594,7 +1594,7 @@ export function CalcView({ data, dv }) {
               {quickPicks.map((p) => {
                 const on = srcName === p.ex && String(p.w) === w && String(p.r) === r;
                 return (
-                  <Pressable key={p.ex} onPress={() => usePick(p)}
+                  <Pressable accessibilityRole="button" key={p.ex} onPress={() => usePick(p)}
                     style={{
                       paddingHorizontal: 12, paddingVertical: 9, borderRadius: 999, marginRight: 8,
                       backgroundColor: on ? C.gold : C.panel2, borderWidth: 1, borderColor: on ? C.gold : C.line,
@@ -1700,7 +1700,7 @@ export function CalcView({ data, dv }) {
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
               {[60, 65, 70, 75, 80, 85, 90, 95, 100].map((p) => (
-                <Pressable key={p} onPress={() => setPct(p)}
+                <Pressable accessibilityRole="button" key={p} onPress={() => setPct(p)}
                   style={{
                     paddingHorizontal: 12, paddingVertical: 7, borderRadius: 999, marginRight: 7,
                     backgroundColor: pct === p ? C.gold : 'transparent',
@@ -1832,7 +1832,7 @@ function collapsePlates(list) {
 
 function Stepper({ label, onPress }) {
   return (
-    <Pressable onPress={onPress} hitSlop={8}
+    <Pressable accessibilityRole="button" onPress={onPress} hitSlop={8}
       style={{
         width: 46, height: 46, borderRadius: 23, alignItems: 'center', justifyContent: 'center',
         backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line,
@@ -2018,7 +2018,7 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
             <Text style={{ ...T.caption2, fontWeight: '800', color: C.cyan, marginBottom: 7 }}>{chosen.length} SELECTED</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
               {chosen.map((e) => (
-                <Pressable key={e.n} onPress={() => setChosen((c) => c.filter((x) => x.n !== e.n))}
+                <Pressable accessibilityRole="button" key={e.n} onPress={() => setChosen((c) => c.filter((x) => x.n !== e.n))}
                   style={{ backgroundColor: C.gold, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 6, marginRight: 6, marginBottom: 6 }}>
                   <Text style={{ ...T.caption2, fontWeight: '700', color: C.ink }}>{e.n}  ✕</Text>
                 </Pressable>
@@ -2035,7 +2035,7 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
           {list.map((e) => {
             const on = chosenSet.has(e.n);
             return (
-              <Pressable key={e.n} onPress={() => toggle(e)}
+              <Pressable accessibilityRole="button" key={e.n} onPress={() => toggle(e)}
                 style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 11, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: C.line }}>
                 <Text style={{ ...T.subheadline, color: on ? C.gold : C.text, fontWeight: on ? '800' : '500' }}>{e.n}</Text>
                 <Text style={{ ...T.callout, color: on ? C.gold : C.dim }}>{on ? '✓' : '+'}</Text>
@@ -2044,7 +2044,7 @@ function DayBuilder({ initial, onClose, onSave, onDelete }) {
           })}
         </View>
         {isEdit && (
-          <Pressable onPress={() => { onDelete(initial.id); onClose(); }} hitSlop={8}
+          <Pressable accessibilityRole="button" onPress={() => { onDelete(initial.id); onClose(); }} hitSlop={8}
             style={{ alignItems: 'center', marginTop: 16 }}>
             <Text style={{ ...T.caption, color: C.red, fontWeight: '700' }}>Delete day</Text>
           </Pressable>

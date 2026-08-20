@@ -46,7 +46,7 @@ export default function WorkoutShareSheet({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onDismiss}>
-      <Pressable
+      <Pressable accessibilityRole="button"
         onPress={onDismiss}
         accessibilityLabel="Dismiss"
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }}

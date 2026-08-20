@@ -140,7 +140,7 @@ export default function Intro({ onDone }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'bottom']}>
       {/* skip — always available, per HIG. Never trap the user. */}
       <View style={{ alignItems: 'flex-end', paddingHorizontal: 16, height: TOUCH, justifyContent: 'center' }}>
-        <Pressable onPress={onDone} hitSlop={12} style={{ minHeight: TOUCH, justifyContent: 'center', paddingHorizontal: 8 }}>
+        <Pressable accessibilityRole="button" onPress={onDone} hitSlop={12} style={{ minHeight: TOUCH, justifyContent: 'center', paddingHorizontal: 8 }}>
           <Text style={{ ...T.footnote, color: C.dim, fontWeight: '600' }}>Skip</Text>
         </Pressable>
       </View>

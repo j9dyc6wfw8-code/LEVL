@@ -551,7 +551,7 @@ export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack, e
   return (
     <View>
       {goBack && (
-        <Pressable onPress={goBack} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+        <Pressable accessibilityRole="button" onPress={goBack} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
           <Text style={{ fontSize: 18, color: C.gold, fontWeight: '800', marginRight: 4 }}>‹</Text>
           <Text style={{ ...T.footnote, color: C.gold, fontWeight: '700' }}>Forge</Text>
         </Pressable>

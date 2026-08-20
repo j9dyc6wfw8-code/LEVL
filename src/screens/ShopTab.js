@@ -376,7 +376,7 @@ function ForgeBay({ data, onForge }) {
           const can = canForge(data, it.id);
           const isMax = L >= FORGE_MAX;
           return (
-            <Pressable key={it.id} onPress={() => setSel(it)}>
+            <Pressable accessibilityRole="button" key={it.id} onPress={() => setSel(it)}>
               <Card style={{ borderWidth: 1, borderColor: L > 0 ? r.color + '66' : C.lineSoft }}>
                 <View style={s.row}>
                   <ItemTile item={it} size={54} rarity={r} forgeLevel={L} />
@@ -579,7 +579,7 @@ function ShopBay({ data, dv, buy, equip }) {
                     <ChunkyBtn small tone="gold" disabled={!canCoins} onPress={() => buy(it.id, 'coins')}>
                       {rar.coins.toLocaleString()} COINS
                     </ChunkyBtn>
-                    <Pressable
+                    <Pressable accessibilityRole="button"
                       onPress={() => canXP && buy(it.id, 'xp')}
                       style={[s.ghostBtn, { paddingVertical: 8, marginTop: 6 }, !canXP && { opacity: 0.45 }]}>
                       <Text style={{ ...T.micro, color: canXP ? C.text : C.dim }}>
@@ -973,7 +973,7 @@ export default function ShopTab({ data, dv, buy, equip, forge, claimTier, claimA
       <ScreenHeader title="Forge" hint="Change how your player looks" />
       {/* Packs entry — Packs merged into Forge (research: 5 tabs, not 7). A bold
           banner keeps them one tap away and visually loud when you have some. */}
-      <Pressable onPress={goPacks} style={{
+      <Pressable accessibilityRole="button" onPress={goPacks} style={{
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: packCount > 0 ? C.goldSoft : C.panel2,
         borderWidth: 1, borderColor: packCount > 0 ? C.gold : C.line,

@@ -95,7 +95,7 @@ export default function CommentSheet({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable
+      <Pressable accessibilityRole="button"
         onPress={onClose}
         accessibilityLabel="Close comments"
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }}

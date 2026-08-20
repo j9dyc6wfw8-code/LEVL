@@ -144,7 +144,7 @@ export default function FriendDuelDetail({ data, dv, duel, onQuit }) {
 
       {/* Quit — two taps required so it can't happen by accident. */}
       {onQuit && (
-        <Pressable
+        <Pressable accessibilityRole="button"
           disabled={quitting}
           onPress={async () => {
             if (!confirmQuit) { setConfirmQuit(true); setTimeout(() => setConfirmQuit(false), 4000); return; }

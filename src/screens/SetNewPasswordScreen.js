@@ -59,7 +59,7 @@ export default function SetNewPasswordScreen({ onDone, onCancel }) {
           />
           {err ? <Text style={{ fontSize: 12, color: C.red, marginBottom: 10 }}>{err}</Text> : null}
           <GoldBtn onPress={submit} disabled={busy}>{busy ? 'Saving…' : 'Save new password'}</GoldBtn>
-          <Pressable onPress={onCancel} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 14 }}>
+          <Pressable accessibilityRole="button" onPress={onCancel} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 14 }}>
             <Text style={{ fontSize: 12, color: C.mut, fontWeight: '600' }}>Cancel</Text>
           </Pressable>
         </Card>

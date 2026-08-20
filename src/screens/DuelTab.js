@@ -58,7 +58,7 @@ function ShareInvite({ data, dv, onCreateInvite, onJoinByCode }) {
       </Text>
       <GoldBtn onPress={shareInvite} disabled={busy}>{busy ? 'Creating…' : invite ? 'Share again' : 'Share duel link'}</GoldBtn>
       {invite && (
-        <Pressable onPress={copyCode} style={{ marginTop: 10, padding: 12, borderRadius: RADIUS.md, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, alignItems: 'center' }}>
+        <Pressable accessibilityRole="button" onPress={copyCode} style={{ marginTop: 10, padding: 12, borderRadius: RADIUS.md, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, alignItems: 'center' }}>
           <Text style={{ ...T.caption2, color: C.dim }}>{copied ? 'Copied!' : 'Invite code (tap to copy)'}</Text>
           <Text style={{ ...T.title2, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'], letterSpacing: 3, marginTop: 2 }}>{invite.code}</Text>
         </Pressable>
@@ -73,7 +73,7 @@ function ShareInvite({ data, dv, onCreateInvite, onJoinByCode }) {
           autoCapitalize="characters" autoCorrect={false} maxLength={12}
           style={{ flex: 1, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.md, color: C.text, paddingHorizontal: 12, paddingVertical: 10, fontVariant: ['tabular-nums'], letterSpacing: 2, marginRight: 8 }}
         />
-        <Pressable onPress={join} disabled={joining || !joinCode.trim()}
+        <Pressable accessibilityRole="button" onPress={join} disabled={joining || !joinCode.trim()}
           style={{ paddingHorizontal: 16, paddingVertical: 11, borderRadius: RADIUS.md, backgroundColor: joinCode.trim() ? C.gold : C.panel2, borderWidth: 1, borderColor: joinCode.trim() ? C.gold : C.line }}>
           <Text style={{ ...T.footnote, fontWeight: '700', color: joinCode.trim() ? C.ink : C.dim }}>{joining ? '…' : 'Join'}</Text>
         </Pressable>
@@ -222,7 +222,7 @@ function DuelBotView({ data, dv, now, confirmFF, setConfirmFF, duels, active, pa
                     Win <Text style={{ color: C.gold, fontWeight: '700' }}>{Math.round(t.reward.coins * durMult)}c</Text> + <Text style={{ color: C.green, fontWeight: '700' }}>{Math.round(t.reward.xp * durMult)} XP</Text> · {duelDays}d
                   </Text>
                 </View>
-                <Pressable onPress={() => startDuel(t.key, seed, duelDays)} style={{ backgroundColor: C.gold, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 16 }}>
+                <Pressable accessibilityRole="button" onPress={() => startDuel(t.key, seed, duelDays)} style={{ backgroundColor: C.gold, borderRadius: 10, paddingVertical: 10, paddingHorizontal: 16 }}>
                   <Text style={{ ...T.footnote, color: C.ink, fontWeight: '800' }}>Duel</Text>
                 </Pressable>
               </View>
@@ -341,7 +341,7 @@ function DuelBotView({ data, dv, now, confirmFF, setConfirmFF, duels, active, pa
       </Card>
 
       {!ended && (
-        <Pressable onPress={() => { if (confirmFF) { forfeitDuel(active.id); setConfirmFF(false); } else setConfirmFF(true); }}
+        <Pressable accessibilityRole="button" onPress={() => { if (confirmFF) { forfeitDuel(active.id); setConfirmFF(false); } else setConfirmFF(true); }}
           style={[s.ghostBtn, { marginBottom: 12 }, confirmFF && { backgroundColor: 'rgba(240,82,95,0.15)', borderColor: C.red }]}>
           <Text style={{ ...T.caption, color: C.red, fontWeight: '700' }}>
             {confirmFF

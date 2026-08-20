@@ -500,7 +500,7 @@ export default function SettingsScreen({
           <AccountTransfer makeCode={makeCode} importCode={importCode} />
 
           {empty ? (
-            <Pressable onPress={loadDemo} style={[s.ghostBtn, { marginTop: 10, borderColor: C.gold }]}>
+            <Pressable accessibilityRole="button" onPress={loadDemo} style={[s.ghostBtn, { marginTop: 10, borderColor: C.gold }]}>
               <Text style={{ ...T.subheadline, fontWeight: '600', color: C.gold }}>Load 4-week demo save</Text>
             </Pressable>
           ) : null}

@@ -507,13 +507,13 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
           {notice ? <Text style={{ ...T.caption, color: C.green, marginBottom: 14, fontWeight: '600' }}>{notice}</Text> : null}
           {resetSent ? (
             <View style={{ marginBottom: 4 }}>
-              <Pressable onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 2 }}>
+              <Pressable accessibilityRole="button" onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 2 }}>
                 <Text style={{ ...T.caption, color: C.gold, fontWeight: '700' }}>{busy ? 'Sending…' : 'Resend email'}</Text>
               </Pressable>
               {/* Fallback: only useful if the reset email is customised to
                   include a 6-digit code (needs custom SMTP). Hidden by default
                   so it can't confuse anyone using the standard link email. */}
-              <Pressable onPress={() => setShowCodeEntry((v) => !v)} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
+              <Pressable accessibilityRole="button" onPress={() => setShowCodeEntry((v) => !v)} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
                 <Text style={{ ...T.caption2, color: C.mut }}>{showCodeEntry ? 'Hide code entry' : 'Email contains a 6-digit code instead?'}</Text>
               </Pressable>
               {showCodeEntry && (
@@ -525,7 +525,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                   <GoldBtn onPress={completeReset} disabled={busy}>{busy ? 'Working…' : 'Set new password'}</GoldBtn>
                 </View>
               )}
-              <Pressable onPress={() => { setResetSent(false); setNotice(''); setShowCodeEntry(false); }} hitSlop={8} style={{ alignItems: 'center', marginTop: 14 }}>
+              <Pressable accessibilityRole="button" onPress={() => { setResetSent(false); setNotice(''); setShowCodeEntry(false); }} hitSlop={8} style={{ alignItems: 'center', marginTop: 14 }}>
                 <Text style={{ ...T.caption, color: C.mut, fontWeight: '600' }}>Back to sign in</Text>
               </Pressable>
             </View>
@@ -545,7 +545,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
             </Pressable>
           )}
           {isConfigured && mode === 'signin' ? (
-            <Pressable onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
+            <Pressable accessibilityRole="button" onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
               <Text style={{ ...T.caption, color: C.mut, fontWeight: '600' }}>Forgot password?</Text>
             </Pressable>
           ) : null}
@@ -556,7 +556,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                 <Text style={{ ...T.micro, color: C.dim, marginHorizontal: 10 }}>OR</Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
               </View>
-              <Pressable onPress={doApple} disabled={busy}
+              <Pressable accessibilityRole="button" onPress={doApple} disabled={busy}
                 style={{ minHeight: TOUCH, borderRadius: RADIUS.md, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}>
                 <Text style={{ fontSize: 17, fontWeight: '700', color: '#000', marginRight: 6 }}></Text>
                 <Text style={{ ...T.subheadline, fontWeight: '700', color: '#000' }}>Continue with Apple</Text>
@@ -688,7 +688,7 @@ export function AccountTransfer({ makeCode, importCode }) {
             style={[s.input, { minHeight: 70, fontSize: 10, fontVariant: ['tabular-nums'], textAlignVertical: 'top' }]} />
           <View style={[s.row, { marginTop: 6 }]}>
             <GhostBtn onPress={paste} style={{ flex: 1, marginRight: 6 }}>Paste</GhostBtn>
-            <Pressable onPress={() => { if (importCode(inCode)) setInCode(''); }} style={[s.greenBtn, { flex: 2, paddingVertical: 10 }]}>
+            <Pressable accessibilityRole="button" onPress={() => { if (importCode(inCode)) setInCode(''); }} style={[s.greenBtn, { flex: 2, paddingVertical: 10 }]}>
               <Text style={s.goldBtnTxt}>Restore from code</Text>
             </Pressable>
           </View>

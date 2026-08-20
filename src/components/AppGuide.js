@@ -106,7 +106,7 @@ export default function AppGuide({ visible, onClose }) {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 22 }}>
           {index > 0 ? (
-            <Pressable onPress={() => setIndex((i) => i - 1)} style={{ minWidth: 70, minHeight: 48, alignItems: 'flex-start', justifyContent: 'center' }}>
+            <Pressable accessibilityRole="button" onPress={() => setIndex((i) => i - 1)} style={{ minWidth: 70, minHeight: 48, alignItems: 'flex-start', justifyContent: 'center' }}>
               <Text style={{ ...T.footnote, color: C.mut, fontWeight: '700' }}>‹ BACK</Text>
             </Pressable>
           ) : <View style={{ minWidth: 70 }} />}

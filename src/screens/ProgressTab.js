@@ -539,7 +539,7 @@ function HistoryView({ data, unit, onDelete, onEdit }) {
               </Pressable>
             ))}
             {filtered.length > limit ? (
-              <Pressable onPress={() => setLimit((v) => v + 25)} hitSlop={8} style={{ alignItems: 'center', paddingTop: 14 }}>
+              <Pressable accessibilityRole="button" onPress={() => setLimit((v) => v + 25)} hitSlop={8} style={{ alignItems: 'center', paddingTop: 14 }}>
                 <Text style={{ ...T.caption, color: C.gold, fontWeight: '700' }}>
                   Show 25 more ({filtered.length - limit} left)
                 </Text>
@@ -568,7 +568,7 @@ function RangeBar({ range, setRange }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 10 }}>
       {RANGES.map((rg) => (
-        <Pressable key={rg[0]} onPress={() => setRange(rg[0])} hitSlop={6}
+        <Pressable accessibilityRole="button" key={rg[0]} onPress={() => setRange(rg[0])} hitSlop={6}
           style={{
             paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, marginLeft: 6,
             backgroundColor: range === rg[0] ? C.goldSoft : 'transparent',
