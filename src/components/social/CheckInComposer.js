@@ -225,7 +225,7 @@ export default function CheckInComposer({
             }}
           />
 
-          <Pressable
+          <Pressable hitSlop={{ top: 3, bottom: 3 }}
             onPress={() => setAltOpen((o) => !o)}
             accessibilityRole="button"
             accessibilityState={{ expanded: altOpen }}

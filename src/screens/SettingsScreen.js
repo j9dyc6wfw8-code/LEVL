@@ -337,7 +337,7 @@ export default function SettingsScreen({
               }
               right={
                 !health.optedIn ? (
-                  <Pressable
+                  <Pressable hitSlop={{ top: 5, bottom: 5 }}
                     onPress={health.connect}
                     accessibilityRole="button"
                     style={{
@@ -392,7 +392,7 @@ export default function SettingsScreen({
                     <Text style={{ ...T.subheadline, color: C.mut, flex: 1, marginLeft: 10 }}>
                       {p.display_name || p.username}
                     </Text>
-                    <Pressable
+                    <Pressable hitSlop={{ top: 5, bottom: 5 }}
                       onPress={async () => { await unblockUser(p.id); loadBlocked(); }}
                       accessibilityRole="button"
                       accessibilityLabel={`Unblock ${p.display_name || p.username}`}
@@ -684,7 +684,7 @@ function CustomWindow({ prefs, onChange }) {
 
   if (!open) {
     return (
-      <Pressable
+      <Pressable hitSlop={{ top: 3, bottom: 3 }}
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         style={{ minHeight: 38, justifyContent: 'center' }}>

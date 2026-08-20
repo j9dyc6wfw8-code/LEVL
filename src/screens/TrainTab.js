@@ -403,10 +403,10 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                       </Text>
                     </Pressable>
                     <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: C.line }}>
-                      <Pressable onPress={() => startDay(d)} style={{ flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: C.goldSoft }}>
+                      <Pressable hitSlop={{ top: 2, bottom: 2 }} onPress={() => startDay(d)} style={{ flex: 1, minHeight: 40, alignItems: 'center', justifyContent: 'center', backgroundColor: C.goldSoft }}>
                         <Text style={{ ...T.caption2, fontWeight: '800', color: C.gold }}>START</Text>
                       </Pressable>
-                      <Pressable onPress={() => { setEditDay(d); setBuilderOpen(true); }} style={{ width: 64, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: C.line }}>
+                      <Pressable hitSlop={{ top: 2, bottom: 2 }} onPress={() => { setEditDay(d); setBuilderOpen(true); }} style={{ width: 64, minHeight: 40, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1, borderLeftColor: C.line }}>
                         <Text style={{ ...T.caption2, fontWeight: '700', color: C.mut }}>EDIT</Text>
                       </Pressable>
                     </View>
@@ -452,7 +452,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 const isDone = done.includes(i);
                 const isNow = i === dayMode.idx;
                 return (
-                  <Pressable
+                  <Pressable hitSlop={{ top: 2, bottom: 2 }}
                     key={name + i}
                     onPress={() => goToExercise(i)}
                     accessibilityRole="button"
@@ -480,7 +480,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
 
             <View style={{ flexDirection: 'row', marginTop: 12, alignItems: 'center' }}>
               {/* Going backwards was simply impossible before. */}
-              <Pressable
+              <Pressable hitSlop={{ top: 1, bottom: 1 }}
                 onPress={() => goToExercise(dayMode.idx - 1)}
                 disabled={dayMode.idx === 0}
                 accessibilityRole="button"
@@ -494,7 +494,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
                 <Text style={{ ...T.subheadline, color: C.mut, fontWeight: '800' }}>‹</Text>
               </Pressable>
 
-              <Pressable onPress={advanceDay} style={{ flex: 1, minHeight: 42, borderRadius: 11, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
+              <Pressable hitSlop={{ top: 1, bottom: 1 }} onPress={advanceDay} style={{ flex: 1, minHeight: 42, borderRadius: 11, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
                 <Text style={{ ...T.caption, fontWeight: '800', color: C.ink }}>
                   {allDone ? 'FINISH DAY' : 'DONE — NEXT  ›'}
                 </Text>
@@ -503,7 +503,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
               {/* Two-tap confirm. This sits next to the primary action, and
                   wiping an in-progress day on a single stray tap is exactly
                   what people reported losing. */}
-              <Pressable
+              <Pressable hitSlop={{ top: 1, bottom: 1 }}
                 onPress={() => { if (endArmed) finishDay(); else setEndArmed(true); }}
                 accessibilityRole="button"
                 accessibilityLabel={endArmed ? 'Confirm end workout day' : 'End workout day'}
@@ -546,7 +546,7 @@ function LogView({ data, dv, onLog, onLogBatch, workoutDays, onSaveDay, onDelete
               </View>
             </View>
             <View style={{ alignItems: 'flex-end' }}>
-              <Pressable onPress={() => setInfoOpen(true)}
+              <Pressable hitSlop={{ top: 6, bottom: 6 }} onPress={() => setInfoOpen(true)}
                 accessibilityRole="button" accessibilityLabel={'How to do ' + sel.n}
                 style={{
                   flexDirection: 'row', alignItems: 'center', minHeight: 32,
@@ -910,7 +910,7 @@ function RestTimer({ defaultSeconds, onChangeDefault }) {
       </View>
 
       <View style={[s.row, { marginTop: 12 }]}>
-        <Pressable
+        <Pressable hitSlop={{ top: 1, bottom: 1 }}
           onPress={() => workoutSession.startRest(remaining + 30)}
           accessibilityRole="button"
           accessibilityLabel="Add 30 seconds to the rest"
@@ -921,7 +921,7 @@ function RestTimer({ defaultSeconds, onChangeDefault }) {
           }}>
           <Text style={{ ...T.footnote, fontWeight: '800', color: C.mut }}>+30s</Text>
         </Pressable>
-        <Pressable
+        <Pressable hitSlop={{ top: 1, bottom: 1 }}
           onPress={() => workoutSession.endRest()}
           accessibilityRole="button"
           accessibilityLabel="Skip the rest and start the next set"
@@ -942,7 +942,7 @@ function RestTimer({ defaultSeconds, onChangeDefault }) {
           {[60, 90, 120, 180].map((sec) => {
             const on = (defaultSeconds || 90) === sec;
             return (
-              <Pressable
+              <Pressable hitSlop={{ top: 6, bottom: 6 }}
                 key={sec}
                 onPress={() => onChangeDefault(sec)}
                 accessibilityRole="button"

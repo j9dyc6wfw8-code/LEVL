@@ -450,7 +450,7 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
             padding: 4, marginBottom: 26, borderWidth: 1, borderColor: C.line,
           }}>
             {[['signin', 'Sign in'], ['signup', 'Create account']].map((m) => (
-              <Pressable key={m[0]} onPress={() => { setMode(m[0]); setErr(''); setNotice(''); }}
+              <Pressable hitSlop={{ top: 1, bottom: 1 }} key={m[0]} onPress={() => { setMode(m[0]); setErr(''); setNotice(''); }}
                 accessibilityRole="tab" accessibilityState={{ selected: mode === m[0] }} accessibilityLabel={m[1]}
                 style={{
                   flex: 1, minHeight: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
