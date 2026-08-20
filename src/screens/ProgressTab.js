@@ -584,10 +584,18 @@ function RangeBar({ range, setRange }) {
 function Metric({ label, value, tint, big, muted }) {
   return (
     <View style={{ flex: 1, alignItems: 'center' }}>
-      <Text style={{
-        fontSize: big ? 26 : 22, fontWeight: '800', fontVariant: ['tabular-nums'],
-        color: muted ? C.mut : (tint || C.text),
-      }}>
+      {/* Tonnage over "All" reaches seven figures for anyone who has trained
+          seriously for a year — "1,284,600" in a third of the screen width at
+          26pt. Shrink to fit rather than wrap: three metrics sit side by side
+          and a wrapped one drags the whole row's baseline down. */}
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.6}
+        style={{
+          fontSize: big ? 26 : 22, fontWeight: '800', fontVariant: ['tabular-nums'],
+          color: muted ? C.mut : (tint || C.text),
+        }}>
         {typeof value === 'number' ? value.toLocaleString() : value}
       </Text>
       <Text style={{ ...T.micro, fontWeight: '700', color: C.dim, letterSpacing: 0.9, marginTop: 3 }}>{label}</Text>

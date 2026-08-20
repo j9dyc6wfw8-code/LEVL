@@ -266,9 +266,17 @@ would be worse than recording it here.
 - [x] **84.1** Run tests after each phase — green after every commit
 - [ ] **85.1** Regression-test all prior security fixes 🔒
 - [ ] **86.1** Build quality gate (install, tests, doctor, no secrets)
-- [~] **87.1** Dead code — measured: **19 unused named exports.** Three (`s.h1/h2/h3`) already deleted with `TYPE`. The rest are listed below and not yet removed, because two are findings rather than litter:
-  `FONT_SCALE_CAP` is now genuinely in use (see 64.1); `needsTermsAcceptance` remains a real question — legal re-acceptance may simply never run.
-  Others: `HunterIdentity`, `TierBadge`, `HeroCard`, `HeroStat`, `SelectRow`, `findSession`, `buildRoute`, `PreviewImage`, `onAuthChange`, `clearSignedUrlCache`, `getCheckIn`, `reactionByKey`, `setPrimaryPhoto`, `LEGACY_DUEL_LINK_PREFIX`, `DUR`, `RARITY_C`, `STAT_C`
+- [~] **87.1** Dead code — 3 of 18 removed. `RARITY_C`, `STAT_C` and `DUR` in
+  theme.js were dead *and* duplicated `RARITY`/`STAT_META` in engine.js, which the
+  design doc explicitly says is where that data belongs. Deleted.
+  **Left deliberately (15):** five service functions (`getCheckIn`,
+  `setPrimaryPhoto`, `reactionByKey`, `clearSignedUrlCache`, `onAuthChange`)
+  where "unused" may mean "feature not built yet" — a product call, not cleanup;
+  `needsTermsAcceptance`, which is a live finding (see the terms note above); and
+  seven dead UI components (`HunterIdentity`, `TierBadge`, `HeroCard`, `HeroStat`,
+  `SelectRow`, `PreviewImage`, `buildRoute`, `findSession`, `LEGACY_DUEL_LINK_PREFIX`).
+  **Method note:** a brace-matching script that stripped all 18 at once cut too
+  much and broke 4 suites. Reverted. Remove exact known text, one file at a time.
 - [x] **88.1** Comment *why*, not *what*
 - [x] **89.1** Boring code over clever code
 
