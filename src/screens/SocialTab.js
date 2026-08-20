@@ -31,6 +31,7 @@ import { Segmented, Unavailable } from '../components/ui';
 import { useCheckInComments } from '../hooks/useCheckInComments';
 import { REPORT_REASONS, reportContent, blockUser } from '../services/supabase/checkInService';
 import haptics from '../services/haptics';
+import { readableError } from '../services/errors';
 
 const SCOPES = [
   { key: 'friends', label: 'Friends' },
@@ -92,7 +93,7 @@ export default function SocialTab({
           onPress: async () => {
             const res = await blockUser(item.userId);
             if (res && res.error) {
-              Alert.alert('Could not block', res.error.message || 'Try again in a moment.');
+              Alert.alert('Could not block', readableError(res.error, 'Try again in a moment.'));
               return;
             }
             haptics.success();
@@ -115,7 +116,7 @@ export default function SocialTab({
           onPress: async () => {
             const res = await feed.remove(item.id);
             if (res && res.error) {
-              Alert.alert('Could not delete', res.error.message || 'Try again in a moment.');
+              Alert.alert('Could not delete', readableError(res.error, 'Try again in a moment.'));
               return;
             }
             haptics.success();

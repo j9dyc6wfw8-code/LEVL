@@ -19,6 +19,7 @@ import {
 } from '../services/supabase/duelService';
 import { getProfile } from '../services/supabase/profileService';
 import { subscribe } from '../services/supabase/realtimeService';
+import { readableError } from '../services/errors';
 
 export function useFriendDuels(accountKey, anotherDuelActive = false, onReward) {
   const [uid, setUid] = useState(null);
@@ -74,7 +75,7 @@ export function useFriendDuels(accountKey, anotherDuelActive = false, onReward) 
 
       const { data, error } = await myDuels();
       if (accountRef.current !== requestAccount) return;
-      if (error || !data) { setError(error ? String(error.message || error) : 'Could not load duels.'); return; }
+      if (error || !data) { setError(readableError(error, 'Could not load duels.')); return; }
 
       const hydrated = await hydrate(data, meId);
       if (accountRef.current !== requestAccount) return;
@@ -90,7 +91,7 @@ export function useFriendDuels(accountKey, anotherDuelActive = false, onReward) 
             : null
       );
     } catch (e) {
-      if (accountRef.current === requestAccount) setError(String(e && e.message || e));
+      if (accountRef.current === requestAccount) setError(readableError(e, 'Could not load duels.'));
     } finally {
       if (accountRef.current === requestAccount) setLoading(false);
     }
@@ -132,14 +133,14 @@ export function useFriendDuels(accountKey, anotherDuelActive = false, onReward) 
   const accept = useCallback(async (duelId) => {
     if (anotherDuelActive || (active && active.length > 0)) return { ok: false, reason: 'busy' };
     const { error } = await respondToDuel(duelId, true);
-    if (error) setError(String(error.message || error));
+    if (error) setError(readableError(error, 'Could not accept that duel.'));
     else await refresh();
     return { ok: !error, error };
   }, [refresh, active, anotherDuelActive]);
 
   const decline = useCallback(async (duelId) => {
     const { error } = await respondToDuel(duelId, false);
-    if (error) setError(String(error.message || error));
+    if (error) setError(readableError(error, 'Could not decline that duel.'));
     else await refresh();
     return { ok: !error, error };
   }, [refresh]);
@@ -147,7 +148,7 @@ export function useFriendDuels(accountKey, anotherDuelActive = false, onReward) 
   // Quit an active duel (UI confirms first).
   const quit = useCallback(async (duelId) => {
     const { error } = await quitDuel(duelId);
-    if (error) setError(String(error.message || error));
+    if (error) setError(readableError(error, 'Could not quit that duel.'));
     else await refresh();
     return { ok: !error, error };
   }, [refresh]);

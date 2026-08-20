@@ -89,6 +89,7 @@ import notifications from './src/services/notifications';
 import workoutSession from './src/services/workoutSession';
 import LiveActivity from './modules/levl-live-activity';
 import haptics from './src/services/haptics';
+import { readableError } from './src/services/errors';
 
 // The splash is a brand moment, not a loading screen — the save is usually
 // ready long before it ends, so this number was pure imposed delay on EVERY
@@ -350,7 +351,7 @@ function AppInner() {
     // Password-reset links and duel invites are not app routes.
     if (isRecoveryUrl(url)) {
       const { error } = await completeRecoveryFromUrl(url);
-      if (error) { toast(error.message || 'That reset link didn’t work — request a new one.', 'error'); return; }
+      if (error) { toast(readableError(error, 'That reset link didn’t work — request a new one.'), 'error'); return; }
       setRecoveryOpen(true);
       return;
     }
@@ -377,7 +378,7 @@ function AppInner() {
     if (!code) return false;
     if (friendDuels.busy) { toast('Finish your current duel first.', 'warn'); return false; }
     const { error } = await claimDuelInviteSvc(code);
-    if (error) { toast(error.message || 'Could not join that duel', 'error'); return false; }
+    if (error) { toast(readableError(error, 'Could not join that duel.'), 'error'); return false; }
     toast('Duel started.', 'green');
     if (friendDuels.refresh) friendDuels.refresh();
     router.open({ tab: 'compete', view: 'duels' });
@@ -395,7 +396,7 @@ function AppInner() {
   const onCreateDuelInvite = useCallback(async () => {
     if (friendDuels.busy) { toast('Finish your current duel first.', 'warn'); return null; }
     const { data: inv, error } = await createDuelInviteSvc(7, 500);
-    if (error || !inv) { toast((error && error.message) || 'Could not create invite.', 'error'); return null; }
+    if (error || !inv) { toast(readableError(error, 'Could not create invite.'), 'error'); return null; }
     return inv;
   }, [friendDuels.busy, toast]);
 
@@ -524,7 +525,7 @@ function AppInner() {
     const session = primarySessionToday(data);
     if (!session) { toast('No workout logged today yet.', 'mut'); return; }
     const res = await checkIn.attachWorkout(session.id);
-    if (res.error) { haptics.error(); toast(res.error.message || 'Could not attach that workout.', 'error'); return; }
+    if (res.error) { haptics.error(); toast(readableError(res.error, 'Could not attach that workout.'), 'error'); return; }
     haptics.celebrate();
     game.applySocialXP(res.xp, 'Verified Session');
     feed.refresh();
@@ -561,7 +562,7 @@ function AppInner() {
     setAttaching(true);
     const res = await checkIn.attachWorkout(shareSession.id);
     setAttaching(false);
-    if (res.error) { haptics.error(); toast(res.error.message || 'Could not attach that workout.', 'error'); return; }
+    if (res.error) { haptics.error(); toast(readableError(res.error, 'Could not attach that workout.'), 'error'); return; }
     haptics.celebrate();
     game.applySocialXP(res.xp, 'Verified Session');
     feed.refresh();

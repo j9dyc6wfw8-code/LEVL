@@ -15,6 +15,7 @@ import { searchProfiles, getProfile } from '../services/supabase/profileService'
 import { getUserWorkouts, friendsFeed } from '../services/supabase/workoutService';
 import { currentUserId } from '../services/supabase/authService';
 import { subscribe } from '../services/supabase/realtimeService';
+import { readableError } from '../services/errors';
 
 export function useFriends(accountKey) {
   const [friends, setFriends] = useState([]);
@@ -44,7 +45,7 @@ export function useFriends(accountKey) {
           profile: row.profiles || null,
         })));
       }
-      if (f.error) setError(f.error.message);
+      if (f.error) setError(readableError(f.error, 'Could not load your friends.'));
 
       // activity feed across my friends (best-effort; never blocks the list)
       if (!f.error && f.data) {
@@ -53,7 +54,7 @@ export function useFriends(accountKey) {
         if (accountRef.current === requestAccount && fd) setFeed(fd);
       }
     } catch (e) {
-      if (accountRef.current === requestAccount) setError(String(e && e.message || e));
+      if (accountRef.current === requestAccount) setError(readableError(e, 'Could not load your friends.'));
     } finally {
       if (accountRef.current === requestAccount) setLoading(false);
     }
@@ -88,13 +89,13 @@ export function useFriends(accountKey) {
   const search = useCallback(async (query) => {
     if (!isConfigured) return [];
     const { data, error: e } = await searchProfiles(query);
-    if (e) { setError(e.message); return []; }
+    if (e) { setError(readableError(e, 'Could not search for players.')); return []; }
     return data || [];
   }, []);
 
   const add = useCallback(async (userId) => {
     const { error: e } = await sendRequest(userId);
-    if (e && !e.offline) { setError(e.message); return false; }
+    if (e && !e.offline) { setError(readableError(e, 'Could not send that request.')); return false; }
     return !e;
   }, []);
 
@@ -122,7 +123,7 @@ export function useFriends(accountKey) {
     setPendingIds((p) => (p.indexOf(id) >= 0 ? p : [...p, id]));
     try {
       const { error: e } = await run();
-      if (e && !e.offline) setError(e.message);
+      if (e && !e.offline) setError(readableError(e, 'Could not update that friendship.'));
       if (!e) await refresh();
       return !e;
     } finally {

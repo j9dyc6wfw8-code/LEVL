@@ -10,6 +10,7 @@ import { C, s } from '../theme';
 import { Card, GoldBtn, LevlMark } from '../components/ui';
 import { setNewPassword } from '../services/supabase/authService';
 import { breachWarning } from '../services/breachCheck';
+import { readableError } from '../services/errors';
 
 export default function SetNewPasswordScreen({ onDone, onCancel }) {
   const [pw, setPw] = useState('');
@@ -28,7 +29,7 @@ export default function SetNewPasswordScreen({ onDone, onCancel }) {
     if (pwned) { setErr(pwned); setBusy(false); return; }
     const { error } = await setNewPassword(pw);
     setBusy(false);
-    if (error) { setErr(error.message || 'Could not update your password.'); return; }
+    if (error) { setErr(readableError(error, 'Could not update your password.')); return; }
     onDone && onDone();
   };
 

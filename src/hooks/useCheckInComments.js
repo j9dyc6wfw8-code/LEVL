@@ -12,6 +12,7 @@ import * as checkIns from '../services/supabase/checkInService';
 import { subscribe as rtSubscribe } from '../services/supabase/realtimeService';
 import { isConfigured } from '../services/supabase/client';
 import { currentUserId } from '../services/supabase/authService';
+import { readableError } from '../services/errors';
 
 export function useCheckInComments(checkInId, enabled) {
   const [comments, setComments] = useState([]);
@@ -33,7 +34,7 @@ export function useCheckInComments(checkInId, enabled) {
     setLoading(true);
     const { data, error: err } = await checkIns.listComments(checkInId);
     if (!alive.current) return;
-    if (err) setError(err.message || 'Could not load comments.');
+    if (err) setError(readableError(err, 'Could not load comments.'));
     else { setError(null); setComments(data || []); }
     setLoading(false);
   }, [checkInId, enabled]);

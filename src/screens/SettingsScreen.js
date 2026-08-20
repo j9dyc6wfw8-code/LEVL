@@ -30,6 +30,7 @@ import { deleteAccount } from '../services/supabase/authService';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from '../services/legal';
 import notifications from '../services/notifications';
 import haptics from '../services/haptics';
+import { readableError } from '../services/errors';
 
 export default function SettingsScreen({
   data,
@@ -83,7 +84,7 @@ export default function SettingsScreen({
     setHandleBusy(false);
     if (res.error) {
       haptics.error();
-      Alert.alert('Could not save that username', res.error.message || 'Try another one.');
+      Alert.alert('Could not save that username', readableError(res.error, 'Try another one.'));
       return;
     }
     haptics.success();

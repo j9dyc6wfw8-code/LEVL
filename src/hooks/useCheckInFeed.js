@@ -21,6 +21,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import * as checkIns from '../services/supabase/checkInService';
 import { subscribe as rtSubscribe } from '../services/supabase/realtimeService';
 import { isConfigured } from '../services/supabase/client';
+import { readableError } from '../services/errors';
 
 const PAGE = 10;
 
@@ -73,7 +74,7 @@ export function useCheckInFeed(user, scope) {
     if (!alive.current) { inFlight.current = false; return; }
 
     if (err) {
-      setError(err.message || 'Could not load the feed.');
+      setError(readableError(err, 'Could not load the feed.'));
       setLoading(false); setRefreshing(false); setLoadingMore(false);
       inFlight.current = false;
       return;
