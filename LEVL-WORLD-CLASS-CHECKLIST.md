@@ -123,7 +123,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [—] **25.1** Sound — not adding any; no value case for a gym app
 - [ ] **26.1** One-handed reachability
 - [ ] **27.1** Keyboard quality per form
-- [~] **28.1** Accessibility — Reduce Motion ✅ done (see 65.1). **Dynamic Type ❌ BROKEN — see 64.1.** VoiceOver, contrast and target audit still outstanding
+- [~] **28.1** Accessibility — Reduce Motion ✅ (65.1) and Dynamic Type ✅ (64.1) both done. VoiceOver, contrast and touch-target audit still outstanding
 - [ ] **29.1** iPhone screen matrix 👁
 - [ ] **30.1** Photo pipeline quality
 - [ ] **31.1** Information density / progressive disclosure
@@ -177,19 +177,20 @@ Every instruction from the brief, tracked. Updated as work lands.
 
 - [ ] **62.1** Test like a bad user
 - [ ] **63.1** Visual edge cases (long names, huge numbers, 100 comments)
-- [ ] **64.1** Large Dynamic Type 👁 — **MEASURED, AND IT IS BROKEN. P0.**
-  At `accessibility-extra-extra-extra-large` the auth screen collapses: the LEVL
-  wordmark wraps to "LEV"/"L", "Create account" clips to "accoun" and overflows its
-  segment, and the form is pushed off-screen entirely.
-  **Root cause:** `FONT_SCALE_CAP` in `theme.js` is exported and read by *nothing*.
-  There is no `maxFontSizeMultiplier` or `allowFontScaling` anywhere in the app, so
-  text scales without limit. The earlier note that the cap "exists but is unverified"
-  was wrong — it does not exist in any working sense.
-  **Do not reach for the usual global fix:** `Text.defaultProps.maxFontSizeMultiplier`
-  was tried on device and had *zero* effect. React 19 ignores `defaultProps` on
-  function components, and RN 0.81's `Text` is one. A real fix needs either a shared
-  `<Text>` wrapper adopted app-wide, or per-component caps on the screens that break.
-  Reproduce with `xcrun simctl ui booted content_size accessibility-extra-extra-extra-large`.
+- [x] **64.1** Large Dynamic Type 👁 — **fixed.** Was completely broken: at
+  `accessibility-extra-extra-extra-large` the auth screen collapsed (wordmark
+  reflowed to "LEV"/"L", "Create account" clipped to "accoun", form pushed
+  off-screen). Root cause: `FONT_SCALE_CAP` was exported and read by nothing, and
+  no `maxFontSizeMultiplier`/`allowFontScaling` existed anywhere.
+  **Negative result worth keeping:** `Text.defaultProps.maxFontSizeMultiplier` —
+  the standard global fix — was tested on device and had *zero* effect. React 19
+  dropped `defaultProps` for function components; RN 0.81's `Text` is one.
+  Fixed with `src/components/Text.js`, a capped `Text`/`TextInput` adopted by 43
+  files. Text 1.5, inputs 1.25. Wordmarks opt out (`allowFontScaling={false}`);
+  the rank name shrinks to fit rather than hyphenating.
+  Verified on device at the largest size across Auth, Train and Compete, and
+  re-checked at the default size for regressions.
+  Reproduce: `xcrun simctl ui booted content_size accessibility-extra-extra-extra-large`
 - [x] **65.1** Reduced Motion — **done.** Correcting the record: it was already honoured in 4 places, not "unimplemented". The real defects were that two copies never subscribed (so toggling mid-session did nothing) and that ten infinite `Animated.loop`s ignored it entirely. One shared `useReduceMotion` hook now; all ten gated. Verified against the real OS setting: **0.000%** of pixels change over 4s with it on, **51.6%** with it off
 - [ ] **66.1** Dark gym readability 👁
 - [ ] **67.1** Sunlight readability 👁
@@ -218,7 +219,7 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [ ] **85.1** Regression-test all prior security fixes 🔒
 - [ ] **86.1** Build quality gate (install, tests, doctor, no secrets)
 - [~] **87.1** Dead code — measured: **19 unused named exports.** Three (`s.h1/h2/h3`) already deleted with `TYPE`. The rest are listed below and not yet removed, because two are findings rather than litter:
-  `FONT_SCALE_CAP` (see 64.1) and `needsTermsAcceptance` (legal re-acceptance may simply never run).
+  `FONT_SCALE_CAP` is now genuinely in use (see 64.1); `needsTermsAcceptance` remains a real question — legal re-acceptance may simply never run.
   Others: `HunterIdentity`, `TierBadge`, `HeroCard`, `HeroStat`, `SelectRow`, `findSession`, `buildRoute`, `PreviewImage`, `onAuthChange`, `clearSignedUrlCache`, `getCheckIn`, `reactionByKey`, `setPrimaryPhoto`, `LEGACY_DUEL_LINK_PREFIX`, `DUR`, `RARITY_C`, `STAT_C`
 - [x] **88.1** Comment *why*, not *what*
 - [x] **89.1** Boring code over clever code
