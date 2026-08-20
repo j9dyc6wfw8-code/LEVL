@@ -13,7 +13,8 @@
 // cosmetic (the no-pay-to-win rule is untouched).
 
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import { C, s, RADIUS, T } from '../theme';
 import { HunterFigure, MiniHunter } from './Hunter';
 import {

@@ -11,10 +11,8 @@
 // ============================================================================
 
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  View, Text, TextInput, Pressable, ScrollView, Modal,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
-} from 'react-native';
+import { View, Pressable, ScrollView, Modal, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
+import { Text, TextInput } from '../Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, RADIUS, SPACING, T, TOUCH } from '../../theme';
 import { HunterAvatar } from '../HunterAvatar';

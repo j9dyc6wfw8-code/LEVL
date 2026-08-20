@@ -3,7 +3,8 @@
 // no platform emoji or novelty symbols are used for core actions.
 
 import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Pressable, ScrollView } from 'react-native';
+import { Text } from './Text';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
 import { C, MONO, RADIUS, T } from '../theme';
 import { Sheet } from './ui';

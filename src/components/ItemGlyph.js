@@ -20,7 +20,8 @@
 // point: the same shape reads common or mythic purely by its frame.
 // ============================================================================
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import Svg, { Path, Circle, Line, Polyline, Rect, Ellipse, G } from 'react-native-svg';
 import { LinearGradient } from 'expo-linear-gradient';
 import { C, alpha, RADIUS, T } from '../theme';

@@ -1,6 +1,7 @@
 // LEVL React Native — shared UI atoms, overlays, and SVG charts
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, Animated, Easing, Modal, StyleSheet, AccessibilityInfo, Platform } from 'react-native';
+import { View, Pressable, Animated, Easing, Modal, StyleSheet, AccessibilityInfo, Platform } from 'react-native';
+import { Text, TextInput } from './Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon, Polyline, Line, Circle, Rect, Path, G, Text as SvgText } from 'react-native-svg';
 import { C, s, GRAD, T, RADIUS, MOTION, alpha } from '../theme';

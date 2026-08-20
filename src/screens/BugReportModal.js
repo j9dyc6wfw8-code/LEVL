@@ -1,6 +1,7 @@
 // LEVL — BugReportModal: quick in-app bug reporting for testers.
 import React, { useState } from 'react';
-import { View, Text, TextInput } from 'react-native';
+import { View } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { C, s } from '../theme';
 import { Sheet, Chip, GoldBtn } from '../components/ui';
 import { submitBugReport } from '../services/supabase/bugReportService';

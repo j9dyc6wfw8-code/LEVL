@@ -2,7 +2,8 @@
 // body regions, equipped cosmetics, rank armor styles, and color customization.
 // (2D vector build for guaranteed reliability; see README for the 3D upgrade path.)
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Pressable, Animated, Easing, ScrollView } from 'react-native';
+import { View, Pressable, Animated, Easing, ScrollView } from 'react-native';
+import { Text } from './Text';
 import Svg, { Circle, Rect, Ellipse, Path, Polygon, G, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { C, s, T } from '../theme';
 import { useReduceMotion } from '../hooks/useReduceMotion';

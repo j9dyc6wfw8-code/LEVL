@@ -4,7 +4,8 @@
 // so all that's left is choosing a new password.
 
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { C, s } from '../theme';
 import { Card, GoldBtn, LevlMark } from '../components/ui';
 import { setNewPassword } from '../services/supabase/authService';

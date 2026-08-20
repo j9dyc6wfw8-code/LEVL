@@ -24,7 +24,8 @@
 // ============================================================================
 
 import React, { useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { Text } from '../components/Text';
 import Svg, { Polygon, Text as SvgText } from 'react-native-svg';
 import { C, s, T, RADIUS, SPACING, TOUCH } from '../theme';
 import { Card, Lbl, PBar, StatBar, GoldBtn, CountUp, RadarChart, ScreenHeader } from '../components/ui';

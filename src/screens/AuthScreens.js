@@ -1,6 +1,7 @@
 // LEVL React Native — auth, physical-profile onboarding, account transfer
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing, Dimensions, Linking } from 'react-native';
+import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing, Dimensions, Linking } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { C, s, MONO, T, RADIUS, TOUCH } from '../theme';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 import { Card, Lbl, Chip, GoldBtn, GhostBtn, ChunkyBtn, LevlMark } from '../components/ui';
@@ -422,7 +423,10 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
         <View style={{ alignItems: 'center', marginBottom: 28 }}>
           <BrandMark />
           {/* the wordmark carries the weight — wide tracking, nothing competing */}
-          <Text style={{
+          {/* The wordmark is a logo, not content. At 40pt with 14pt tracking it
+              already spans most of the screen, so any scaling at all reflows it
+              to "LEV"/"L". Opted out rather than capped. */}
+          <Text allowFontScaling={false} style={{
             fontSize: 40, color: C.text, fontWeight: '900', letterSpacing: 14,
             textTransform: 'uppercase', marginTop: 16, marginRight: -14,
           }}>LEVL</Text>

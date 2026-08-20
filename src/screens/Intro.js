@@ -12,7 +12,8 @@
 // loot is the least distinctive thing here, and Verified Sessions are the only
 // mechanic a competitor cannot copy.
 import React, { useRef, useState } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, ScrollView } from 'react-native';
+import { View, Pressable, Animated, Dimensions, ScrollView } from 'react-native';
+import { Text } from '../components/Text';
 import Svg, { Polygon, Circle, Path, Rect } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { C, TOUCH, T } from '../theme';

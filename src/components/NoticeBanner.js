@@ -8,7 +8,8 @@
 // Pure Animated with the native driver. No new dependencies.
 
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Pressable, Animated, Easing } from 'react-native';
+import { View, Pressable, Animated, Easing } from 'react-native';
+import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, RADIUS, T } from '../theme';
 import { NoticeGlyph } from './NotificationCenter';

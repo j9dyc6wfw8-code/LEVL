@@ -10,7 +10,8 @@
 // The Forge is cosmetic only. It is never scored, never touches Fitness
 // Rating, and cannot buy rank. Glory only — the ladder stays honest.
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, Animated, Easing, TextInput } from 'react-native';
+import { View, Pressable, ScrollView, Animated, Easing } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';

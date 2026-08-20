@@ -5,7 +5,8 @@
 // roughly a screenful rather than one long scroll of everything at once.
 
 import React, { useState, useMemo } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Pressable, ScrollView } from 'react-native';
+import { Text } from '../components/Text';
 import { C, s, MONO, T } from '../theme';
 import { Card, Lbl, Chip, LineChart, BarChart, EmptyState, CountUp, ScreenHeader, Segmented } from '../components/ui';
 import { dayKeyOf, fmtShort, DAY, EXERCISES } from '../engine/engine';

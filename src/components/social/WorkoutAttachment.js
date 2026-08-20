@@ -15,7 +15,8 @@
 // ============================================================================
 
 import React, { useState, useCallback } from 'react';
-import { View, Text, Pressable, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { View, Pressable, LayoutAnimation, Platform, UIManager } from 'react-native';
+import { Text } from '../Text';
 import { C, RADIUS, T } from '../../theme';
 import { formatVolume } from '../../engine/session';
 import haptics from '../../services/haptics';

@@ -6,8 +6,9 @@
 // the native driver — no new dependencies, no image assets, GPU-cheap.
 
 import React, { useEffect, useRef, useMemo } from 'react';
-import { View, Text, Animated, Easing, Dimensions } from 'react-native';
-import { C } from '../theme';
+import { View, Animated, Easing, Dimensions } from 'react-native';
+import { Text } from '../components/Text';
+import { C, FONT_SCALE_CAP } from '../theme';
 import { useReduceMotion } from '../hooks/useReduceMotion';
 import { LevlMark } from '../components/ui';
 
@@ -152,7 +153,9 @@ export default function BootScreen({ duration }) {
       </View>
 
       {/* ---------- wordmark ---------- */}
-      <Animated.Text style={{
+      {/* Same call as the auth wordmark: a logo, and Animated.Text bypasses the
+          capped Text anyway, so it opts out explicitly. */}
+      <Animated.Text allowFontScaling={false} style={{
         color: C.text, marginTop: 16, letterSpacing: 9, fontWeight: '800', fontSize: 21,
         opacity: rise, transform: [{ translateY: riseY }],
       }}>
@@ -160,7 +163,7 @@ export default function BootScreen({ duration }) {
       </Animated.Text>
 
       {/* tagline — the ethos in three words */}
-      <Animated.Text style={{
+      <Animated.Text maxFontSizeMultiplier={FONT_SCALE_CAP.normal} style={{
         color: C.dim, marginTop: 10, letterSpacing: 3.2, fontWeight: '600', fontSize: 10,
         opacity: rise, transform: [{ translateY: riseY }],
       }}>

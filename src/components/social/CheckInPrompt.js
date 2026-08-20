@@ -12,7 +12,8 @@
 // ============================================================================
 
 import React from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Pressable, ActivityIndicator } from 'react-native';
+import { Text } from '../Text';
 import { C, RADIUS, SPACING, T, TOUCH } from '../../theme';
 import { VerifiedBadge } from './WorkoutAttachment';
 import { SOCIAL_XP } from '../../engine/engine';

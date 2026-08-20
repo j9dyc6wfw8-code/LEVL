@@ -13,7 +13,8 @@
 // ============================================================================
 
 import React, { memo, useCallback } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { Text } from '../Text';
 import { C, RADIUS, SPACING, T } from '../../theme';
 import DualPhoto from './DualPhoto';
 import ReactionBar from './ReactionBar';

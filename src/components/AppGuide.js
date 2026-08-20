@@ -3,7 +3,8 @@
 // one switch, one sentence at a time.
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { Text } from './Text';
 import { C, RADIUS, T } from '../theme';
 import { Sheet, ChunkyBtn } from './ui';
 import { TabIcon } from './TabIcon';

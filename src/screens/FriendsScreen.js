@@ -15,7 +15,8 @@ import React, { useState, useMemo } from 'react';
 // already memoised, so calling them here would reintroduce the per-render walk
 // over 100 rows that made this sheet lag.
 import useFriendProfile from '../hooks/useFriendProfile';
-import { View, Text, Pressable, ScrollView, TextInput } from 'react-native';
+import { View, Pressable, ScrollView } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { C, s, T, RADIUS, TOUCH, MONO } from '../theme';
 import { MiniHunter } from '../components/Hunter';
 import { HunterShowcase } from '../components/LoadoutCard';

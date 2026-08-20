@@ -7,7 +7,8 @@
 // sides are real. Opponent rows appear as their app syncs (offline-first).
 
 import React, { useState } from 'react';
-import { View, Text, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Pressable } from 'react-native';
+import { Text } from '../components/Text';
 import { C, s, MONO, T } from '../theme';
 import { Card } from '../components/ui';
 import { MiniHunter } from '../components/Hunter';

@@ -1,10 +1,11 @@
 // LEVL React Native — Packs: earn packs, open them with a premium reveal.
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, Animated, Easing, ScrollView, AccessibilityInfo } from 'react-native';
+import { View, Pressable, Animated, Easing, ScrollView, AccessibilityInfo } from 'react-native';
+import { Text } from '../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { C, alpha, s, T, RADIUS, RARITY as RARITY_THEME } from '../theme';
+import { C, alpha, s, T, RADIUS, FONT_SCALE_CAP, RARITY as RARITY_THEME } from '../theme';
 import { Card, Lbl, GoldBtn, GhostBtn, CountUp, ChunkyBtn, Stagger, Segmented, Unavailable } from '../components/ui';
 import { PackGlyph, RewardGlyph, LockGlyph } from '../components/ItemGlyph';
 import { PACK_TYPES, packTypeByKey, packMeter, COSMETICS, PACK_TITLES, DECORATIONS } from '../engine/engine';
@@ -458,7 +459,7 @@ function PackOpening({ packKey, reward, onDone }) {
       {/* ---------- the reward ---------------------------------------------- */}
       {isReveal ? (
         <View style={{ alignItems: 'center' }}>
-          <Animated.Text style={{
+          <Animated.Text maxFontSizeMultiplier={FONT_SCALE_CAP.normal} style={{
             ...T.footnote, color: rar.color, fontWeight: '800', letterSpacing: 4,
             textTransform: 'uppercase', marginBottom: 14, opacity: outro,
             transform: [{ translateY: outro.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],

@@ -1,6 +1,7 @@
 // LEVL React Native — Train hub (Log Lift · Cardio · Calculator)
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { View, Pressable, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import workoutSession from '../services/workoutSession';
 import { C, s, MONO, alpha, T } from '../theme';
 import { Card, Lbl, Chip, PBar, NumField, GoldBtn, GreenBtn, FadeIn, CountUp, Sheet, ScreenHeader, Segmented } from '../components/ui';

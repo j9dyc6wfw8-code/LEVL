@@ -1,6 +1,7 @@
 // LEVL React Native — Duel (1v1 weekly) screen
 import React, { useState } from 'react';
-import { View, Text, Pressable, TextInput } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import * as Clipboard from 'expo-clipboard';
 import { C, s, MONO, T, RADIUS } from '../theme';
 import { Card, Lbl, PBar, GoldBtn, Unavailable } from '../components/ui';

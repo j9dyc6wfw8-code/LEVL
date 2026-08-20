@@ -21,10 +21,8 @@
 // ============================================================================
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View, Text, Pressable, ScrollView, StatusBar, StyleSheet,
-  KeyboardAvoidingView, Platform, Modal, AppState, Alert,
-} from 'react-native';
+import { View, Pressable, ScrollView, StatusBar, StyleSheet, KeyboardAvoidingView, Platform, Modal, AppState, Alert } from 'react-native';
+import { Text } from './src/components/Text';
 import { SafeAreaProvider, SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { C, alpha, s, T, MONO, RADIUS } from './src/theme';

@@ -19,10 +19,8 @@
 // ============================================================================
 
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  View, Text, Pressable, FlatList, RefreshControl,
-  ActivityIndicator, Alert, ActionSheetIOS, Platform,
-} from 'react-native';
+import { View, Pressable, FlatList, RefreshControl, ActivityIndicator, Alert, ActionSheetIOS, Platform } from 'react-native';
+import { Text } from '../components/Text';
 import { C, RADIUS, SPACING, T, TOUCH } from '../theme';
 import CheckInCard from '../components/social/CheckInCard';
 import CheckInPrompt from '../components/social/CheckInPrompt';

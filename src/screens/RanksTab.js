@@ -15,7 +15,8 @@
 //     the only one now; keeping a hidden duplicate around invited it back.
 // ============================================================================
 import React, { useState, useMemo } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { Text } from '../components/Text';
 import { C, alpha, s, T, RADIUS } from '../theme';
 import { Card, Lbl, PBar, Sheet } from '../components/ui';
 import { MiniHunter } from '../components/Hunter';

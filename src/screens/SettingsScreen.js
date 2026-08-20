@@ -11,10 +11,8 @@
 // ============================================================================
 
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, Pressable, ScrollView, Switch, TextInput,
-  Alert, Linking, ActivityIndicator,
-} from 'react-native';
+import { View, Pressable, ScrollView, Switch, Alert, Linking, ActivityIndicator } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, s, T, RADIUS, SPACING, TOUCH } from '../theme';
 import { Chip, GhostBtn, Sheet } from '../components/ui';

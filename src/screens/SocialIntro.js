@@ -11,7 +11,8 @@
 // ============================================================================
 
 import React, { useState } from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Pressable, ScrollView } from 'react-native';
+import { Text } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, RADIUS, SPACING, T, TOUCH } from '../theme';
 import { WINDOW_PRESETS } from '../hooks/useCheckInPreferences';
