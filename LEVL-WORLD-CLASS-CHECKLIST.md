@@ -61,7 +61,15 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [ ] **5.2** Spacing per screen 👁
 - [ ] **5.3** Alignment 👁
 - [x] **5.4** Typography 👁 — verified per screen on an iPhone 17 Pro against before/after screenshots
-- [ ] **5.5** Contrast 👁 — still outstanding; the one accessibility axis not yet measured
+- [x] **5.5** Contrast — **measured and fixed.** Computed WCAG ratios for all 12
+  text colours against all 6 surfaces. Ten pass AA comfortably (gold 11.06:1 on
+  cards, white 17.01). Two failed, and both are used as text: `dim` at 3.63:1
+  (177 sites) and `faint` at 2.04:1 (35 sites) — 212 text sites below AA.
+  Raised to `#7b8497` (4.53:1, passes AA for body) and `#5d677f` (3.01:1, AA for
+  large/non-essential). Hue and saturation unchanged; only lightness moved.
+  `faint` deliberately not taken to 4.5 — that would collapse it into `dim` and
+  destroy a level the design uses. Ladder is now 17.01 > 7.79 > 4.53 > 3.01.
+  Verified on device: 0.232% of pixels differ on Train, all of it dim subtitles
 - [ ] **5.6** Primary action obvious 👁
 - [ ] **5.7** Clutter removal 👁
 - [ ] **5.8** Cross-screen consistency 👁
@@ -174,7 +182,9 @@ Every instruction from the brief, tracked. Updated as work lands.
 - [x] **54.1** List performance audit — done, see 16.2
 - [ ] **55.1** Image pipeline
 - [ ] **56.1** Memory and lifecycle cleanup
-- [~] **57.1** Crash resistance — FriendsScreen now tolerates a missing `isPending` prop rather than blanking; broader defensive pass outstanding
+- [~] **57.1** Crash resistance — FriendsScreen tolerates a missing `isPending`
+  prop; other users' display names can no longer stretch layouts (see 63.1).
+  Deleted users and partial rows still unaudited
 - [ ] **58.1** Error boundaries
 
 ## STAGE 59–61 — Observability, analytics, budgets
@@ -186,7 +196,12 @@ Every instruction from the brief, tracked. Updated as work lands.
 ## STAGE 62–67 — Adversarial and environmental testing
 
 - [ ] **62.1** Test like a bad user
-- [ ] **63.1** Visual edge cases (long names, huge numbers, 100 comments)
+- [~] **63.1** Visual edge cases — **long names done.** Found that `username` is
+  capped server-side at 20 chars but `display_name` has no length constraint at
+  all, and the 18-char limit in Settings is only a TextInput `maxLength` — a UI
+  courtesy that binds nobody using the API directly. Seven renders of another
+  user's name were unbounded; all now `numberOfLines={1}`.
+  **Left:** huge numbers, and a 100-comment thread 📊
 - [x] **64.1** Large Dynamic Type 👁 — **fixed.** Was completely broken: at
   `accessibility-extra-extra-extra-large` the auth screen collapsed (wordmark
   reflowed to "LEV"/"L", "Create account" clipped to "accoun", form pushed
