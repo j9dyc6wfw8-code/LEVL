@@ -21,10 +21,8 @@
 // ============================================================================
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  View, Text, Pressable, ActivityIndicator, Linking,
-  Platform, AppState, StyleSheet, Alert, ScrollView,
-} from 'react-native';
+import { View, Pressable, ActivityIndicator, Linking, Platform, AppState, StyleSheet, Alert, ScrollView } from 'react-native';
+import { Text } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Image } from 'expo-image';
 import { CameraView, useCameraPermissions } from 'expo-camera';

@@ -11,16 +11,15 @@
 // ============================================================================
 
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  View, Text, TextInput, Pressable, ScrollView, Modal,
-  KeyboardAvoidingView, Platform, ActivityIndicator, Alert,
-} from 'react-native';
+import { View, Pressable, ScrollView, Modal, KeyboardAvoidingView, Platform, ActivityIndicator, Alert } from 'react-native';
+import { Text, TextInput } from '../Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, RADIUS, SPACING, T, TOUCH } from '../../theme';
 import { HunterAvatar } from '../HunterAvatar';
 import { relativeTime } from '../../engine/session';
 import { COMMENT_MAX, REPORT_REASONS } from '../../services/supabase/checkInService';
 import haptics from '../../services/haptics';
+import { readableError } from '../../services/errors';
 
 export default function CommentSheet({
   visible,
@@ -47,7 +46,7 @@ export default function CommentSheet({
     if (res && res.error) {
       haptics.error();
       setDraft(body);   // give it back rather than losing what they wrote
-      Alert.alert('Could not post', res.error.message || 'Try again in a moment.');
+      Alert.alert('Could not post', readableError(res.error, 'Try again in a moment.'));
       return;
     }
     setTimeout(() => {
@@ -97,7 +96,7 @@ export default function CommentSheet({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
-      <Pressable
+      <Pressable accessibilityRole="button"
         onPress={onClose}
         accessibilityLabel="Close comments"
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }}

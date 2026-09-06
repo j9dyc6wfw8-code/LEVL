@@ -17,7 +17,8 @@
 // ============================================================================
 
 import React from 'react';
-import { View, Text, Pressable, Modal, ActivityIndicator } from 'react-native';
+import { View, Pressable, Modal, ActivityIndicator } from 'react-native';
+import { Text } from '../Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, RADIUS, SPACING, T, TOUCH } from '../../theme';
 import { formatVolume, formatDuration } from '../../engine/session';
@@ -45,7 +46,7 @@ export default function WorkoutShareSheet({
 
   return (
     <Modal visible={visible} animationType="slide" transparent onRequestClose={onDismiss}>
-      <Pressable
+      <Pressable accessibilityRole="button"
         onPress={onDismiss}
         accessibilityLabel="Dismiss"
         style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.55)' }}

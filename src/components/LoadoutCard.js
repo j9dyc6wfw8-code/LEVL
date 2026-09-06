@@ -13,8 +13,9 @@
 // cosmetic (the no-pay-to-win rule is untouched).
 
 import React from 'react';
-import { View, Text } from 'react-native';
-import { C, s, RADIUS } from '../theme';
+import { View } from 'react-native';
+import { Text } from './Text';
+import { C, s, RADIUS, T } from '../theme';
 import { HunterFigure, MiniHunter } from './Hunter';
 import {
   SKINS, HAIRS, OUTFITS, ACCENTS, TIERS, RARITY, STAT_META,
@@ -75,12 +76,12 @@ function GearRow({ equipped }) {
             }]}>
             <Text style={{ fontSize: 16 }}>{item.emoji}</Text>
             <View style={{ flex: 1, marginLeft: 9 }}>
-              <Text style={{ fontSize: 9, fontWeight: '800', color: C.dim, letterSpacing: 1 }}>{label}</Text>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: C.text, marginTop: 1 }} numberOfLines={1}>
+              <Text style={{ ...T.micro, fontWeight: '800', color: C.dim, letterSpacing: 1 }}>{label}</Text>
+              <Text style={{ ...T.footnote, fontWeight: '800', color: C.text, marginTop: 1 }} numberOfLines={1}>
                 {item.name}
               </Text>
             </View>
-            <Text style={{ fontSize: 9, fontWeight: '900', color: rarity.color, letterSpacing: 0.8 }}>
+            <Text style={{ ...T.micro, fontWeight: '900', color: rarity.color, letterSpacing: 0.8 }}>
               {rarity.name.toUpperCase()}
             </Text>
           </View>
@@ -90,6 +91,20 @@ function GearRow({ equipped }) {
   );
 }
 
+// Two swatches per row, not four.
+//
+// This was one row of four, and the labels broke mid-word: ColourRow only ever
+// renders inside a half-width CompareColumn, so four flex cells are ~40pt each
+// on a 402pt phone (~36pt on an SE), while "ARMOUR" measures 45pt at the 8.5pt
+// it used to be set in. "ARMOUR" and "ENERGY" wrapped to "ARMOU"+"R" and
+// "ENERG"+"Y", and overflowed into each other on the way.
+//
+// Type could not fix that. Dropping the letterSpacing still leaves ARMOUR at
+// 41pt against a 40pt cell, and shrinking further was already below the scale's
+// 10pt floor. adjustsFontSizeToFit would have sized each of the four labels
+// differently, which is worse than the wrap. So the layout gives way instead:
+// two per row is ~79pt a cell, which fits the longest label with 29pt spare
+// (24pt on an SE) and lets these labels sit on T.micro like everything else.
 function ColourRow({ avatar }) {
   const av = avatar || {};
   const dots = [
@@ -99,14 +114,18 @@ function ColourRow({ avatar }) {
     ['Energy', pal(ACCENTS, av.accent)],
   ];
   return (
-    <View style={[s.row, { marginTop: 4, justifyContent: 'space-between' }]}>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', rowGap: 10, marginTop: 8 }}>
       {dots.map(([label, color]) => (
-        <View key={label} style={{ alignItems: 'center', flex: 1 }}>
+        <View key={label} style={{ width: '50%', alignItems: 'center' }}>
           <View style={{
             width: 26, height: 26, borderRadius: 13, backgroundColor: color,
             borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.18)',
           }} />
-          <Text style={{ fontSize: 8.5, fontWeight: '800', color: C.dim, marginTop: 4, letterSpacing: 0.6 }}>
+          {/* Belt and braces: at an accessibility text size this truncates
+              rather than going back to breaking the word in half. */}
+          <Text
+            style={{ ...T.micro, fontWeight: '800', color: C.dim, marginTop: 4 }}
+            numberOfLines={1}>
             {label.toUpperCase()}
           </Text>
         </View>
@@ -125,7 +144,7 @@ function StatReadout({ stats }) {
   const have = stats && Object.keys(stats).length > 0;
   if (!have) {
     return (
-      <Text style={{ fontSize: 12.5, color: C.dim, marginTop: 8, fontWeight: '600', lineHeight: 18 }}>
+      <Text style={{ ...T.caption, color: C.dim, marginTop: 8, fontWeight: '600', lineHeight: 18 }}>
         Their stat breakdown appears once they open the latest version of LEVL.
       </Text>
     );
@@ -145,14 +164,14 @@ function StatReadout({ stats }) {
               backgroundColor: meta.color + '1e', borderWidth: 1, borderColor: meta.color + '44',
               alignItems: 'center', justifyContent: 'center',
             }}>
-              <Text style={{ fontSize: 15, fontWeight: '900', color: meta.color }}>{key}</Text>
+              <Text style={{ ...T.subheadline, fontWeight: '900', color: meta.color }}>{key}</Text>
             </View>
             <View style={{ flex: 1 }}>
               <View style={s.between}>
                 <Text style={{ fontSize: 18, fontWeight: '800', color: C.text, letterSpacing: -0.3 }}>{meta.name}</Text>
                 <Text style={{ fontSize: 21, fontWeight: '900', color: meta.color }}>{level}</Text>
               </View>
-              <Text style={{ fontSize: 12, color: C.dim, marginTop: 1, fontWeight: '600' }}>{meta.desc}</Text>
+              <Text style={{ ...T.caption, color: C.dim, marginTop: 1, fontWeight: '600' }}>{meta.desc}</Text>
             </View>
           </View>
         );
@@ -199,21 +218,21 @@ export const HunterShowcase = React.memo(function HunterShowcase({ avatar, equip
         <View style={{ flex: 1, marginLeft: 14 }}>
           <Text style={{ fontSize: 21, fontWeight: '800', color: C.text, letterSpacing: -0.4 }} numberOfLines={1}>{name}</Text>
           {username ? (
-            <Text style={{ fontSize: 12, color: C.dim, marginTop: 1, fontWeight: '600' }} numberOfLines={1}>@{username}</Text>
+            <Text style={{ ...T.caption, color: C.dim, marginTop: 1, fontWeight: '600' }} numberOfLines={1}>@{username}</Text>
           ) : null}
           {t ? (
-            <Text style={{ fontSize: 12.5, fontWeight: '800', color: C.purp, marginTop: 2 }} numberOfLines={1}>"{t.name}"</Text>
+            <Text style={{ ...T.caption, fontWeight: '800', color: C.purp, marginTop: 2 }} numberOfLines={1}>"{t.name}"</Text>
           ) : null}
           <View style={{
             marginTop: 8, alignSelf: 'flex-start',
             paddingHorizontal: 11, paddingVertical: 5, borderRadius: RADIUS.pill,
             backgroundColor: tier.color + '22', borderWidth: 1, borderColor: tier.color,
           }}>
-            <Text style={{ fontSize: 11, fontWeight: '800', color: tier.color, letterSpacing: 0.5 }}>
+            <Text style={{ ...T.caption2, fontWeight: '800', color: tier.color, letterSpacing: 0.5 }}>
               {level ? 'LV ' + level + ' · ' : ''}{rank || 'Bronze'}
             </Text>
           </View>
-          <Text style={{ fontSize: 11.5, color: C.dim, marginTop: 7, fontWeight: '600' }}>
+          <Text style={{ ...T.caption2, color: C.dim, marginTop: 7, fontWeight: '600' }}>
             {rs.label} armour
           </Text>
         </View>
@@ -237,8 +256,8 @@ function CompareColumn({ avatar, equipped, name, tint, label }) {
     <View style={{ flex: 1 }}>
       <View style={{ alignItems: 'center' }}>
         <MiniHunter avatar={avatar || {}} tierColor={tint} size={52} />
-        <Text style={{ fontSize: 9, fontWeight: '900', color: C.dim, letterSpacing: 1, marginTop: 6 }}>{label}</Text>
-        <Text style={{ fontSize: 13, fontWeight: '800', color: tint, marginTop: 1 }} numberOfLines={1}>{name}</Text>
+        <Text style={{ ...T.micro, fontWeight: '900', color: C.dim, letterSpacing: 1, marginTop: 6 }}>{label}</Text>
+        <Text style={{ ...T.footnote, fontWeight: '800', color: tint, marginTop: 1 }} numberOfLines={1}>{name}</Text>
       </View>
       <View style={{ marginTop: 10 }}>
         {SLOTS.map(([slot, slotLabel]) => {
@@ -250,8 +269,8 @@ function CompareColumn({ avatar, equipped, name, tint, label }) {
               borderRadius: RADIUS.sm, backgroundColor: C.panel2,
               borderWidth: 1, borderColor: C.line, borderLeftWidth: 3, borderLeftColor: rarity.color,
             }}>
-              <Text style={{ fontSize: 8, fontWeight: '800', color: C.dim, letterSpacing: 0.8 }}>{slotLabel}</Text>
-              <Text style={{ fontSize: 11, fontWeight: '800', color: C.text, marginTop: 1 }} numberOfLines={1}>
+              <Text style={{ ...T.micro, fontWeight: '800', color: C.dim, letterSpacing: 0.8 }}>{slotLabel}</Text>
+              <Text style={{ ...T.caption2, fontWeight: '800', color: C.text, marginTop: 1 }} numberOfLines={1}>
                 {item.emoji} {item.name}
               </Text>
             </View>

@@ -1,7 +1,7 @@
 // LEVL — design system
 // Premium dark theme built around the original gold-on-charcoal identity.
 // Everything the app already imports (C.*, s.*, MONO) is preserved; new scales
-// (SPACING, TYPE, RADIUS, SHADOW, RARITY, GRAD) are added on top.
+// (SPACING, RADIUS, SHADOW, RARITY, GRAD) are added on top.
 import { StyleSheet, Platform } from 'react-native';
 
 /* ----------------------------- color tokens -----------------------------
@@ -37,8 +37,8 @@ export const C = {
   // --- text (four levels, Apple's model) ---
   text: '#ffffff',
   mut:  '#a7b0c0',
-  dim:  '#6b7488',
-  faint:'#464e60',
+  dim:  '#7b8497',   // WCAG AA on cards: 4.53:1 (was 3.63:1 and failing)
+  faint:'#5d677f',   // 3.01:1 — AA for large/non-essential only (was 2.04:1)
 
   // Ink — the dark text that sits ON a bright accent (gold/green buttons).
   // Never pure black: it keeps the brand's warmth even at 1pt.
@@ -92,27 +92,6 @@ export function alpha(color, a) {
   return color;
 }
 
-/* RARITY LADDER — the learned ARPG convention (Diablo/WoW). Users read this
- * instantly. Never signalled by hue alone: pair with frame, glow and a label,
- * so it survives grayscale and colour-blindness. */
-export const RARITY_C = {
-  common:    { c: '#8e97a8', glow: 'rgba(142,151,168,0.28)', label: 'Common'    },
-  rare:      { c: '#3d9bff', glow: 'rgba(61,155,255,0.38)',  label: 'Rare'      },
-  epic:      { c: '#a66bff', glow: 'rgba(166,107,255,0.42)', label: 'Epic'      },
-  legendary: { c: '#ff8a3d', glow: 'rgba(255,138,61,0.48)',  label: 'Legendary' },
-  mythic:    { c: '#ff4d6d', glow: 'rgba(255,77,109,0.52)',  label: 'Mythic'    },
-};
-
-/* STAT COLOURS — six distinct, vivid hues so the radar/stat sheet reads fast. */
-export const STAT_C = {
-  STR: '#ff5c6e',  // red     — raw force
-  PWR: '#ff8a3d',  // orange  — explosive
-  END: '#2fe39b',  // green   — engine
-  VIT: '#3d9bff',  // blue    — resilience
-  MOB: '#2fe0e0',  // cyan    — range
-  DIS: '#a66bff',  // violet  — discipline
-};
-
 /* Minimum iOS touch target. Apple HIG: 44x44pt. Nothing tappable goes below. */
 export const TOUCH = 44;
 
@@ -134,15 +113,6 @@ export const MOTION = {
   smooth: { friction: 20, tension: 180, useNativeDriver: true },   // ~300ms, settles clean
   bouncy: { friction: 6,  tension: 160, useNativeDriver: true },   // overshoots — celebrations
   gauge:  { friction: 9,  tension: 40,  useNativeDriver: false },  // bars filling (needs layout)
-};
-
-/* Fixed-duration curves, for the few things springs shouldn't do. */
-export const DUR = {
-  instant: 120,   // opacity flicks
-  quick:   200,   // enter
-  exit:    160,   // exits run ~80% of entry — feels decisive
-  hero:    380,   // sheets, big transitions
-  cheer:   600,   // celebration beats
 };
 
 export const SPACING = { xs: 4, sm: 8, md: 12, lg: 16, xl: 20, xxl: 28, xxxl: 40 };
@@ -200,6 +170,15 @@ export const T = {
   // because LEVL's identity leans on them — but confined to section headers,
   // never body copy.
   label:        { fontSize: 11, fontWeight: '600', letterSpacing: 0.9, textTransform: 'uppercase' },
+  /* THE STEP THAT WAS MISSING, and the reason screens fell back to literals.
+   *
+   * T stopped at 11 (caption2), but badges, pills and unit suffixes genuinely
+   * need something smaller — the app was using 10, 10.5 and 9 in 40-odd places
+   * because there was nothing to reach for. The only alternative at that size
+   * was `label`, which UPPERCASES, so using it would have rewritten the copy.
+   *
+   * NOT for reading text — badges and units only. */
+  micro:        { fontSize: 10, fontWeight: '600', letterSpacing: 0.4 },
   // Numerals: pair with any step above, e.g. {...T.title2, ...T.numeric}
   numeric:      { fontVariant: ['tabular-nums'] },
 };
@@ -210,21 +189,6 @@ export const T = {
  * still grows, it just stops before it breaks the layout. */
 export const FONT_SCALE_CAP = { tight: 1.25, normal: 1.5 };
 
-// TYPE SCALE — the original six steps. Kept verbatim so every existing screen
-// renders identically; new work should reach for T above.
-export const TYPE = {
-  // Weights sit one step lighter than the old scale: heavy blacks read as
-  // "bulky" at phone sizes; 800 at display size still lands with authority.
-  // Line-height on reading steps (heading/body/caption) gives text room to
-  // breathe — the single cheapest "flowy" upgrade there is.
-  display: { fontSize: 34, fontWeight: '700', letterSpacing: -0.8 },   // trophy numbers
-  title:   { fontSize: 22, fontWeight: '700', letterSpacing: -0.4 },   // screen heroes
-  heading: { fontSize: 16, fontWeight: '600', letterSpacing: -0.2, lineHeight: 21 }, // card titles
-  body:    { fontSize: 14, fontWeight: '500', letterSpacing: -0.1, lineHeight: 20 }, // primary text
-  caption: { fontSize: 12, fontWeight: '400', lineHeight: 17 },        // secondary text
-  micro:   { fontSize: 10, fontWeight: '600', letterSpacing: 0.4 },    // badges, tags
-  label:   { fontSize: 10, fontWeight: '600', letterSpacing: 1.4, textTransform: 'uppercase' }, // section headers
-};
 
 // RADIUS SCALE — five steps, no more.
 // (defined above; screens should use these, never raw numbers)
@@ -273,9 +237,6 @@ export const s = StyleSheet.create({
   txt: { color: C.text, fontSize: 14 },
   mut: { color: C.mut }, dim: { color: C.dim }, gold: { color: C.gold },
   mono: { fontVariant: ['tabular-nums'] },
-  h1: { ...TYPE.title, color: C.text },
-  h2: { ...TYPE.heading, color: C.text },
-  h3: { ...TYPE.body, fontWeight: '700', color: C.text },
 
   row: { flexDirection: 'row', alignItems: 'center' },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

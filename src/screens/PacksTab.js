@@ -1,10 +1,11 @@
 // LEVL React Native — Packs: earn packs, open them with a premium reveal.
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, Pressable, Animated, Easing, ScrollView, AccessibilityInfo } from 'react-native';
+import { View, Pressable, Animated, Easing, ScrollView, AccessibilityInfo } from 'react-native';
+import { Text } from '../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { C, alpha, s, T, RADIUS, RARITY as RARITY_THEME } from '../theme';
+import { C, alpha, s, T, RADIUS, FONT_SCALE_CAP, RARITY as RARITY_THEME } from '../theme';
 import { Card, Lbl, GoldBtn, GhostBtn, CountUp, ChunkyBtn, Stagger, Segmented, Unavailable } from '../components/ui';
 import { PackGlyph, RewardGlyph, LockGlyph } from '../components/ItemGlyph';
 import { PACK_TYPES, packTypeByKey, packMeter, COSMETICS, PACK_TITLES, DECORATIONS } from '../engine/engine';
@@ -142,7 +143,7 @@ function PackFace({ packKey, pack }) {
         backgroundColor: 'rgba(255,255,255,0.35)',
       }} />
       <PackGlyph packKey={packKey} size={82} color="#ffffff" strokeWidth={1.3} />
-      <Text style={{ color: '#fff', fontWeight: '800', fontSize: 13, marginTop: 10, letterSpacing: 1.4 }}>
+      <Text style={{ ...T.footnote, color: '#fff', fontWeight: '800', marginTop: 10, letterSpacing: 1.4 }}>
         {pack.name.toUpperCase()}
       </Text>
     </LinearGradient>
@@ -458,8 +459,8 @@ function PackOpening({ packKey, reward, onDone }) {
       {/* ---------- the reward ---------------------------------------------- */}
       {isReveal ? (
         <View style={{ alignItems: 'center' }}>
-          <Animated.Text style={{
-            color: rar.color, fontWeight: '800', fontSize: 13, letterSpacing: 4,
+          <Animated.Text maxFontSizeMultiplier={FONT_SCALE_CAP.normal} style={{
+            ...T.footnote, color: rar.color, fontWeight: '800', letterSpacing: 4,
             textTransform: 'uppercase', marginBottom: 14, opacity: outro,
             transform: [{ translateY: outro.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
           }}>
@@ -491,12 +492,12 @@ function PackOpening({ packKey, reward, onDone }) {
                   style={{ color: '#fff', fontWeight: '800', fontSize: 26, marginTop: 10, fontVariant: ['tabular-nums'] }}
                 />
               ) : (
-                <Text style={{ color: '#fff', fontWeight: '800', fontSize: 16, marginTop: 10, textAlign: 'center', paddingHorizontal: 14 }}>
+                <Text style={{ ...T.callout, color: '#fff', fontWeight: '800', marginTop: 10, textAlign: 'center', paddingHorizontal: 14 }}>
                   {reward.name}
                 </Text>
               )}
               <Text style={{
-                color: 'rgba(255,255,255,0.72)', fontSize: 11, marginTop: 7,
+                color: 'rgba(255,255,255,0.72)', ...T.caption2, marginTop: 7,
                 fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.4,
               }}>
                 {kindLabel}
@@ -550,25 +551,25 @@ export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack, e
   return (
     <View>
       {goBack && (
-        <Pressable onPress={goBack} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
+        <Pressable accessibilityRole="button" onPress={goBack} hitSlop={8} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 10 }}>
           <Text style={{ fontSize: 18, color: C.gold, fontWeight: '800', marginRight: 4 }}>‹</Text>
-          <Text style={{ fontSize: 13, color: C.gold, fontWeight: '700' }}>Forge</Text>
+          <Text style={{ ...T.footnote, color: C.gold, fontWeight: '700' }}>Forge</Text>
         </Pressable>
       )}
       <Card style={s.hero}>
         <Lbl>Reward Packs</Lbl>
-        <Text style={{ fontSize: 15, color: C.mut, fontWeight: '700', lineHeight: 21 }}>
+        <Text style={{ ...T.subheadline, color: C.mut, fontWeight: '700', lineHeight: 21 }}>
           One pack, one reward. Rarer packs, better odds.
         </Text>
         <View style={[s.row, { marginTop: 12 }]}>
           <View style={{ flex: 1, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.md, padding: 12, alignItems: 'center' }}>
             <Text style={[s.label, { marginBottom: 2 }]}>Packs Owned</Text>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'] }}>{totalPacks}</Text>
+            <Text style={{ ...T.title2, fontWeight: '800', color: C.gold, fontVariant: ['tabular-nums'] }}>{totalPacks}</Text>
           </View>
           <View style={{ width: 10 }} />
           <View style={{ flex: 1, backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, borderRadius: RADIUS.md, padding: 12, alignItems: 'center' }}>
             <Text style={[s.label, { marginBottom: 2 }]}>Opened</Text>
-            <Text style={{ fontSize: 22, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'] }}>{data.packsOpened || 0}</Text>
+            <Text style={{ ...T.title2, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'] }}>{data.packsOpened || 0}</Text>
           </View>
         </View>
       </Card>
@@ -577,14 +578,14 @@ export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack, e
       <Card>
         <View style={s.between}>
           <Lbl style={{ marginBottom: 0 }}>Next Training Pack</Lbl>
-          <Text style={{ fontSize: 11, color: C.gold, fontVariant: ['tabular-nums'], fontWeight: '800' }}>
+          <Text style={{ ...T.caption2, color: C.gold, fontVariant: ['tabular-nums'], fontWeight: '800' }}>
             {Math.round(meter.into)} / {meter.need} XP
           </Text>
         </View>
         <View style={{ height: 10, borderRadius: 5, backgroundColor: C.panel2, marginTop: 10, overflow: 'hidden' }}>
           <View style={{ width: Math.max(2, meter.pct) + '%', height: 10, backgroundColor: C.gold }} />
         </View>
-        <Text style={{ fontSize: 12.5, color: C.dim, marginTop: 8, lineHeight: 18 }}>
+        <Text style={{ ...T.caption, color: C.dim, marginTop: 8, lineHeight: 18 }}>
           Every {meter.need} XP of training earns a pack — on top of level-up packs.
         </Text>
       </Card>
@@ -601,7 +602,7 @@ export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack, e
                 <PackGlyph packKey={pack.key} size={40} color="#ffffff" strokeWidth={1.5} />
               </LinearGradient>
               <View style={{ flex: 1, marginLeft: 14 }}>
-                <Text style={{ fontSize: 16, fontWeight: '800', color: C.text }}>{pack.name}</Text>
+                <Text style={{ ...T.callout, fontWeight: '800', color: C.text }}>{pack.name}</Text>
                 {/* odds as a single segmented bar — reads at a glance, no wrapping text */}
                 <View style={{ flexDirection: 'row', height: 6, borderRadius: 3, overflow: 'hidden', marginTop: 8, backgroundColor: C.panel2 }}>
                   {['common', 'rare', 'epic', 'legendary'].map((rk) => {
@@ -615,13 +616,13 @@ export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack, e
                   {['common', 'rare', 'epic', 'legendary'].map((rk) => (
                     <View key={rk} style={{ flexDirection: 'row', alignItems: 'center', marginRight: 12, marginBottom: 2 }}>
                       <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: rarityTheme(rk).color, marginRight: 4 }} />
-                      <Text style={{ fontSize: 11, color: C.mut, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
+                      <Text style={{ ...T.caption2, color: C.mut, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
                         {Math.round((pack.odds[rk] || 0) * 100)}%
                       </Text>
                     </View>
                   ))}
                 </View>
-                <Text style={{ fontSize: 12, color: C.dim, marginTop: 6, fontVariant: ['tabular-nums'] }}>Own: {count}</Text>
+                <Text style={{ ...T.caption, color: C.dim, marginTop: 6, fontVariant: ['tabular-nums'] }}>Own: {count}</Text>
               </View>
             </View>
             <View style={{ marginTop: 14 }}>
@@ -649,8 +650,8 @@ export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack, e
               <View key={p.id} style={[s.between, { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: C.line, alignItems: 'center' }]}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: rt.color, marginRight: 10 }} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontSize: 13, color: C.text, fontWeight: '700' }} numberOfLines={1}>{p.name}</Text>
-                  <Text style={{ fontSize: 10.5, color: C.dim, fontVariant: ['tabular-nums'], marginTop: 1 }}>
+                  <Text style={{ ...T.footnote, color: C.text, fontWeight: '700' }} numberOfLines={1}>{p.name}</Text>
+                  <Text style={{ ...T.micro, color: C.dim, fontVariant: ['tabular-nums'], marginTop: 1 }}>
                     {String(p.rarity || '').toUpperCase()} · {packTypeByKey(p.pack).name}
                   </Text>
                 </View>
@@ -666,12 +667,12 @@ export default function PacksTab({ data, dv, openPackH, grantTestPack, goBack, e
         <View style={s.row}>
           {[['Titles', (data.titles || []).length], ['Borders', (data.decorations || []).length], ['Cosmetics', (data.owned || []).length]].map((c, i) => (
             <View key={c[0]} style={{ flex: 1, alignItems: 'center', paddingVertical: 6, borderLeftWidth: i > 0 ? 1 : 0, borderLeftColor: C.line }}>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'] }}>{c[1]}</Text>
-              <Text style={{ fontSize: 10, color: C.dim, marginTop: 2, fontWeight: '700' }}>{c[0]}</Text>
+              <Text style={{ ...T.title3, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'] }}>{c[1]}</Text>
+              <Text style={{ ...T.micro, color: C.dim, marginTop: 2, fontWeight: '700' }}>{c[0]}</Text>
             </View>
           ))}
         </View>
-        <Text style={{ fontSize: 14, color: C.mut, marginTop: 11, fontWeight: '700' }}>
+        <Text style={{ ...T.footnote, color: C.mut, marginTop: 11, fontWeight: '700' }}>
           Equip titles and borders in Player. Packs are cosmetic only.
         </Text>
         <ChunkyBtn onPress={() => setCatalogueOpen(true)} tone="slate" style={{ marginTop: 12 }}>
@@ -730,7 +731,7 @@ function Catalogue({ data, onClose }) {
         <Segmented options={TABS} value={tab} onChange={setTab} />
 
         <View style={[s.between, { marginTop: 12, alignItems: 'center' }]}>
-          <Text style={{ fontSize: 13, color: C.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+          <Text style={{ ...T.footnote, color: C.text, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
             {haveCount} / {items.length} <Text style={{ color: C.gold }}>· {pct}%</Text>
           </Text>
           <Pressable onPress={() => setOwnedOnly((v) => !v)} hitSlop={8}
@@ -740,7 +741,7 @@ function Catalogue({ data, onClose }) {
               backgroundColor: ownedOnly ? C.goldSoft : 'transparent',
               borderWidth: 1, borderColor: ownedOnly ? C.gold : C.line,
             }}>
-            <Text style={{ fontSize: 11.5, fontWeight: '800', color: ownedOnly ? C.gold : C.dim }}>Owned only</Text>
+            <Text style={{ ...T.caption2, fontWeight: '800', color: ownedOnly ? C.gold : C.dim }}>Owned only</Text>
           </Pressable>
         </View>
 
@@ -751,7 +752,7 @@ function Catalogue({ data, onClose }) {
 
       <ScrollView style={{ maxHeight: 420 }} contentContainerStyle={{ padding: 16, paddingTop: 12 }}>
         {shown.length === 0 ? (
-          <Text style={{ fontSize: 13, color: C.dim, textAlign: 'center', paddingVertical: 24 }}>
+          <Text style={{ ...T.footnote, color: C.dim, textAlign: 'center', paddingVertical: 24 }}>
             Nothing here yet — open a pack to start the set.
           </Text>
         ) : (
@@ -771,10 +772,10 @@ function Catalogue({ data, onClose }) {
                       : <LockGlyph size={20} color={C.faint} />}
                     <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: rt.color }} />
                   </View>
-                  <Text style={{ fontSize: 12.5, fontWeight: '800', color: it.have ? C.text : C.mut, marginTop: 7 }} numberOfLines={2}>
+                  <Text style={{ ...T.caption, fontWeight: '800', color: it.have ? C.text : C.mut, marginTop: 7 }} numberOfLines={2}>
                     {it.name}
                   </Text>
-                  <Text style={{ fontSize: 9.5, fontWeight: '800', color: rt.color, marginTop: 3, fontVariant: ['tabular-nums'] }}>
+                  <Text style={{ ...T.micro, fontWeight: '800', color: rt.color, marginTop: 3, fontVariant: ['tabular-nums'] }}>
                     {String(it.rarity || '').toUpperCase()}
                   </Text>
                 </View>

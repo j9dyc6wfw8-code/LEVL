@@ -17,7 +17,8 @@
 // ============================================================================
 
 import React from 'react';
-import { Platform, View, Text } from 'react-native';
+import { Platform, View } from 'react-native';
+import { Text } from './Text';
 import Svg, { Path, Circle, Line } from 'react-native-svg';
 import { C } from '../theme';
 

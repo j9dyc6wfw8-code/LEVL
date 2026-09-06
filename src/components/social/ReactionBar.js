@@ -11,8 +11,9 @@
 // ============================================================================
 
 import React, { useRef, useCallback } from 'react';
-import { View, Text, Pressable, Animated } from 'react-native';
-import { C, RADIUS, T } from '../../theme';
+import { View, Pressable, Animated } from 'react-native';
+import { Text } from '../Text';
+import { C, RADIUS, T, FONT_SCALE_CAP } from '../../theme';
 import { REACTIONS } from '../../services/supabase/checkInService';
 import haptics from '../../services/haptics';
 
@@ -45,7 +46,7 @@ function ReactionChip({ reaction, count, mine, onPress }) {
         backgroundColor: mine ? C.goldSoft : C.panel2,
         borderWidth: 1, borderColor: mine ? C.gold : C.lineSoft,
       }}>
-      <Animated.Text style={{ fontSize: 15, transform: [{ scale }] }}>{reaction.emoji}</Animated.Text>
+      <Animated.Text maxFontSizeMultiplier={FONT_SCALE_CAP.tight} style={{ fontSize: 15, transform: [{ scale }] }}>{reaction.emoji}</Animated.Text>
       {count > 0 ? (
         <Text
           style={{

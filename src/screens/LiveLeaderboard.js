@@ -14,7 +14,8 @@
 // filter on the chosen board rather than a peer decision. Same two choices, one
 // less row, and an obvious hierarchy.
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { Text } from '../components/Text';
 import { C, alpha, T, RADIUS, SPACING } from '../theme';
 import { Card, EmptyState, Segmented } from '../components/ui';
 import { isConfigured } from '../services/supabase/client';

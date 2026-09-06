@@ -16,7 +16,8 @@
 //
 // One stale dependency was holding the entire app hostage. It's gone.
 import React, { useState } from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import { C, RADIUS } from '../theme';
 import { HunterFigure } from './Hunter';
 import { STAT_META, PART_LABEL } from '../engine/engine';

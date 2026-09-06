@@ -2,9 +2,11 @@
 // body regions, equipped cosmetics, rank armor styles, and color customization.
 // (2D vector build for guaranteed reliability; see README for the 3D upgrade path.)
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Pressable, Animated, Easing, ScrollView } from 'react-native';
+import { View, Pressable, Animated, Easing, ScrollView } from 'react-native';
+import { Text } from './Text';
 import Svg, { Circle, Rect, Ellipse, Path, Polygon, G, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { C, s, TYPE } from '../theme';
+import { C, s, T } from '../theme';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 import { SKINS, HAIRS, OUTFITS, ACCENTS, STAT_META } from '../engine/engine';
 
 const pal = (arr, i) => arr[(i || 0) % arr.length];
@@ -126,25 +128,31 @@ export function HunterFigure({ statLevels, avatar, equipped, rankStyle, onPart, 
 
   // idle bob + aura pulse (unchanged)
   const bob = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
   useEffect(() => {
+    // Parked at 0: no bob, aura held at half brightness.
+    if (reduceMotion) { bob.setValue(0); return undefined; }
     const loop = Animated.loop(Animated.sequence([
       Animated.timing(bob, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
       Animated.timing(bob, { toValue: 0, duration: 1500, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
     ]));
     loop.start();
     return () => loop.stop();
-  }, [bob]);
+  }, [bob, reduceMotion]);
   const ty = bob.interpolate({ inputRange: [0, 1], outputRange: [0, -5] });
   const pulse = bob.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
 
   const shimmer = useRef(new Animated.Value(0)).current;
   useEffect(() => {
+    // Mid-travel, NOT 0. auraFade reads 0 opacity at both ends, so parking at 0
+    // would delete an aura the player actually bought. 0.5 keeps it lit and still.
+    if (reduceMotion) { shimmer.setValue(0.5); return undefined; }
     const loop = Animated.loop(
       Animated.timing(shimmer, { toValue: 1, duration: 2600, easing: Easing.linear, useNativeDriver: true })
     );
     loop.start();
     return () => loop.stop();
-  }, [shimmer]);
+  }, [shimmer, reduceMotion]);
   const auraSpin = shimmer.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   const auraRise = shimmer.interpolate({ inputRange: [0, 1], outputRange: [12, -30] });
   const auraFade = shimmer.interpolate({ inputRange: [0, 0.2, 0.8, 1], outputRange: [0, 0.75, 0.4, 0] });
@@ -504,7 +512,7 @@ function Swatch({ color, selected, onPress }) {
 function SwatchRow({ label, colors, value, onPick }) {
   return (
     <View style={{ marginBottom: 16 }}>
-      <Text style={{ ...TYPE.caption, color: C.mut, fontWeight: '700', marginBottom: 8 }}>{label}</Text>
+      <Text style={{ ...T.caption, color: C.mut, fontWeight: '700', marginBottom: 8 }}>{label}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

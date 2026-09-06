@@ -11,10 +11,8 @@
 // ============================================================================
 
 import React, { useCallback, useState } from 'react';
-import {
-  View, Text, Pressable, ScrollView, Switch, TextInput,
-  Alert, Linking, ActivityIndicator,
-} from 'react-native';
+import { View, Pressable, ScrollView, Switch, Alert, Linking, ActivityIndicator } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, s, T, RADIUS, SPACING, TOUCH } from '../theme';
 import { Chip, GhostBtn, Sheet } from '../components/ui';
@@ -32,6 +30,7 @@ import { deleteAccount } from '../services/supabase/authService';
 import { PRIVACY_URL, TERMS_URL, SUPPORT_EMAIL } from '../services/legal';
 import notifications from '../services/notifications';
 import haptics from '../services/haptics';
+import { readableError } from '../services/errors';
 
 export default function SettingsScreen({
   data,
@@ -85,7 +84,7 @@ export default function SettingsScreen({
     setHandleBusy(false);
     if (res.error) {
       haptics.error();
-      Alert.alert('Could not save that username', res.error.message || 'Try another one.');
+      Alert.alert('Could not save that username', readableError(res.error, 'Try another one.'));
       return;
     }
     haptics.success();
@@ -339,7 +338,7 @@ export default function SettingsScreen({
               }
               right={
                 !health.optedIn ? (
-                  <Pressable
+                  <Pressable hitSlop={{ top: 5, bottom: 5 }}
                     onPress={health.connect}
                     accessibilityRole="button"
                     style={{
@@ -391,10 +390,10 @@ export default function SettingsScreen({
                 blocked.map((p) => (
                   <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8 }}>
                     <HunterAvatar avatar={p.avatar} size={30} dim />
-                    <Text style={{ ...T.subheadline, color: C.mut, flex: 1, marginLeft: 10 }}>
+                    <Text numberOfLines={1} style={{ ...T.subheadline, color: C.mut, flex: 1, marginLeft: 10 }}>
                       {p.display_name || p.username}
                     </Text>
-                    <Pressable
+                    <Pressable hitSlop={{ top: 5, bottom: 5 }}
                       onPress={async () => { await unblockUser(p.id); loadBlocked(); }}
                       accessibilityRole="button"
                       accessibilityLabel={`Unblock ${p.display_name || p.username}`}
@@ -502,7 +501,7 @@ export default function SettingsScreen({
           <AccountTransfer makeCode={makeCode} importCode={importCode} />
 
           {empty ? (
-            <Pressable onPress={loadDemo} style={[s.ghostBtn, { marginTop: 10, borderColor: C.gold }]}>
+            <Pressable accessibilityRole="button" onPress={loadDemo} style={[s.ghostBtn, { marginTop: 10, borderColor: C.gold }]}>
               <Text style={{ ...T.subheadline, fontWeight: '600', color: C.gold }}>Load 4-week demo save</Text>
             </Pressable>
           ) : null}
@@ -686,7 +685,7 @@ function CustomWindow({ prefs, onChange }) {
 
   if (!open) {
     return (
-      <Pressable
+      <Pressable hitSlop={{ top: 3, bottom: 3 }}
         onPress={() => setOpen(true)}
         accessibilityRole="button"
         style={{ minHeight: 38, justifyContent: 'center' }}>

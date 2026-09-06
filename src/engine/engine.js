@@ -249,6 +249,30 @@ const roundLoad = (w, unit) => {
   return Math.round(w / s) * s;
 };
 
+/* Which exercises actually involve a loaded barbell — used to decide whether a
+ * plate breakdown is meaningful. Conservative on purpose: showing plates for a
+ * dumbbell curl would be worse than showing nothing, so anything not clearly a
+ * barbell movement is excluded.
+ *
+ * The plate ARITHMETIC deliberately does not live here. It already existed in
+ * TrainTab for the 1RM workbench, complete with IPF plate colours, and adding a
+ * second copy in the engine would have created exactly the two-competing-
+ * implementations problem the pre-launch audit called out. Consolidating that
+ * one into the engine with tests is worth doing and belongs in its own change,
+ * because it means touching rendering code. */
+const BARBELL_PATTERNS = [
+  'barbell', 'deadlift', 'back squat', 'front squat', 'rack pull',
+  'overhead barbell', 'hip thrust', 'romanian deadlift', 'good morning',
+  'bent over row', 'power clean', 'clean', 'snatch', 'push press',
+];
+function usesBarbell(exerciseName) {
+  const n = String(exerciseName || '').toLowerCase();
+  if (!n) return false;
+  // "Dumbbell Romanian Deadlift" matches 'romanian deadlift' but is not a bar.
+  if (n.includes('dumbbell') || n.includes('cable') || n.includes('machine')) return false;
+  return BARBELL_PATTERNS.some((p) => n.includes(p));
+}
+
 // XP per set: diminishing returns on tonnage, scaled by effort, PR bonus.
 const setXP = (weight, reps, rpe, isPR) => {
   const load = weight > 0 ? weight * reps : reps * 25; // bodyweight fallback
@@ -1493,6 +1517,7 @@ export {
   fmtShort,
   uid,
   tierForFR,
+  usesBarbell,
   updateFrPeak,
   frFloorOf,
   frProtection,

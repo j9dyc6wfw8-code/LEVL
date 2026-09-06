@@ -13,7 +13,8 @@
 // ============================================================================
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import { View, Pressable, Alert } from 'react-native';
+import { Text } from './Text';
 import { C, RADIUS, T, TOUCH } from '../theme';
 import workoutSession from '../services/workoutSession';
 import { formatDuration } from '../engine/session';

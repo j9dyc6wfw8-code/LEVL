@@ -12,10 +12,11 @@
 // loot is the least distinctive thing here, and Verified Sessions are the only
 // mechanic a competitor cannot copy.
 import React, { useRef, useState } from 'react';
-import { View, Text, Pressable, Animated, Dimensions, ScrollView } from 'react-native';
+import { View, Pressable, Animated, Dimensions, ScrollView } from 'react-native';
+import { Text } from '../components/Text';
 import Svg, { Polygon, Circle, Path, Rect } from 'react-native-svg';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { C, TYPE, TOUCH } from '../theme';
+import { C, TOUCH, T } from '../theme';
 import { ChunkyBtn } from '../components/ui';
 
 const { width: SW } = Dimensions.get('window');
@@ -139,8 +140,8 @@ export default function Intro({ onDone }) {
     <SafeAreaView style={{ flex: 1, backgroundColor: C.bg }} edges={['top', 'bottom']}>
       {/* skip — always available, per HIG. Never trap the user. */}
       <View style={{ alignItems: 'flex-end', paddingHorizontal: 16, height: TOUCH, justifyContent: 'center' }}>
-        <Pressable onPress={onDone} hitSlop={12} style={{ minHeight: TOUCH, justifyContent: 'center', paddingHorizontal: 8 }}>
-          <Text style={{ ...TYPE.body, color: C.dim, fontWeight: '600' }}>Skip</Text>
+        <Pressable accessibilityRole="button" onPress={onDone} hitSlop={12} style={{ minHeight: TOUCH, justifyContent: 'center', paddingHorizontal: 8 }}>
+          <Text style={{ ...T.footnote, color: C.dim, fontWeight: '600' }}>Skip</Text>
         </Pressable>
       </View>
 

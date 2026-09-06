@@ -10,11 +10,13 @@
 // The Forge is cosmetic only. It is never scored, never touches Fitness
 // Rating, and cannot buy rank. Glory only — the ladder stays honest.
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, Animated, Easing, TextInput } from 'react-native';
+import { View, Pressable, ScrollView, Animated, Easing } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Polygon } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
-import { C, alpha, s, RADIUS, TYPE, T, MOTION } from '../theme';
+import { C, alpha, s, RADIUS, T, MOTION } from '../theme';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 import { Card, Lbl, Chip, PBar, StatBar, ChunkyBtn, Sheet, EmptyState, ScreenHeader, Segmented } from '../components/ui';
 import { ItemGlyph, ItemTile, PackGlyph, RewardGlyph } from '../components/ItemGlyph';
 import {
@@ -64,8 +66,8 @@ function ForgeMark({ color }) {
 function ForgeMetric({ value, label, color }) {
   return (
     <View style={{ flex: 1, alignItems: 'center' }}>
-      <Text style={{ ...TYPE.title, color: color || C.text, fontVariant: ['tabular-nums'] }}>{value}</Text>
-      <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 2 }}>{label}</Text>
+      <Text style={{ ...T.title2, color: color || C.text, fontVariant: ['tabular-nums'] }}>{value}</Text>
+      <Text style={{ ...T.micro, color: C.dim, marginTop: 2 }}>{label}</Text>
     </View>
   );
 }
@@ -234,14 +236,14 @@ function ForgeAnvil({ item, rarity, result, newLevel, onDone }) {
         {phase === 'result' && (
           <View style={{ alignItems: 'center', marginTop: 22 }}>
             <Text style={{
-              ...TYPE.title, color: win ? rarity.color : C.mut,
+              ...T.title2, color: win ? rarity.color : C.mut,
               textShadowColor: win ? rarity.color + '77' : 'transparent',
               textShadowRadius: 14, textShadowOffset: { width: 0, height: 0 },
             }}>
               {win ? 'FORGE SUCCESS' : 'THE STEEL HELD'}
             </Text>
             <Text style={{
-              ...TYPE.caption, color: C.mut, marginTop: 8,
+              ...T.caption, color: C.mut, marginTop: 8,
               textAlign: 'center', maxWidth: 270, lineHeight: 18,
             }}>
               {win
@@ -374,20 +376,20 @@ function ForgeBay({ data, onForge }) {
           const can = canForge(data, it.id);
           const isMax = L >= FORGE_MAX;
           return (
-            <Pressable key={it.id} onPress={() => setSel(it)}>
+            <Pressable accessibilityRole="button" key={it.id} onPress={() => setSel(it)}>
               <Card style={{ borderWidth: 1, borderColor: L > 0 ? r.color + '66' : C.lineSoft }}>
                 <View style={s.row}>
                   <ItemTile item={it} size={54} rarity={r} forgeLevel={L} />
 
                   <View style={{ flex: 1, marginLeft: 12 }}>
-                    <Text style={{ ...TYPE.heading, color: C.text }} numberOfLines={1}>{it.name}</Text>
-                    <Text style={{ ...TYPE.micro, color: r.color, marginTop: 2 }}>
+                    <Text style={{ ...T.callout, fontWeight: '600', color: C.text }} numberOfLines={1}>{it.name}</Text>
+                    <Text style={{ ...T.micro, color: r.color, marginTop: 2 }}>
                       {r.name.toUpperCase()} · {FORGE_TIERS[L]}
                     </Text>
                     <View style={{ marginTop: 6 }}><Pips level={L} color={r.color} /></View>
                   </View>
 
-                    <Text style={{ ...TYPE.micro, color: isMax ? C.gold : can.ok ? C.green : C.dim, fontWeight: '800' }}>
+                    <Text style={{ ...T.micro, color: isMax ? C.gold : can.ok ? C.green : C.dim, fontWeight: '800' }}>
                       {isMax ? 'MAX' : can.ok ? 'READY' : 'LOCKED'}
                   </Text>
                 </View>
@@ -411,10 +413,10 @@ function ForgeBay({ data, onForge }) {
                 }}>
                   <ItemGlyph item={sel} size={38} color={C.mut} />
                 </View>
-                <Text style={{ ...TYPE.caption, color: C.mut, marginTop: 6 }}>{FORGE_TIERS[lvl]}</Text>
+                <Text style={{ ...T.caption, color: C.mut, marginTop: 6 }}>{FORGE_TIERS[lvl]}</Text>
               </View>
 
-              <Text style={{ ...TYPE.title, color: C.dim, marginHorizontal: 6 }}>→</Text>
+              <Text style={{ ...T.title2, color: C.dim, marginHorizontal: 6 }}>→</Text>
 
               <View style={{ alignItems: 'center', flex: 1 }}>
                 <Text style={[s.label, { marginBottom: 6, color: rar.color }]}>Next</Text>
@@ -427,7 +429,7 @@ function ForgeBay({ data, onForge }) {
                   }}>
                   <ItemGlyph item={sel} size={38} color={rar.color} />
                 </LinearGradient>
-                <Text style={{ ...TYPE.caption, color: rar.color, marginTop: 6, fontWeight: '700' }}>
+                <Text style={{ ...T.caption, color: rar.color, marginTop: 6, fontWeight: '700' }}>
                   {maxed ? 'Mastered' : FORGE_TIERS[lvl + 1]}
                 </Text>
               </View>
@@ -435,8 +437,8 @@ function ForgeBay({ data, onForge }) {
 
             {maxed ? (
               <View style={{ alignItems: 'center', paddingVertical: 10 }}>
-                <Text style={{ ...TYPE.heading, color: C.gold }}>Fully Mastered</Text>
-                <Text style={{ ...TYPE.caption, color: C.mut, marginTop: 6, textAlign: 'center', lineHeight: 18 }}>
+                <Text style={{ ...T.callout, fontWeight: '600', color: C.gold }}>Fully Mastered</Text>
+                <Text style={{ ...T.caption, color: C.mut, marginTop: 6, textAlign: 'center', lineHeight: 18 }}>
                   Highest grade reached.
                 </Text>
               </View>
@@ -445,13 +447,13 @@ function ForgeBay({ data, onForge }) {
                 {/* success chance */}
                 <View style={[s.between, { marginBottom: 6 }]}>
                   <Text style={[s.label, { marginBottom: 0 }]}>Success chance</Text>
-                  <Text style={{ ...TYPE.body, fontWeight: '700', fontVariant: ['tabular-nums'], color: C.text }}>
+                  <Text style={{ ...T.footnote, fontWeight: '700', fontVariant: ['tabular-nums'], color: C.text }}>
                     {Math.round(forgeChance(lvl, temper) * 100)}%
                   </Text>
                 </View>
                 <PBar pct={forgeChance(lvl, temper) * 100} color={C.green} height={8} />
                 {temper > 0 ? (
-                  <Text style={{ ...TYPE.micro, color: C.purp, marginTop: 6, fontWeight: '600' }}>
+                  <Text style={{ ...T.micro, color: C.purp, marginTop: 6, fontWeight: '600' }}>
                     Temper +{temper} — next strike is likelier.
                   </Text>
                 ) : null}
@@ -460,9 +462,9 @@ function ForgeBay({ data, onForge }) {
                 <View style={{ marginTop: 18 }}>
                   <Lbl>Cost</Lbl>
                   <View style={[s.between, { marginBottom: 10 }]}>
-                    <Text style={{ ...TYPE.body, color: C.mut }}>Forge Coins</Text>
+                    <Text style={{ ...T.footnote, color: C.mut }}>Forge Coins</Text>
                     <Text style={{
-                      ...TYPE.body, fontWeight: '700', fontVariant: ['tabular-nums'],
+                      ...T.footnote, fontWeight: '700', fontVariant: ['tabular-nums'],
                       color: coinBalance(data) >= cost.coins ? C.text : C.red,
                     }}>
                       {cost.coins.toLocaleString()} / {coinBalance(data).toLocaleString()}
@@ -488,11 +490,11 @@ function ForgeBay({ data, onForge }) {
                   marginTop: 14, backgroundColor: C.panel2, borderRadius: RADIUS.md,
                   padding: 12, borderWidth: 1, borderColor: C.lineSoft,
                 }}>
-                  <Text style={{ ...TYPE.micro, color: C.dim, marginBottom: 4 }}>ON SUCCESS</Text>
-                  <Text style={{ ...TYPE.body, color: C.text }}>
+                  <Text style={{ ...T.micro, color: C.dim, marginBottom: 4 }}>ON SUCCESS</Text>
+                  <Text style={{ ...T.footnote, color: C.text }}>
                     Grade rises to <Text style={{ color: rar.color, fontWeight: '700' }}>{FORGE_TIERS[lvl + 1]}</Text>
                   </Text>
-                  <Text style={{ ...TYPE.caption, color: C.dim, marginTop: 6, lineHeight: 16 }}>
+                  <Text style={{ ...T.caption, color: C.dim, marginTop: 6, lineHeight: 16 }}>
                     Your item is always safe.
                   </Text>
                 </View>
@@ -556,9 +558,9 @@ function ShopBay({ data, dv, buy, equip }) {
             }}>
               <View style={s.between}>
                 <ItemTile item={it} size={40} rarity={rar} forgeLevel={L} />
-                <Text style={{ ...TYPE.micro, color: rar.color }}>{rar.name.toUpperCase()}</Text>
+                <Text style={{ ...T.micro, color: rar.color }}>{rar.name.toUpperCase()}</Text>
               </View>
-              <Text style={{ ...TYPE.body, fontWeight: '700', color: C.text, marginTop: 8 }} numberOfLines={1}>
+              <Text style={{ ...T.footnote, fontWeight: '700', color: C.text, marginTop: 8 }} numberOfLines={1}>
                 {it.name}
               </Text>
               {L > 0 ? <View style={{ marginTop: 5 }}><Pips level={L} color={rar.color} /></View> : null}
@@ -570,17 +572,17 @@ function ShopBay({ data, dv, buy, equip }) {
                   </ChunkyBtn>
                 ) : gated ? (
                   <View style={[s.ghostBtn, { paddingVertical: 10 }]}>
-                    <Text style={{ ...TYPE.micro, color: C.dim }}>{rar.reqTier}+ ONLY</Text>
+                    <Text style={{ ...T.micro, color: C.dim }}>{rar.reqTier}+ ONLY</Text>
                   </View>
                 ) : (
                   <View>
                     <ChunkyBtn small tone="gold" disabled={!canCoins} onPress={() => buy(it.id, 'coins')}>
                       {rar.coins.toLocaleString()} COINS
                     </ChunkyBtn>
-                    <Pressable
+                    <Pressable accessibilityRole="button"
                       onPress={() => canXP && buy(it.id, 'xp')}
                       style={[s.ghostBtn, { paddingVertical: 8, marginTop: 6 }, !canXP && { opacity: 0.45 }]}>
-                      <Text style={{ ...TYPE.micro, color: canXP ? C.text : C.dim }}>
+                      <Text style={{ ...T.micro, color: canXP ? C.text : C.dim }}>
                         {rar.xp.toLocaleString()} XP
                       </Text>
                     </Pressable>
@@ -593,7 +595,7 @@ function ShopBay({ data, dv, buy, equip }) {
       </View>
 
       <Card>
-        <Text style={{ ...TYPE.body, color: C.mut, fontWeight: '700' }}>
+        <Text style={{ ...T.footnote, color: C.mut, fontWeight: '700' }}>
           Your rank unlocks{' '}
           <Text style={{ color: rankStyleFor(dv.tier).trim, fontWeight: '700' }}>
             {rankStyleFor(dv.tier).label}
@@ -617,15 +619,20 @@ function ShopBay({ data, dv, buy, equip }) {
  */
 function NextReward({ next, level, prevLevel, premium, claims, claimAll }) {
   const pulse = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
   useEffect(() => {
-    if (!claims.length) return;
+    if (!claims.length) return undefined;
+    // Claimable is signalled by icon + brightness + motion precisely so it
+    // survives losing one of them. Hold the bright end rather than the middle:
+    // with the pulse gone, brightness is carrying the state on its own.
+    if (reduceMotion) { pulse.setValue(1); return undefined; }
     const loop = Animated.loop(Animated.sequence([
       Animated.timing(pulse, { toValue: 1, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
       Animated.timing(pulse, { toValue: 0, duration: 900, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
     ]));
     loop.start();
     return () => loop.stop();
-  }, [claims.length, pulse]);
+  }, [claims.length, pulse, reduceMotion]);
 
   // Something to claim RIGHT NOW beats any future promise. Lead with it.
   if (claims.length) {
@@ -637,8 +644,8 @@ function NextReward({ next, level, prevLevel, premium, claims, claimAll }) {
           borderRadius: 999, backgroundColor: C.green, opacity: glow,
         }} />
         <Text style={[s.label, { color: C.green }]}>Ready to claim</Text>
-        <Text style={{ ...TYPE.display, color: C.text, marginTop: 2 }}>{claims.length}</Text>
-        <Text style={{ ...TYPE.body, color: C.mut, marginTop: 2 }}>
+        <Text style={{ ...T.display, color: C.text, marginTop: 2 }}>{claims.length}</Text>
+        <Text style={{ ...T.footnote, color: C.mut, marginTop: 2 }}>
           {claims.length === 1 ? 'reward waiting' : 'rewards waiting'}
         </Text>
         <View style={{ marginTop: 14 }}>
@@ -651,8 +658,8 @@ function NextReward({ next, level, prevLevel, premium, claims, claimAll }) {
   if (!next) {
     return (
       <Card style={{ alignItems: 'center', paddingVertical: 24 }}>
-        <Text style={{ ...TYPE.title, color: C.gold }}>Season cleared</Text>
-        <Text style={{ ...TYPE.caption, color: C.mut, marginTop: 6 }}>Every tier claimed.</Text>
+        <Text style={{ ...T.title2, color: C.gold }}>Season cleared</Text>
+        <Text style={{ ...T.caption, color: C.mut, marginTop: 6 }}>Every tier claimed.</Text>
       </Card>
     );
   }
@@ -687,8 +694,8 @@ function NextReward({ next, level, prevLevel, premium, claims, claimAll }) {
             : <RewardGlyph reward={{ kind: 'coins' }} size={28} color={C.gold} />}
         </View>
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={{ ...TYPE.heading, color: C.text }} numberOfLines={1}>{nextLabel}</Text>
-          <Text style={{ ...TYPE.caption, color: C.gold, marginTop: 2, fontWeight: '700' }}>
+          <Text style={{ ...T.callout, fontWeight: '600', color: C.text }} numberOfLines={1}>{nextLabel}</Text>
+          <Text style={{ ...T.caption, color: C.gold, marginTop: 2, fontWeight: '700' }}>
             Tier {next.tier}
           </Text>
         </View>
@@ -697,8 +704,8 @@ function NextReward({ next, level, prevLevel, premium, claims, claimAll }) {
       <View style={{ marginTop: 14 }}>
         <StatBar pct={pct} height={12} glow />
         <View style={[s.between, { marginTop: 8 }]}>
-          <Text style={{ ...TYPE.caption, color: C.mut }}>Level {level}</Text>
-          <Text style={{ ...TYPE.caption, color: C.gold, fontWeight: '700' }}>
+          <Text style={{ ...T.caption, color: C.mut }}>Level {level}</Text>
+          <Text style={{ ...T.caption, color: C.gold, fontWeight: '700' }}>
             {togo} {togo === 1 ? 'level' : 'levels'} to go
           </Text>
         </View>
@@ -881,12 +888,12 @@ function PassBay({ data, dv, claimTier, claimAll, buyPremium }) {
         <View style={s.between}>
           <View style={{ flex: 1 }}>
             <Text style={s.label}>{dv.season}</Text>
-            <Text style={{ ...TYPE.heading, color: premium ? C.gold : C.text }}>
+            <Text style={{ ...T.callout, fontWeight: '600', color: premium ? C.gold : C.text }}>
               {premium ? 'Premium pass' : 'Free pass'}
             </Text>
           </View>
-          <Text style={{ ...TYPE.title, color: C.text, fontVariant: ['tabular-nums'] }}>
-            {unlocked}<Text style={{ ...TYPE.caption, color: C.faint }}>/{PASS_SEASON_TIERS}</Text>
+          <Text style={{ ...T.title2, color: C.text, fontVariant: ['tabular-nums'] }}>
+            {unlocked}<Text style={{ ...T.caption, color: C.faint }}>/{PASS_SEASON_TIERS}</Text>
           </Text>
         </View>
         {/* Length of chain forged, as a bar. Mirrors the rail below. */}
@@ -898,7 +905,7 @@ function PassBay({ data, dv, claimTier, claimAll, buyPremium }) {
             <ChunkyBtn tone="gold" disabled={coins < PASS_PREMIUM_COST} onPress={buyPremium}>
               GO PREMIUM · {PASS_PREMIUM_COST.toLocaleString()}
             </ChunkyBtn>
-            <Text style={{ ...TYPE.caption, color: C.dim, marginTop: 8 }}>
+            <Text style={{ ...T.caption, color: C.dim, marginTop: 8 }}>
               Unlocks the right-hand side of every link. Cosmetic only — never rank.
             </Text>
           </View>
@@ -966,7 +973,7 @@ export default function ShopTab({ data, dv, buy, equip, forge, claimTier, claimA
       <ScreenHeader title="Forge" hint="Change how your player looks" />
       {/* Packs entry — Packs merged into Forge (research: 5 tabs, not 7). A bold
           banner keeps them one tap away and visually loud when you have some. */}
-      <Pressable onPress={goPacks} style={{
+      <Pressable accessibilityRole="button" onPress={goPacks} style={{
         flexDirection: 'row', alignItems: 'center',
         backgroundColor: packCount > 0 ? C.goldSoft : C.panel2,
         borderWidth: 1, borderColor: packCount > 0 ? C.gold : C.line,
@@ -985,10 +992,10 @@ export default function ShopTab({ data, dv, buy, equip, forge, claimTier, claimA
           <PackGlyph packKey="prime" size={22} color={packCount > 0 ? C.gold : C.mut} strokeWidth={1.7} />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: C.text }}>
+          <Text style={{ ...T.subheadline, fontWeight: '800', color: C.text }}>
             {packCount > 0 ? `${packCount} pack${packCount > 1 ? 's' : ''} to open` : 'Reward Packs'}
           </Text>
-          <Text style={{ fontSize: 12, color: C.mut, fontWeight: '600' }}>
+          <Text style={{ ...T.caption, color: C.mut, fontWeight: '600' }}>
             {packCount > 0 ? 'Tap to open now' : 'Earn packs by leveling & dueling'}
           </Text>
         </View>

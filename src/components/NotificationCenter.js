@@ -3,9 +3,10 @@
 // no platform emoji or novelty symbols are used for core actions.
 
 import React from 'react';
-import { View, Text, Pressable, ScrollView } from 'react-native';
+import { View, Pressable, ScrollView } from 'react-native';
+import { Text } from './Text';
 import Svg, { Path, Circle, Line, Polyline } from 'react-native-svg';
-import { C, TYPE, MONO, RADIUS } from '../theme';
+import { C, MONO, RADIUS, T } from '../theme';
 import { Sheet } from './ui';
 
 const META = {
@@ -105,14 +106,14 @@ function NoticeRow({ item, onOpen }) {
       </View>
       <View style={{ flex: 1 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          <Text style={{ ...TYPE.body, color: item.read ? C.mut : C.text, fontWeight: '700', flex: 1 }}>
+          <Text style={{ ...T.footnote, color: item.read ? C.mut : C.text, fontWeight: '700', flex: 1 }}>
             {meta.title}
           </Text>
-          <Text style={{ ...TYPE.micro, color: C.dim, fontVariant: ['tabular-nums'], marginLeft: 8 }}>
+          <Text style={{ ...T.micro, color: C.dim, fontVariant: ['tabular-nums'], marginLeft: 8 }}>
             {relativeTime(item.created_at)}
           </Text>
         </View>
-        <Text style={{ ...TYPE.caption, color: meta.color, fontWeight: '700', marginTop: 4 }}>
+        <Text style={{ ...T.caption, color: meta.color, fontWeight: '700', marginTop: 4 }}>
           {meta.action}  ›
         </Text>
       </View>
@@ -135,7 +136,7 @@ export default function NotificationCenter({ visible, center, onClose, onOpen })
 
   const section = (label, rows) => rows.length ? (
     <View style={{ marginTop: 14 }}>
-      <Text style={{ ...TYPE.label, color: C.dim, marginBottom: 8 }}>{label}</Text>
+      <Text style={{ ...T.label, color: C.dim, marginBottom: 8 }}>{label}</Text>
       {rows.map((item) => <NoticeRow key={item.id} item={item} onOpen={openItem} />)}
     </View>
   ) : null;
@@ -145,18 +146,18 @@ export default function NotificationCenter({ visible, center, onClose, onOpen })
       <View style={{ paddingHorizontal: 16, paddingTop: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <View>
-            <Text style={{ ...TYPE.title, color: C.text }}>Stay in the loop.</Text>
-            <Text style={{ ...TYPE.caption, color: center && center.live ? C.green : C.mut, marginTop: 3, fontWeight: '700' }}>
+            <Text style={{ ...T.title2, color: C.text }}>Stay in the loop.</Text>
+            <Text style={{ ...T.caption, color: center && center.live ? C.green : C.mut, marginTop: 3, fontWeight: '700' }}>
               {center && center.live ? 'Live updates on' : 'Syncing updates'}
             </Text>
           </View>
           {unread > 0 ? (
-            <Pressable onPress={center.markAllRead} hitSlop={8} style={{
+            <Pressable accessibilityRole="button" onPress={center.markAllRead} hitSlop={8} style={{
               minHeight: 38, paddingHorizontal: 12, borderRadius: RADIUS.pill,
               backgroundColor: C.goldSoft, borderWidth: 1, borderColor: C.gold,
               alignItems: 'center', justifyContent: 'center',
             }}>
-              <Text style={{ ...TYPE.caption, color: C.gold, fontWeight: '700' }}>Mark all read</Text>
+              <Text style={{ ...T.caption, color: C.gold, fontWeight: '700' }}>Mark all read</Text>
             </Pressable>
           ) : null}
         </View>
@@ -169,8 +170,8 @@ export default function NotificationCenter({ visible, center, onClose, onOpen })
             }}>
               <NoticeGlyph color={C.mut} size={30} />
             </View>
-            <Text style={{ ...TYPE.heading, color: C.text, marginTop: 14 }}>All clear.</Text>
-            <Text style={{ ...TYPE.body, color: C.mut, marginTop: 5, textAlign: 'center' }}>
+            <Text style={{ ...T.callout, fontWeight: '600', color: C.text, marginTop: 14 }}>All clear.</Text>
+            <Text style={{ ...T.footnote, color: C.mut, marginTop: 5, textAlign: 'center' }}>
               Requests, duels and rewards appear here.
             </Text>
           </View>

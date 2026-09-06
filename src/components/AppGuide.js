@@ -3,8 +3,9 @@
 // one switch, one sentence at a time.
 
 import React, { useEffect, useState } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { C, TYPE, RADIUS } from '../theme';
+import { View, Pressable } from 'react-native';
+import { Text } from './Text';
+import { C, RADIUS, T } from '../theme';
 import { Sheet, ChunkyBtn } from './ui';
 import { TabIcon } from './TabIcon';
 
@@ -93,7 +94,7 @@ export default function AppGuide({ visible, onClose }) {
         }}>
           <TabIcon name={step.icon} color={step.color} active />
         </View>
-        <Text style={{ ...TYPE.label, color: step.color, marginTop: 16, marginBottom: 7 }}>{step.place}</Text>
+        <Text style={{ ...T.label, color: step.color, marginTop: 16, marginBottom: 7 }}>{step.place}</Text>
         <Text style={{ fontSize: 27, fontWeight: '800', color: C.text, letterSpacing: -0.7 }}>{step.title}</Text>
         <Text style={{ fontSize: 15, fontWeight: '700', color: C.mut, lineHeight: 22, marginTop: 9 }}>
           {step.text}
@@ -105,8 +106,8 @@ export default function AppGuide({ visible, onClose }) {
 
         <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 22 }}>
           {index > 0 ? (
-            <Pressable onPress={() => setIndex((i) => i - 1)} style={{ minWidth: 70, minHeight: 48, alignItems: 'flex-start', justifyContent: 'center' }}>
-              <Text style={{ ...TYPE.body, color: C.mut, fontWeight: '700' }}>‹ BACK</Text>
+            <Pressable accessibilityRole="button" onPress={() => setIndex((i) => i - 1)} style={{ minWidth: 70, minHeight: 48, alignItems: 'flex-start', justifyContent: 'center' }}>
+              <Text style={{ ...T.footnote, color: C.mut, fontWeight: '700' }}>‹ BACK</Text>
             </Pressable>
           ) : <View style={{ minWidth: 70 }} />}
           <View style={{ flex: 1 }} />

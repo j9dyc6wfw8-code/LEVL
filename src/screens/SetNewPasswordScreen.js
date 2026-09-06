@@ -4,11 +4,13 @@
 // so all that's left is choosing a new password.
 
 import React, { useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { Text, TextInput } from '../components/Text';
 import { C, s } from '../theme';
 import { Card, GoldBtn, LevlMark } from '../components/ui';
 import { setNewPassword } from '../services/supabase/authService';
 import { breachWarning } from '../services/breachCheck';
+import { readableError } from '../services/errors';
 
 export default function SetNewPasswordScreen({ onDone, onCancel }) {
   const [pw, setPw] = useState('');
@@ -27,7 +29,7 @@ export default function SetNewPasswordScreen({ onDone, onCancel }) {
     if (pwned) { setErr(pwned); setBusy(false); return; }
     const { error } = await setNewPassword(pw);
     setBusy(false);
-    if (error) { setErr(error.message || 'Could not update your password.'); return; }
+    if (error) { setErr(readableError(error, 'Could not update your password.')); return; }
     onDone && onDone();
   };
 
@@ -58,7 +60,7 @@ export default function SetNewPasswordScreen({ onDone, onCancel }) {
           />
           {err ? <Text style={{ fontSize: 12, color: C.red, marginBottom: 10 }}>{err}</Text> : null}
           <GoldBtn onPress={submit} disabled={busy}>{busy ? 'Saving…' : 'Save new password'}</GoldBtn>
-          <Pressable onPress={onCancel} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 14 }}>
+          <Pressable accessibilityRole="button" onPress={onCancel} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 14 }}>
             <Text style={{ fontSize: 12, color: C.mut, fontWeight: '600' }}>Cancel</Text>
           </Pressable>
         </Card>

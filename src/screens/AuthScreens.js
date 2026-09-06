@@ -1,7 +1,9 @@
 // LEVL React Native — auth, physical-profile onboarding, account transfer
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing, Dimensions, Linking } from 'react-native';
-import { C, s, MONO, RADIUS, TYPE, TOUCH } from '../theme';
+import { View, Pressable, ScrollView, KeyboardAvoidingView, Platform, Animated, Easing, Dimensions, Linking } from 'react-native';
+import { Text, TextInput } from '../components/Text';
+import { C, s, MONO, T, RADIUS, TOUCH } from '../theme';
+import { useReduceMotion } from '../hooks/useReduceMotion';
 import { Card, Lbl, Chip, GoldBtn, GhostBtn, ChunkyBtn, LevlMark } from '../components/ui';
 import { copyText, pasteText } from '../services/platform';
 import { isConfigured } from '../services/supabase/client';
@@ -25,6 +27,26 @@ function readableAuthError(msg) {
   }
   if (m.includes('rate limit')) return 'Too many attempts. Wait an hour, then try again.';
   if (m.includes('audience') || m.includes('id_token')) return 'Apple sign-in isn\'t finished setting up yet. Use email for now.';
+
+  /* Apple's own failure strings, which are written for developers and reached
+   * the user verbatim. Signing in on a device with no Apple Account produced
+   * "The authorization attempt failed for an unknown reason" — technically
+   * accurate, useless to the person reading it, and it names no way forward.
+   * Seen in a simulator; it is not obvious from the source that these strings
+   * ever surface, because appleAuth only special-cases cancellation. */
+  if (m.includes('unknown reason') || m.includes('authorization attempt failed')) {
+    return 'Apple couldn\'t sign you in. Check you\'re signed into an Apple Account in iOS Settings, or use email instead.';
+  }
+  if (m.includes('not handled') || m.includes('not interactive')) {
+    return 'Apple sign-in couldn\'t start. Try again, or use email instead.';
+  }
+  if (m.includes('no identity token')) {
+    return 'Apple didn\'t return the details we need. Try again, or use email instead.';
+  }
+  if (m.includes('unavailable on this build')) {
+    return 'Apple sign-in isn\'t available here. Use email instead.';
+  }
+
   return msg || 'Something went wrong — try again.';
 }
 
@@ -63,8 +85,16 @@ function AuthBackdrop() {
     }))
   ).current;
   const bloom = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
+    // Embers read 0 opacity at v=0, so parking them there removes the drift
+    // entirely. The bloom holds mid-travel: a still glow, not a flat panel.
+    if (reduceMotion) {
+      bloom.setValue(0.5);
+      embers.forEach((e) => e.v.setValue(0));
+      return undefined;
+    }
     const b = Animated.loop(Animated.sequence([
       Animated.timing(bloom, { toValue: 1, duration: 3600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
       Animated.timing(bloom, { toValue: 0, duration: 3600, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
@@ -74,7 +104,7 @@ function AuthBackdrop() {
     ));
     b.start(); es.forEach((a) => a.start());
     return () => { b.stop(); es.forEach((a) => a.stop()); };
-  }, [bloom, embers]);
+  }, [bloom, embers, reduceMotion]);
 
   return (
     <View pointerEvents="none" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
@@ -102,8 +132,17 @@ function BrandMark() {
   const spin = useRef(new Animated.Value(0)).current;
   const glow = useRef(new Animated.Value(0)).current;
   const rise = useRef(new Animated.Value(0)).current;
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
+    // The mark still arrives, it just arrives already there: full opacity and
+    // scale, ring parked, glow held mid-pulse.
+    if (reduceMotion) {
+      rise.setValue(1);
+      spin.setValue(0);
+      glow.setValue(0.5);
+      return undefined;
+    }
     const a = Animated.timing(rise, { toValue: 1, duration: 900, easing: Easing.out(Easing.cubic), useNativeDriver: true });
     const b = Animated.loop(Animated.timing(spin, { toValue: 1, duration: 16000, easing: Easing.linear, useNativeDriver: true }));
     const c = Animated.loop(Animated.sequence([
@@ -112,7 +151,7 @@ function BrandMark() {
     ]));
     a.start(); b.start(); c.start();
     return () => { a.stop(); b.stop(); c.stop(); };
-  }, [spin, glow, rise]);
+  }, [spin, glow, rise, reduceMotion]);
 
   const rot = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
   const scale = rise.interpolate({ inputRange: [0, 1], outputRange: [0.86, 1] });
@@ -150,7 +189,7 @@ function AuthField({ label, ...props }) {
   return (
     <View style={{ marginBottom: 20 }}>
       <Text style={{
-        fontSize: 9.5, letterSpacing: 1.6, fontWeight: '800',
+        ...T.micro, letterSpacing: 1.6, fontWeight: '800',
         color: focus ? C.gold : C.dim, marginBottom: 7, textTransform: 'uppercase',
       }}>{label}</Text>
       <TextInput
@@ -379,22 +418,25 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: C.bg }}>
       <AuthBackdrop />
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 40 }}
+        contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 28, paddingVertical: 28 }}
         keyboardShouldPersistTaps="handled">
-        <View style={{ alignItems: 'center', marginBottom: 34 }}>
+        <View style={{ alignItems: 'center', marginBottom: 28 }}>
           <BrandMark />
           {/* the wordmark carries the weight — wide tracking, nothing competing */}
-          <Text style={{
+          {/* The wordmark is a logo, not content. At 40pt with 14pt tracking it
+              already spans most of the screen, so any scaling at all reflows it
+              to "LEV"/"L". Opted out rather than capped. */}
+          <Text allowFontScaling={false} style={{
             fontSize: 40, color: C.text, fontWeight: '900', letterSpacing: 14,
-            textTransform: 'uppercase', marginTop: 18, marginRight: -14,
+            textTransform: 'uppercase', marginTop: 16, marginRight: -14,
           }}>LEVL</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12 }}>
             <View style={{ width: 46, height: 1, backgroundColor: 'rgba(255,201,51,0.28)' }} />
             <Text style={{ color: C.gold, fontSize: 6.5, marginHorizontal: 10 }}>◆</Text>
             <View style={{ width: 46, height: 1, backgroundColor: 'rgba(255,201,51,0.28)' }} />
           </View>
           <Text style={{
-            fontSize: 11, color: C.dim, marginTop: 16, textAlign: 'center',
+            ...T.caption2, color: C.dim, marginTop: 12, textAlign: 'center',
             fontWeight: '700', letterSpacing: 2.6, textTransform: 'uppercase',
           }}>
             {mode === 'signup' ? 'Begin the climb' : 'Welcome back'}
@@ -408,13 +450,13 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
             padding: 4, marginBottom: 26, borderWidth: 1, borderColor: C.line,
           }}>
             {[['signin', 'Sign in'], ['signup', 'Create account']].map((m) => (
-              <Pressable key={m[0]} onPress={() => { setMode(m[0]); setErr(''); setNotice(''); }}
+              <Pressable hitSlop={{ top: 1, bottom: 1 }} key={m[0]} onPress={() => { setMode(m[0]); setErr(''); setNotice(''); }}
                 accessibilityRole="tab" accessibilityState={{ selected: mode === m[0] }} accessibilityLabel={m[1]}
                 style={{
                   flex: 1, minHeight: 42, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
                   backgroundColor: mode === m[0] ? C.gold : 'transparent',
                 }}>
-                <Text style={{ fontSize: 13.5, fontWeight: '800', color: mode === m[0] ? C.ink : C.mut }}>{m[1]}</Text>
+                <Text style={{ ...T.footnote, fontWeight: '800', color: mode === m[0] ? C.ink : C.mut }}>{m[1]}</Text>
               </Pressable>
             ))}
           </View>
@@ -444,9 +486,9 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                 backgroundColor: agreed ? C.gold : 'transparent',
                 borderWidth: 1.5, borderColor: agreed ? C.gold : C.line,
               }}>
-                {agreed ? <Text style={{ fontSize: 13, fontWeight: '900', color: C.ink }}>✓</Text> : null}
+                {agreed ? <Text style={{ ...T.footnote, fontWeight: '900', color: C.ink }}>✓</Text> : null}
               </View>
-              <Text style={{ flex: 1, fontSize: 12.5, color: C.mut, lineHeight: 18 }}>
+              <Text style={{ flex: 1, ...T.caption, color: C.mut, lineHeight: 18 }}>
                 I agree to the{' '}
                 <Text
                   style={{ color: C.gold, fontWeight: '700' }}
@@ -461,18 +503,18 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
               </Text>
             </Pressable>
           ) : null}
-          {err ? <Text style={{ fontSize: 12.5, color: C.red, marginBottom: 14, fontWeight: '600' }}>{err}</Text> : null}
-          {notice ? <Text style={{ fontSize: 12.5, color: C.green, marginBottom: 14, fontWeight: '600' }}>{notice}</Text> : null}
+          {err ? <Text style={{ ...T.caption, color: C.red, marginBottom: 14, fontWeight: '600' }}>{err}</Text> : null}
+          {notice ? <Text style={{ ...T.caption, color: C.green, marginBottom: 14, fontWeight: '600' }}>{notice}</Text> : null}
           {resetSent ? (
             <View style={{ marginBottom: 4 }}>
-              <Pressable onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 2 }}>
-                <Text style={{ fontSize: 12, color: C.gold, fontWeight: '700' }}>{busy ? 'Sending…' : 'Resend email'}</Text>
+              <Pressable accessibilityRole="button" onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 2 }}>
+                <Text style={{ ...T.caption, color: C.gold, fontWeight: '700' }}>{busy ? 'Sending…' : 'Resend email'}</Text>
               </Pressable>
               {/* Fallback: only useful if the reset email is customised to
                   include a 6-digit code (needs custom SMTP). Hidden by default
                   so it can't confuse anyone using the standard link email. */}
-              <Pressable onPress={() => setShowCodeEntry((v) => !v)} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
-                <Text style={{ fontSize: 11.5, color: C.mut }}>{showCodeEntry ? 'Hide code entry' : 'Email contains a 6-digit code instead?'}</Text>
+              <Pressable accessibilityRole="button" onPress={() => setShowCodeEntry((v) => !v)} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
+                <Text style={{ ...T.caption2, color: C.mut }}>{showCodeEntry ? 'Hide code entry' : 'Email contains a 6-digit code instead?'}</Text>
               </Pressable>
               {showCodeEntry && (
                 <View style={{ marginTop: 10 }}>
@@ -483,8 +525,8 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                   <GoldBtn onPress={completeReset} disabled={busy}>{busy ? 'Working…' : 'Set new password'}</GoldBtn>
                 </View>
               )}
-              <Pressable onPress={() => { setResetSent(false); setNotice(''); setShowCodeEntry(false); }} hitSlop={8} style={{ alignItems: 'center', marginTop: 14 }}>
-                <Text style={{ fontSize: 12, color: C.mut, fontWeight: '600' }}>Back to sign in</Text>
+              <Pressable accessibilityRole="button" onPress={() => { setResetSent(false); setNotice(''); setShowCodeEntry(false); }} hitSlop={8} style={{ alignItems: 'center', marginTop: 14 }}>
+                <Text style={{ ...T.caption, color: C.mut, fontWeight: '600' }}>Back to sign in</Text>
               </Pressable>
             </View>
           ) : (
@@ -497,35 +539,35 @@ export function AuthScreen({ onAuthed, loadAuth, saveAuth, sha256Hex, makeSalt }
                 shadowColor: C.gold, shadowOpacity: 0.28, shadowRadius: 18,
                 shadowOffset: { width: 0, height: 6 }, elevation: 6,
               }}>
-              <Text style={{ fontSize: 14, fontWeight: '900', color: C.ink, letterSpacing: 1.6, textTransform: 'uppercase' }}>
+              <Text style={{ ...T.footnote, fontWeight: '900', color: C.ink, letterSpacing: 1.6, textTransform: 'uppercase' }}>
                 {busy ? 'Working…' : mode === 'signup' ? 'Create account' : 'Sign in'}
               </Text>
             </Pressable>
           )}
           {isConfigured && mode === 'signin' ? (
-            <Pressable onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
-              <Text style={{ fontSize: 12, color: C.mut, fontWeight: '600' }}>Forgot password?</Text>
+            <Pressable accessibilityRole="button" onPress={forgotPassword} disabled={busy} hitSlop={8} style={{ alignItems: 'center', marginTop: 12 }}>
+              <Text style={{ ...T.caption, color: C.mut, fontWeight: '600' }}>Forgot password?</Text>
             </Pressable>
           ) : null}
           {appleAvailable && isConfigured ? (
             <View style={{ marginTop: 14 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
                 <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
-                <Text style={{ ...TYPE.micro, color: C.dim, marginHorizontal: 10 }}>OR</Text>
+                <Text style={{ ...T.micro, color: C.dim, marginHorizontal: 10 }}>OR</Text>
                 <View style={{ flex: 1, height: 1, backgroundColor: C.line }} />
               </View>
-              <Pressable onPress={doApple} disabled={busy}
+              <Pressable accessibilityRole="button" onPress={doApple} disabled={busy}
                 style={{ minHeight: TOUCH, borderRadius: RADIUS.md, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', flexDirection: 'row' }}>
                 <Text style={{ fontSize: 17, fontWeight: '700', color: '#000', marginRight: 6 }}></Text>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: '#000' }}>Continue with Apple</Text>
+                <Text style={{ ...T.subheadline, fontWeight: '700', color: '#000' }}>Continue with Apple</Text>
               </Pressable>
             </View>
           ) : null}
           <Pressable onPress={() => onAuthed(null, 'Player', false)} hitSlop={8}
             accessibilityRole="button" accessibilityLabel="Continue as guest"
-            style={{ alignItems: 'center', marginTop: 26, paddingVertical: 8 }}>
-            <Text style={{ fontSize: 12.5, color: C.mut, fontWeight: '700' }}>Continue as guest</Text>
-            <Text style={{ fontSize: 10.5, color: C.faint, marginTop: 3 }}>Saves to this device only</Text>
+            style={{ alignItems: 'center', marginTop: 20, paddingVertical: 8 }}>
+            <Text style={{ ...T.caption, color: C.mut, fontWeight: '700' }}>Continue as guest</Text>
+            <Text style={{ ...T.micro, color: C.faint, marginTop: 3 }}>Saves to this device only</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -557,7 +599,7 @@ export function PhysicalProfileForm({ data, onSave, onCancel, embedded }) {
       <View style={[s.row, { backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, borderRadius: 10 }]}>
         <TextInput value={val} onChangeText={set} keyboardType="decimal-pad" placeholder="0" placeholderTextColor={C.dim}
           style={{ flex: 1, paddingHorizontal: 10, paddingVertical: 12, color: C.text, fontSize: 16, fontVariant: ['tabular-nums'] }} />
-        <Text style={{ paddingRight: 10, color: C.dim, fontSize: 12, fontWeight: '700' }}>{suffix}</Text>
+        <Text style={{ paddingRight: 10, color: C.dim, ...T.caption, fontWeight: '700' }}>{suffix}</Text>
       </View>
     </View>
   );
@@ -580,10 +622,10 @@ export function PhysicalProfileForm({ data, onSave, onCancel, embedded }) {
       {pick('Sex', SEX_OPTS, sex, setSex)}
       {pick('Activity level', ACTIVITY_OPTS, activity, setActivity)}
       {pick('Training experience', EXPERIENCE_OPTS, experience, setExperience)}
-      {err ? <Text style={{ fontSize: 12, color: C.red, marginTop: 10 }}>{err}</Text> : null}
+      {err ? <Text style={{ ...T.caption, color: C.red, marginTop: 10 }}>{err}</Text> : null}
       <GoldBtn onPress={save} style={{ marginTop: 14 }}>Save physical profile</GoldBtn>
       {onCancel && <GhostBtn onPress={onCancel} style={{ marginTop: 8 }}>Cancel</GhostBtn>}
-      <Text style={{ fontSize: 13, color: C.mut, marginTop: 10, fontWeight: '700' }}>
+      <Text style={{ ...T.footnote, color: C.mut, marginTop: 10, fontWeight: '700' }}>
         Used for realistic lift checks. Edit anytime.
       </Text>
     </View>
@@ -597,8 +639,8 @@ export function PhysicalProfileForm({ data, onSave, onCancel, embedded }) {
           arrow — so the old brand flashed up mid sign-in. */}
       <View style={{ alignItems: 'center', marginBottom: 18 }}>
         <LevlMark size={44} />
-        <Text style={{ fontSize: 16, color: C.text, marginTop: 10, fontWeight: '800' }}>Build your player profile</Text>
-        <Text style={{ fontSize: 15, color: C.mut, marginTop: 6, textAlign: 'center', fontWeight: '700' }}>
+        <Text style={{ ...T.callout, color: C.text, marginTop: 10, fontWeight: '800' }}>Build your player profile</Text>
+        <Text style={{ ...T.subheadline, color: C.mut, marginTop: 6, textAlign: 'center', fontWeight: '700' }}>
           Three details keep your lift checks accurate.
         </Text>
       </View>
@@ -634,7 +676,7 @@ export function AccountTransfer({ makeCode, importCode }) {
           <ChunkyBtn onPress={copy} small tone={copied ? 'green' : 'gold'} style={{ marginTop: 6 }}>
             {copied ? 'Copied ✓' : 'Copy code'}
           </ChunkyBtn>
-          <Text style={{ fontSize: 13, color: C.mut, marginTop: 7, fontWeight: '700' }}>
+          <Text style={{ ...T.footnote, color: C.mut, marginTop: 7, fontWeight: '700' }}>
             Paste this code on your other device.
           </Text>
         </View>
@@ -646,11 +688,11 @@ export function AccountTransfer({ makeCode, importCode }) {
             style={[s.input, { minHeight: 70, fontSize: 10, fontVariant: ['tabular-nums'], textAlignVertical: 'top' }]} />
           <View style={[s.row, { marginTop: 6 }]}>
             <GhostBtn onPress={paste} style={{ flex: 1, marginRight: 6 }}>Paste</GhostBtn>
-            <Pressable onPress={() => { if (importCode(inCode)) setInCode(''); }} style={[s.greenBtn, { flex: 2, paddingVertical: 10 }]}>
+            <Pressable accessibilityRole="button" onPress={() => { if (importCode(inCode)) setInCode(''); }} style={[s.greenBtn, { flex: 2, paddingVertical: 10 }]}>
               <Text style={s.goldBtnTxt}>Restore from code</Text>
             </Pressable>
           </View>
-          <Text style={{ fontSize: 10, color: C.dim, marginTop: 6 }}>This replaces the current save on this device.</Text>
+          <Text style={{ ...T.micro, color: C.dim, marginTop: 6 }}>This replaces the current save on this device.</Text>
         </View>
       )}
     </View>

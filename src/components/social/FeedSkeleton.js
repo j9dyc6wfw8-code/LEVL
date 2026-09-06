@@ -11,8 +11,9 @@
 // The shimmer stops entirely under Reduce Motion.
 // ============================================================================
 
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Animated, Easing, AccessibilityInfo } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Animated, Easing } from 'react-native';
+import { useReduceMotion } from '../../hooks/useReduceMotion';
 import { C, RADIUS, SPACING } from '../../theme';
 
 function Block({ width, height, radius = RADIUS.sm, style, opacity }) {
@@ -28,11 +29,7 @@ function Block({ width, height, radius = RADIUS.sm, style, opacity }) {
 
 export default function FeedSkeleton({ count = 2 }) {
   const pulse = useRef(new Animated.Value(0.45)).current;
-  const [reduceMotion, setReduceMotion] = useState(false);
-
-  useEffect(() => {
-    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion).catch(() => {});
-  }, []);
+  const reduceMotion = useReduceMotion();
 
   useEffect(() => {
     if (reduceMotion) { pulse.setValue(0.6); return undefined; }

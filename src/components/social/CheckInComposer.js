@@ -13,10 +13,8 @@
 // ============================================================================
 
 import React, { useCallback, useMemo, useState } from 'react';
-import {
-  View, Text, Pressable, ScrollView, TextInput,
-  ActivityIndicator, Platform, KeyboardAvoidingView,
-} from 'react-native';
+import { View, Pressable, ScrollView, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
+import { Text, TextInput } from '../Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { C, RADIUS, SPACING, T, TOUCH } from '../../theme';
 import DualPhoto from './DualPhoto';
@@ -227,7 +225,7 @@ export default function CheckInComposer({
             }}
           />
 
-          <Pressable
+          <Pressable hitSlop={{ top: 3, bottom: 3 }}
             onPress={() => setAltOpen((o) => !o)}
             accessibilityRole="button"
             accessibilityState={{ expanded: altOpen }}

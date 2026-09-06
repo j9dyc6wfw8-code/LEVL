@@ -10,6 +10,7 @@ import { isConfigured } from '../services/supabase/client';
 import { currentUserId } from '../services/supabase/authService';
 import { myNotifications, markRead } from '../services/supabase/notificationService';
 import { subscribe } from '../services/supabase/realtimeService';
+import { readableError } from '../services/errors';
 
 export function useNotifications(accountKey) {
   const [items, setItems] = useState([]);
@@ -36,10 +37,10 @@ export function useNotifications(accountKey) {
         setUnread(list.data.filter((n) => !n.read).length);
         setError(null);
       } else if (list.error) {
-        setError(String(list.error.message || 'Could not refresh activity'));
+        setError(readableError(list.error, 'Could not refresh activity.'));
       }
     } catch (e) {
-      if (accountRef.current === requestAccount) setError(String(e && e.message || e));
+      if (accountRef.current === requestAccount) setError(readableError(e, 'Could not refresh activity.'));
     } finally {
       if (accountRef.current === requestAccount) setLoading(false);
     }

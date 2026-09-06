@@ -17,7 +17,8 @@
 // scoreboard.
 // ============================================================================
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
+import { Text } from './Text';
 import { C, alpha, T, RADIUS, SPACING } from '../theme';
 import { TierCrest } from './TierCrest';
 import { TIERS } from '../engine/engine';
@@ -107,7 +108,15 @@ export default function StandingPanel({ dv, rank, fieldSize, detail, onToggleDet
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         <TierCrest tier={tier} size={54} />
         <View style={{ flex: 1, marginLeft: 14 }}>
-          <Text style={{ ...T.title2, color: tier.color, letterSpacing: 0.3 }}>
+          {/* A rank is an identity label, so it stays on one line. At large
+              Dynamic Type "Champion II" no longer fits this column and RN
+              breaks mid-word — "Champi" / "on II". Shrink to fit instead, with
+              a floor so it never becomes unreadable. */}
+          <Text
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.75}
+            style={{ ...T.title2, color: tier.color, letterSpacing: 0.3 }}>
             {tier.name}{dv.division || ''}
           </Text>
           <Text style={{ ...T.caption, color: C.dim, marginTop: 1 }} numberOfLines={1}>

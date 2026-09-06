@@ -8,9 +8,10 @@
 // Pure Animated with the native driver. No new dependencies.
 
 import React, { useEffect, useRef } from 'react';
-import { View, Text, Pressable, Animated, Easing } from 'react-native';
+import { View, Pressable, Animated, Easing } from 'react-native';
+import { Text } from './Text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { C, TYPE, RADIUS } from '../theme';
+import { C, RADIUS, T } from '../theme';
 import { NoticeGlyph } from './NotificationCenter';
 
 const VISIBLE_MS = 4500;
@@ -88,10 +89,10 @@ export default function NoticeBanner({ notice, onPress, onDismiss }) {
         }}>
         <NoticeGlyph kind={m.glyph} color={m.color} size={22} />
         <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={{ ...TYPE.body, color: C.text, fontWeight: '900' }} numberOfLines={1}>
+          <Text style={{ ...T.footnote, color: C.text, fontWeight: '900' }} numberOfLines={1}>
             {m.title}
           </Text>
-          <Text style={{ ...TYPE.micro, color: C.dim, marginTop: 1 }} numberOfLines={1}>
+          <Text style={{ ...T.micro, color: C.dim, marginTop: 1 }} numberOfLines={1}>
             {from ? from + ' · tap to open' : 'Tap to open'}
           </Text>
         </View>

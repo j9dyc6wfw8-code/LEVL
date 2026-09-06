@@ -1,9 +1,10 @@
 // LEVL React Native — shared UI atoms, overlays, and SVG charts
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, Animated, Easing, Modal, StyleSheet, AccessibilityInfo, Platform } from 'react-native';
+import { View, Pressable, Animated, Easing, Modal, StyleSheet, AccessibilityInfo, Platform } from 'react-native';
+import { Text, TextInput } from './Text';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Polygon, Polyline, Line, Circle, Rect, Path, G, Text as SvgText } from 'react-native-svg';
-import { C, s, GRAD, RADIUS, TYPE, MOTION, alpha } from '../theme';
+import { C, s, GRAD, T, RADIUS, MOTION, alpha } from '../theme';
 import haptics from '../services/haptics';
 
 /* expo-blur is already a dependency AND already linked in ios/Podfile.lock, so
@@ -397,11 +398,11 @@ export function Unavailable({ title, body }) {
       }}>
         <Text style={{ fontSize: 19, fontWeight: '800', color: C.orange }}>!</Text>
       </View>
-      <Text style={{ ...TYPE.heading, color: C.text, textAlign: 'center' }}>
+      <Text style={{ ...T.callout, fontWeight: '600', color: C.text, textAlign: 'center' }}>
         {title || 'Temporarily unavailable'}
       </Text>
       <Text style={{
-        ...TYPE.caption, color: C.mut, textAlign: 'center',
+        ...T.caption, color: C.mut, textAlign: 'center',
         marginTop: 6, lineHeight: 18, maxWidth: 300,
       }}>
         {body || 'We have switched this off for a moment while we fix something. Everything else still works, and nothing you have logged is affected.'}
@@ -415,7 +416,7 @@ export function Unavailable({ title, body }) {
 // Replaces nested scroll lists — the page scrolls, the sheet scrolls, never both.
 export function SelectRow({ label, value, placeholder, onPress }) {
   return (
-    <Pressable onPress={onPress} style={{
+    <Pressable accessibilityRole="button" onPress={onPress} style={{
       flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
       backgroundColor: C.sunken, borderWidth: 1, borderColor: C.lineSoft,
       borderRadius: RADIUS.md, paddingHorizontal: 14, paddingVertical: 13,
@@ -470,7 +471,7 @@ export function Sheet({ visible, title, onClose, children }) {
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 18, paddingVertical: 10 }}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, letterSpacing: -0.2 }}>{title}</Text>
-          <Pressable onPress={onClose} hitSlop={10}>
+          <Pressable accessibilityRole="button" onPress={onClose} hitSlop={10}>
             <Text style={{ fontSize: 14, color: C.gold, fontWeight: '600' }}>Done</Text>
           </Pressable>
         </View>
@@ -493,7 +494,7 @@ export function Collapsible({ title, subtitle, children, defaultOpen }) {
   const spin = rot.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] });
   return (
     <View style={s.card}>
-      <Pressable onPress={toggle} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Pressable accessibilityRole="button" onPress={toggle} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <View style={{ flex: 1 }}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: C.text, letterSpacing: -0.2 }}>{title}</Text>
           {subtitle ? <Text style={{ fontSize: 12, color: C.dim, marginTop: 2 }}>{subtitle}</Text> : null}
@@ -513,25 +514,52 @@ export function Collapsible({ title, subtitle, children, defaultOpen }) {
   );
 }
 
-export const NumField = ({ label, value, onChange, suffix, flex }) => (
-  <View style={{ flex: flex || 1 }}>
-    <Lbl>{label}</Lbl>
-    <View style={[s.row, { backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, borderRadius: 10 }]}>
-      <TextInput
-        value={String(value)} onChangeText={onChange} keyboardType="decimal-pad"
-        placeholder="0" placeholderTextColor={C.dim}
-        style={{ flex: 1, paddingHorizontal: 12, paddingVertical: 12, color: C.text, fontSize: 18, fontVariant: ['tabular-nums'] }}
-      />
-      {suffix ? <Text style={{ paddingHorizontal: 12, color: C.dim, fontSize: 12, fontWeight: '700' }}>{suffix}</Text> : null}
+/* The most-repeated interaction in LEVL. A four-set session touches this eight
+ * times; a year of training, thousands. Two changes, both about the tap count:
+ *
+ * selectTextOnFocus — the field arrives PRE-FILLED with the previous set's
+ *   value, which is the right default. But without this, tapping it put a caret
+ *   after "80" and the only way to enter 85 was to backspace twice first. Now
+ *   the value is selected on focus, so typing replaces it. That is two taps
+ *   removed from every corrected entry.
+ *
+ * ref forwarding — weight and reps are two fields the user always crosses in
+ *   the same direction, and nothing could move the focus because the component
+ *   swallowed the ref. Now a caller can hold a ref to reps and jump straight
+ *   there. Worth naming the constraint: keyboardType="decimal-pad" has NO
+ *   return key on iOS, so there is no "Next" to press — the jump has to be
+ *   driven by the caller, and a proper InputAccessoryView toolbar is the
+ *   native answer if this needs to go further.
+ *
+ * The same gap is the top logging complaint about Hevy, and 2026 retention
+ * research puts logging friction as the strongest single predictor of whether
+ * somebody is still tracking at 30 days. This is not cosmetic. */
+export const NumField = React.forwardRef(
+  ({ label, value, onChange, suffix, flex, onSubmitEditing, returnKeyType }, ref) => (
+    <View style={{ flex: flex || 1 }}>
+      <Lbl>{label}</Lbl>
+      <View style={[s.row, { backgroundColor: C.panel2, borderWidth: 1, borderColor: C.line, borderRadius: 10 }]}>
+        <TextInput
+          ref={ref}
+          value={String(value)} onChangeText={onChange} keyboardType="decimal-pad"
+          selectTextOnFocus
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={returnKeyType}
+          placeholder="0" placeholderTextColor={C.dim}
+          style={{ flex: 1, paddingHorizontal: 12, paddingVertical: 12, color: C.text, fontSize: 18, fontVariant: ['tabular-nums'] }}
+        />
+        {suffix ? <Text style={{ paddingHorizontal: 12, color: C.dim, fontSize: 12, fontWeight: '700' }}>{suffix}</Text> : null}
+      </View>
     </View>
-  </View>
+  ),
 );
+NumField.displayName = 'NumField';
 
 // Press-scale wrapper — used by ghost/secondary buttons.
 function Pressable3D({ onPress, disabled, style, children }) {
   const sc = useRef(new Animated.Value(1)).current;
   return (
-    <Pressable
+    <Pressable accessibilityRole="button"
       onPressIn={() => !disabled && Animated.spring(sc, { toValue: 0.96, useNativeDriver: true, speed: 50 }).start()}
       onPressOut={() => Animated.spring(sc, { toValue: 1, useNativeDriver: true, speed: 50 }).start()}
       onPress={disabled ? undefined : onPress}>
@@ -588,8 +616,8 @@ export function Stagger({ children, step }) {
 export function EmptyState({ title, body, action }) {
   return (
     <View style={[s.card, { alignItems: 'center', paddingVertical: 28 }]}>
-      <Text style={{ ...TYPE.heading, color: C.text, marginBottom: 6, textAlign: 'center' }}>{title}</Text>
-      <Text style={{ ...TYPE.caption, color: C.mut, textAlign: 'center', lineHeight: 18, maxWidth: 280 }}>{body}</Text>
+      <Text style={{ ...T.callout, fontWeight: '600', color: C.text, marginBottom: 6, textAlign: 'center' }}>{title}</Text>
+      <Text style={{ ...T.caption, color: C.mut, textAlign: 'center', lineHeight: 18, maxWidth: 280 }}>{body}</Text>
       {action ? <View style={{ marginTop: 16, alignSelf: 'stretch' }}>{action}</View> : null}
     </View>
   );
@@ -619,7 +647,7 @@ export function LevelUpOverlay({ info, onClose }) {
   }, [info, a]);
   if (!info) return null;
   return (
-    <Pressable onPress={onClose} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(5,6,10,0.88)', zIndex: 70, alignItems: 'center', justifyContent: 'center' }}>
+    <Pressable accessibilityRole="button" onPress={onClose} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(5,6,10,0.88)', zIndex: 70, alignItems: 'center', justifyContent: 'center' }}>
       <Animated.View style={{ alignItems: 'center', transform: [{ scale: a }] }}>
         <Text style={{ fontSize: 12, color: C.gold, fontWeight: '700', letterSpacing: 2, textTransform: 'uppercase' }}>Level Up</Text>
         <Text style={{ fontSize: 84, fontWeight: '800', color: C.text, fontVariant: ['tabular-nums'] }}>{info.to}</Text>

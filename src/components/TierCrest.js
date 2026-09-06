@@ -17,7 +17,8 @@
 // ornament is added at the OUTLINE, never inside it.
 // ============================================================================
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
+import { Text } from './Text';
 import Svg, { Path, Polygon, G, Circle } from 'react-native-svg';
 import { C, alpha, T } from '../theme';
 import { TIERS } from '../engine/engine';
