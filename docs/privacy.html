@@ -1,24 +1,37 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="What the LEVL iPhone app collects, why, who can see it, how long it is kept, and how to delete it.">
 <title>LEVL Privacy Policy</title>
 <style>
   :root{
     --ground:#FBFAF8; --surface:#fff; --line:#E4E0D8; --text:#1A1B1E;
-    --muted:#565B63; --faint:#8A8F97; --accent:#8A6D1F;
+    --muted:#565B63; --faint:#6F747C; --accent:#8A6D1F; --otc:#B3261E;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
     --ground:#111316; --surface:#171A1E; --line:#2A2F36; --text:#E9EAEC;
-    --muted:#A0A6AE; --faint:#6D747D; --accent:#D9B45A;
+    --muted:#A0A6AE; --faint:#8A919A; --accent:#D9B45A; --otc:#FF8A80;
   }}
   :root[data-theme="dark"]{
     --ground:#111316; --surface:#171A1E; --line:#2A2F36; --text:#E9EAEC;
-    --muted:#A0A6AE; --faint:#6D747D; --accent:#D9B45A;
+    --muted:#A0A6AE; --faint:#8A919A; --accent:#D9B45A; --otc:#FF8A80;
   }
   *{box-sizing:border-box}
   body{background:var(--ground);color:var(--text);font-family:var(--sans);
     font-size:17px;line-height:1.65;margin:0;padding:0 22px 88px;-webkit-font-smoothing:antialiased}
   .wrap{max-width:720px;margin:0 auto}
-  header{padding:56px 0 26px;border-bottom:1px solid var(--line);margin-bottom:34px}
+  .skip{position:absolute;left:-999px}
+  .skip:focus{left:16px;top:12px;background:var(--surface);padding:6px 10px;border:1px solid var(--line)}
+  nav.pages{padding-top:20px;font-size:14px}
+  nav.pages ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 16px}
+  nav.pages li{margin:0}
+  nav.pages a[aria-current="page"]{color:var(--accent);text-decoration:none;font-weight:600}
+  header{padding:36px 0 26px;border-bottom:1px solid var(--line);margin-bottom:34px}
   .brand{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
     color:var(--accent);margin:0 0 12px}
   h1{font-size:clamp(30px,5vw,40px);line-height:1.1;letter-spacing:-.028em;margin:0 0 10px;font-weight:700}
@@ -28,12 +41,13 @@
   h3{font-size:17px;margin:26px 0 8px;font-weight:700}
   p,li{color:var(--muted);max-width:66ch}
   strong{color:var(--text);font-weight:600}
-  ul{padding-left:20px}
+  ul,ol{padding-left:20px}
   li{margin-bottom:7px}
   a{color:var(--text);text-decoration-color:var(--accent);text-underline-offset:3px}
   a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   .tbl{overflow-x:auto;margin:16px 0}
-  table{border-collapse:collapse;width:100%;font-size:15px;min-width:440px}
+  table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
+  caption{text-align:left;color:var(--faint);font-size:13px;padding-bottom:6px}
   th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
   th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
     color:var(--faint);font-weight:600}
@@ -42,103 +56,169 @@
   .callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
     border-radius:3px;padding:16px 18px;margin:20px 0}
   .callout p{margin:0}
+  .callout p+p,.callout ul{margin-top:10px}
+  mark.otc{background:transparent;color:var(--otc);border:1.5px dashed var(--otc);border-radius:3px;
+    padding:0 4px;font-family:var(--mono);font-size:.8em;font-weight:600}
   footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
     color:var(--faint);font-size:14px}
   code{font-family:var(--mono);font-size:.9em;background:var(--surface);
     border:1px solid var(--line);border-radius:3px;padding:1px 5px;color:var(--accent)}
+  @media (max-width:480px){body{padding:0 16px 64px;font-size:16px}}
 </style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="wrap">
+<nav class="pages" aria-label="LEVL pages">
+  <ul>
+    <li><a href="privacy.html" aria-current="page">Privacy</a></li>
+    <li><a href="terms.html">Terms</a></li>
+    <li><a href="community-guidelines.html">Community guidelines</a></li>
+    <li><a href="account-deletion.html">Delete your account</a></li>
+    <li><a href="support.html">Support</a></li>
+  </ul>
+</nav>
 <header>
   <p class="brand">LEVL</p>
   <h1>Privacy Policy</h1>
-  <p class="updated">Last updated 18 August 2026</p>
+  <p class="updated">Last updated 1 October 2026 · applies to LEVL 2.0 and later</p>
 </header>
+<main id="main">
 
-<p>This policy explains what LEVL collects, why, and what control you have. It is
-written to be read, not to be survived.</p>
+<p>This policy explains what the LEVL iPhone app collects, why, who can see it, how long it is kept, and what you can do about it.</p>
+
+<div class="callout">
+<p><strong>The short version</strong></p>
+<ul>
+  <li>As a guest, your training and progress stay on your iPhone. Only diagnostics, and any bug report you choose to send, leave it.</li>
+  <li>With an account, your training, progress and the physical details you enter are stored with your account, so they sync and so friends and duels work.</li>
+  <li>What LEVL reads from Apple Health stays on your iPhone.</li>
+  <li>There is no advertising or tracking, and we don't sell data.</li>
+  <li>You can delete your account in the app at any time.</li>
+</ul>
+</div>
 
 <h2>Who we are</h2>
-<p>LEVL is an iOS training app. The data controller is the LEVL developer. For any
-privacy question, or to exercise any right below, contact
-<a href="mailto:Levlup18@gmail.com">Levlup18@gmail.com</a>.</p>
+<p>LEVL is made by Matteo Shidrawi and Seb Michel, in the United Kingdom. We are responsible for your data (the "controller"). For any privacy question, or to use any of the rights below, email <a href="mailto:Levlup18@gmail.com">Levlup18@gmail.com</a>.</p>
 
-<h2>What we collect</h2>
-<h3>You give us this directly</h3>
+<h2>Using LEVL as a guest</h2>
+<p>If you choose "Continue as guest", your save stays on this iPhone: your training log, physical details, progress and cosmetics. Two things still leave your iPhone:</p>
+<ul>
+  <li><strong>Diagnostics</strong> (see below). These are sent without an account ID, tagged only with a random ID that changes every time the app starts.</li>
+  <li><strong>A bug report</strong>, if you send one.</li>
+</ul>
+<p>Guests can't post Check Ins, add friends, duel friends or see the boards.</p>
+
+<h2>What we collect when you have an account</h2>
 <div class="tbl">
 <table>
-  <thead><tr><th>Data</th><th>Why</th><th>Kept</th></tr></thead>
+  <caption>Data stored with your LEVL account</caption>
+  <thead><tr><th scope="col">Data</th><th scope="col">Why</th><th scope="col">Who can see it</th><th scope="col">Kept until</th></tr></thead>
   <tbody>
-    <tr><td>Email address</td><td>To create and recover your account</td><td>Until you delete your account</td></tr>
-    <tr><td>Display name and username</td><td>Shown to friends and on leaderboards</td><td>Until you delete your account</td></tr>
-    <tr><td>Training log — exercises, weights, reps, effort, cardio, dates</td><td>The core function of the app</td><td>Until you delete it or your account</td></tr>
-    <tr><td>Bodyweight, height, age, sex, activity level, experience</td><td>To sanity-check implausible lifts and give context to stats</td><td>Until you delete your account</td></tr>
-    <tr><td>Check In photographs and captions</td><td>The social feed, if you use it</td><td>Until you delete the Check In or your account</td></tr>
-    <tr><td>Bug reports you submit</td><td>To fix the bug</td><td>Until you delete your account</td></tr>
+    <tr><td>Email address (from you, or from Apple if you use Sign in with Apple; this may be a private relay address)</td><td>Signing in, password reset</td><td>Only us. Never shown to other players</td><td>You delete your account</td></tr>
+    <tr><td>Password</td><td>Signing in</td><td>No one. It is stored in hashed form by our sign-in provider</td><td>You delete your account</td></tr>
+    <tr><td>Display name (you choose it; if you share your name through Sign in with Apple, it starts as that name)</td><td>Shown with your posts, on the boards and to friends</td><td>Other signed-in LEVL players</td><td>You change it or delete your account</td></tr>
+    <tr><td>Username</td><td>So friends can find you</td><td>Other signed-in LEVL players</td><td>You change it or delete your account</td></tr>
+    <tr><td>Profile summary: your character's look, title and border, level, XP, coins, rank, streak, when you were last active, and figures worked out from your log (weekly XP, best lift, consistency)</td><td>Boards, friends, duels, "online" status</td><td>Other signed-in LEVL players</td><td>You delete your account</td></tr>
+    <tr><td>Training log: exercises, weights, reps, effort, cardio time and distance, dates, XP, personal records</td><td>Syncing, your stats, friend duels, boards</td><td>You, your friends, and the friend you are duelling while the duel is active</td><td>You delete the set or your account</td></tr>
+    <tr><td>Physical details you enter: bodyweight, height, age, sex, activity level, training experience</td><td>Checking that lifts are realistic, and giving your stats context</td><td>Only you. They are stored inside your private save</td><td>You change them or delete your account</td></tr>
+    <tr><td>Your game save: everything above plus progress, cosmetics, packs, the Pass, practice duels and Workout Days</td><td>Keeping your progress across devices and reinstalls</td><td>Only you</td><td>You delete your account</td></tr>
+    <tr><td>Check In photos (two per Check In)</td><td>The Check In feed</td><td>The audience you choose for each Check In: friends, or public. Public discovery (Profile › Check In) controls whether people who aren't your friends can see Check Ins you mark Public. It is off unless you switch it on</td><td>You delete the Check In or your account</td></tr>
+    <tr><td>Check In details: date, time zone, time posted, caption, photo description, audience, and the summary of any workout you attach (sets, volume, XP, personal records, cardio minutes, exercise names)</td><td>The feed, streaks, Verified Sessions</td><td>The same audience as the photos</td><td>You delete the Check In or your account</td></tr>
+    <tr><td>Reactions and comments</td><td>Social features</td><td>People who can see the Check In</td><td>You delete them or your account. The owner of a Check In can also remove comments on it</td></tr>
+    <tr><td>Friends, friend requests and blocks</td><td>Friends and blocking</td><td>Friends: you and them. Blocks: only you</td><td>You remove them or delete your account</td></tr>
+    <tr><td>Friend duels and duel invite codes</td><td>Friend duels, which our server scores</td><td>You and your opponent</td><td>You delete your account</td></tr>
+    <tr><td>Activity notices (friend requests, duel challenges)</td><td>The bell in the app</td><td>You</td><td>You delete your account</td></tr>
+    <tr><td>Check In and notification settings: reminder window, default audience, public discovery, notification switches, your iPhone's time zone, and your iPhone's push token if you allow notifications</td><td>Reminders at the right local time, notifications</td><td>Only us</td><td>You delete your account</td></tr>
+    <tr><td>Reports you make about posts or comments</td><td>Moderation</td><td>The LEVL team. The person you report is not told who reported them</td><td>You delete your account</td></tr>
+    <tr><td>When you accepted the Terms, and which version</td><td>A record of your agreement</td><td>Only us</td><td>You delete your account</td></tr>
   </tbody>
 </table>
 </div>
 
-<h3>Collected automatically</h3>
-<div class="tbl">
-<table>
-  <thead><tr><th>Data</th><th>Why</th></tr></thead>
-  <tbody>
-    <tr><td>Device push token</td><td>To send the notifications you switch on</td></tr>
-    <tr><td>Timezone</td><td>To send reminders at the right local time</td></tr>
-    <tr><td>App usage events and crash reports</td><td>To find crashes and see which screens fail</td></tr>
-  </tbody>
-</table>
-</div>
-
-<h3>Apple Health</h3>
+<h2>Apple Health</h2>
 <div class="callout">
-<p>If you connect Apple Health, LEVL reads activity data to show alongside your
-training. <strong>This data never leaves your device.</strong> It is not uploaded to our
-servers, never attached to a Check In, and never used to change your XP, stats or
-rank. You can disconnect it at any time in iOS Settings → Privacy → Health.</p>
+<p>LEVL connects to Apple Health only if you tap <strong>Connect</strong>. It then reads steps, active energy, exercise minutes, resting heart rate, VO₂ max, sleep and workouts, and shows them beside your training. It reads workouts only to avoid saving the same session twice.</p>
+<p><strong>These Health readings stay on your iPhone.</strong> They are not uploaded to our servers, never attached to a Check In, and never used for XP, stats, rank or duels.</p>
+<p>LEVL can also save your finished LEVL workouts to Health: the type of workout, when it started and when it ended. You can change or remove LEVL's access at any time in the Health app, or turn it off in LEVL under Profile › Apple Health.</p>
+<p><strong>Separate from Health:</strong> the physical details you type into LEVL yourself (bodyweight, height, age, sex, activity level, experience) and your training log are part of your save. If you are signed in, they are stored with your account as described above.</p>
 </div>
+
+<h2>Camera and Check In photos</h2>
+<p>LEVL uses the camera only while you take a Check In. The live camera image stays on your iPhone; only the two photos you post are uploaded. Before upload, LEVL resizes and re-encodes each photo, which removes embedded metadata such as location. Photos are kept in private storage and shown to the people allowed to see them through links that expire after an hour.</p>
+
+<h2>Diagnostics (guests and accounts)</h2>
+<ul>
+  <li><strong>Usage events.</strong> We record when the app is opened (and whether you are signed in), when an account is created, when your first and third sets are logged, when a Workout Day is created, and when our server refuses a logged set as implausible (how many, and why). Each event includes the app version, build, platform, a random ID for that launch, and, when you are signed in, your account ID. We use them to see what works and what fails.</li>
+  <li><strong>Crash reports.</strong> When iOS reports that LEVL crashed, the next launch sends the type of crash and a technical stack trace, with your account ID if you are signed in. We use them to fix crashes.</li>
+</ul>
+<p>You can turn diagnostics off at any time in Profile › Help &amp; data › <strong>Share diagnostics</strong>. From then on LEVL sends no usage events and no crash reports from that iPhone. It is on until you turn it off. You can also object by emailing us. Diagnostics are kept for one year. When you delete your account, your account ID is removed from them.</p>
+
+<h2>Bug reports and support</h2>
+<p>If you send a bug report from Profile › Report a bug, we receive your message, the category you chose, the app version and build, and your iOS version. If you are signed in, we also receive your account email and ID. If sending fails, LEVL opens your email app with the same details addressed to us. Emails you send us are handled in our email provider, Gmail.</p>
+<p>Bug reports are deleted when you delete your account. Reports sent as a guest, and support emails, are kept for as long as we need them to deal with the report or your message.</p>
+
+<h2>Password safety check</h2>
+<p>When you create an account or set a new password, LEVL checks whether that password has appeared in known data breaches, using Have I Been Pwned's range search. Only the first five characters of a one-way hash of the password are sent. Your password itself doesn't leave your iPhone for this check, and nothing about it is stored.</p>
+
+<h2>Technical information</h2>
+<p>Like any online service, our hosting provider receives your IP address and basic device and app information with every request, and keeps request logs for 1 day on our current plan. We use them only to run and secure the service.</p>
 
 <h2>What we never do</h2>
 <ul>
-  <li>We do not sell your data. To anyone. Ever.</li>
-  <li>We do not use your data for advertising, and there is no advertising in LEVL.</li>
-  <li>We do not use Apple Health data for anything except showing it back to you.</li>
-  <li>We do not share your email address with other users.</li>
+  <li>We don't sell your data.</li>
+  <li>We don't show advertising. LEVL contains no advertising or third-party analytics code, and doesn't track you across other companies' apps or websites.</li>
+  <li>We don't use Apple Health data for anything except showing it to you.</li>
+  <li>We don't show your email address to other players.</li>
 </ul>
 
-<h2>Who processes it for us</h2>
+<h2>Who processes data for us</h2>
 <ul>
-  <li><strong>Supabase</strong> — database, authentication and photo storage, hosted in the EU (eu-central-1).</li>
-  <li><strong>Expo</strong> — delivers push notifications.</li>
-  <li><strong>Apple</strong> — App Store, and Sign in with Apple if you use it.</li>
+  <li><strong>Supabase</strong>: database, sign-in, photo storage and live updates. Hosted in the EU (Frankfurt, eu-central-1).</li>
+  <li><strong>Apple</strong>: Sign in with Apple, push notification delivery, and Apple Health on your iPhone.</li>
+  <li><strong>Have I Been Pwned</strong>: the password safety check above.</li>
+  <li><strong>Google (Gmail)</strong>: if you email us.</li>
+  <li><strong>GitHub</strong>: hosts these web pages, and may log visits to them.</li>
 </ul>
+<p>Each provider receives only what it needs to do its job, under its own data processing or privacy terms. Supabase stores LEVL's data in the EU (Frankfurt). Apple, Google and GitHub may handle data outside the UK. Where they do, they use the legal safeguards UK law requires for international transfers, such as the UK–US data bridge or approved contract clauses.</p>
 
-<h2>Who can see what</h2>
-<p>Your training log is private by default. A Check In is visible to the audience you
-choose when posting — friends, or public. Your level, rank, username and display
-name appear on leaderboards and to friends. Your email address is never shown to
-another user.</p>
+<h2>How long we keep data, and deleting it</h2>
+<p>You can delete your account in the app: tap your picture at the top right, then <strong>Delete account</strong>. Full steps are on the <a href="account-deletion.html">account deletion page</a>. When you confirm:</p>
+<ol>
+  <li>LEVL removes your Check In photos from storage. If that fails, nothing is deleted and the app tells you.</li>
+  <li>Your account is deleted, together with your profile, save, training log, Check Ins, comments, reactions, friends and requests, duels, notices, blocks, reports you made, settings (including your push token) and bug reports.</li>
+  <li>Your iPhone forgets that account's save, recovery copies, any unsent Check In and cached photos, then signs you out. If this iPhone ran a LEVL version before 2.0, the copy that older version kept inside the app stays there until you delete the app.</li>
+</ol>
+<p><strong>What stays, without your account ID:</strong> diagnostics records, reports other people made about your posts, and the record that an invite code was used.</p>
+<p>We don't make our own backups of the database. Our hosting provider may keep daily backups of it for up to 7 days, so something you delete can remain in those backups for up to 7 days before it is gone. Content hidden after reports is kept for review for one year.</p>
+<p>If you used Sign in with Apple, you can also remove LEVL in the Settings app › your name › Sign-In &amp; Security › Sign in with Apple.</p>
 
-<h2>Your rights</h2>
+<h2>Your choices and rights</h2>
 <ul>
-  <li><strong>See your data</strong> — it is in the app; the backup code exports it in full.</li>
-  <li><strong>Correct it</strong> — every logged set can be edited or deleted.</li>
-  <li><strong>Delete everything</strong> — Settings → Delete account. This permanently removes your
-      account, training history, photographs, friendships and duels from our servers.
-      It cannot be undone.</li>
-  <li><strong>Object or restrict</strong> — contact us.</li>
-  <li><strong>Complain</strong> — to your local data protection authority.</li>
+  <li><strong>See and export your data.</strong> Everything is visible in the app. Profile › Export my data gives a backup code containing your save (training log, physical details and progress). For a copy of anything else we hold about you, email us.</li>
+  <li><strong>Correct it.</strong> Edit or delete any logged set, change your display name and username, and edit your physical profile in Profile.</li>
+  <li><strong>Choose who sees your posts.</strong> Pick friends or public for each Check In, set a default audience, turn Public discovery on or off (it starts off), delete a Check In, or block someone.</li>
+  <li><strong>Notifications.</strong> Use the switches in Profile, or the iPhone's Settings › LEVL › Notifications.</li>
+  <li><strong>Start over without deleting.</strong> Profile › Reset all data resets your progress on this iPhone and, if you're signed in, your account's saved progress. Your account, friends and Check Ins stay.</li>
+  <li><strong>Delete everything.</strong> See above.</li>
+  <li><strong>Object, restrict or complain.</strong> Email us. You can also complain to your data protection authority: in the UK, the Information Commissioner's Office (<a href="https://ico.org.uk">ico.org.uk</a>).</li>
 </ul>
-<p>Under UK/EU GDPR our lawful basis is performance of a contract (running the app you
-asked for) and legitimate interest (keeping it working and free of abuse).</p>
+<p>Under the UK GDPR, we rely on:</p>
+<ul>
+  <li>performance of our contract with you, to run the app you asked for;</li>
+  <li>our legitimate interests, for diagnostics, security and keeping the community safe;</li>
+  <li>your choice, for optional features such as Apple Health and the camera.</li>
+</ul>
+<p>We aim to reply to requests within 24 hours.</p>
 
 <h2>Children</h2>
-<p>LEVL is not intended for children under 13, and we do not knowingly collect their
-data. If you believe a child has created an account, contact us and we will remove it.</p>
+<p>LEVL is not intended for anyone under 13, and we don't knowingly collect their data. If you believe a child has created an account, email us and we will remove it.</p>
 
 <h2>Changes</h2>
-<p>If this policy changes materially we will say so in the app before the change takes
-effect.</p>
+<p>If this policy changes in a way that matters, we will say so in the app before the change takes effect. The date at the top shows the latest version.</p>
 
-<footer>LEVL — Privacy Policy — 18 August 2026</footer>
+</main>
+<footer>LEVL — Privacy Policy — <a href="mailto:Levlup18@gmail.com">Levlup18@gmail.com</a></footer>
 </div>
+</body>
+</html>
