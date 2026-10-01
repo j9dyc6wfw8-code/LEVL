@@ -1,24 +1,37 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="The terms for using LEVL: your account, acceptable use, fair play, virtual items and ending your account.">
 <title>LEVL Terms of Use</title>
 <style>
   :root{
     --ground:#FBFAF8; --surface:#fff; --line:#E4E0D8; --text:#1A1B1E;
-    --muted:#565B63; --faint:#8A8F97; --accent:#8A6D1F;
+    --muted:#565B63; --faint:#6F747C; --accent:#8A6D1F; --otc:#B3261E;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
     --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   }
   @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
     --ground:#111316; --surface:#171A1E; --line:#2A2F36; --text:#E9EAEC;
-    --muted:#A0A6AE; --faint:#6D747D; --accent:#D9B45A;
+    --muted:#A0A6AE; --faint:#8A919A; --accent:#D9B45A; --otc:#FF8A80;
   }}
   :root[data-theme="dark"]{
     --ground:#111316; --surface:#171A1E; --line:#2A2F36; --text:#E9EAEC;
-    --muted:#A0A6AE; --faint:#6D747D; --accent:#D9B45A;
+    --muted:#A0A6AE; --faint:#8A919A; --accent:#D9B45A; --otc:#FF8A80;
   }
   *{box-sizing:border-box}
   body{background:var(--ground);color:var(--text);font-family:var(--sans);
     font-size:17px;line-height:1.65;margin:0;padding:0 22px 88px;-webkit-font-smoothing:antialiased}
   .wrap{max-width:720px;margin:0 auto}
-  header{padding:56px 0 26px;border-bottom:1px solid var(--line);margin-bottom:34px}
+  .skip{position:absolute;left:-999px}
+  .skip:focus{left:16px;top:12px;background:var(--surface);padding:6px 10px;border:1px solid var(--line)}
+  nav.pages{padding-top:20px;font-size:14px}
+  nav.pages ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 16px}
+  nav.pages li{margin:0}
+  nav.pages a[aria-current="page"]{color:var(--accent);text-decoration:none;font-weight:600}
+  header{padding:36px 0 26px;border-bottom:1px solid var(--line);margin-bottom:34px}
   .brand{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
     color:var(--accent);margin:0 0 12px}
   h1{font-size:clamp(30px,5vw,40px);line-height:1.1;letter-spacing:-.028em;margin:0 0 10px;font-weight:700}
@@ -28,12 +41,13 @@
   h3{font-size:17px;margin:26px 0 8px;font-weight:700}
   p,li{color:var(--muted);max-width:66ch}
   strong{color:var(--text);font-weight:600}
-  ul{padding-left:20px}
+  ul,ol{padding-left:20px}
   li{margin-bottom:7px}
   a{color:var(--text);text-decoration-color:var(--accent);text-underline-offset:3px}
   a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   .tbl{overflow-x:auto;margin:16px 0}
-  table{border-collapse:collapse;width:100%;font-size:15px;min-width:440px}
+  table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
+  caption{text-align:left;color:var(--faint);font-size:13px;padding-bottom:6px}
   th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
   th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
     color:var(--faint);font-weight:600}
@@ -42,18 +56,34 @@
   .callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
     border-radius:3px;padding:16px 18px;margin:20px 0}
   .callout p{margin:0}
+  .callout p+p,.callout ul{margin-top:10px}
+  mark.otc{background:transparent;color:var(--otc);border:1.5px dashed var(--otc);border-radius:3px;
+    padding:0 4px;font-family:var(--mono);font-size:.8em;font-weight:600}
   footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
     color:var(--faint);font-size:14px}
   code{font-family:var(--mono);font-size:.9em;background:var(--surface);
     border:1px solid var(--line);border-radius:3px;padding:1px 5px;color:var(--accent)}
+  @media (max-width:480px){body{padding:0 16px 64px;font-size:16px}}
 </style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
 <div class="wrap">
+<nav class="pages" aria-label="LEVL pages">
+  <ul>
+    <li><a href="privacy.html">Privacy</a></li>
+    <li><a href="terms.html" aria-current="page">Terms</a></li>
+    <li><a href="community-guidelines.html">Community guidelines</a></li>
+    <li><a href="account-deletion.html">Delete your account</a></li>
+    <li><a href="support.html">Support</a></li>
+  </ul>
+</nav>
 <header>
   <p class="brand">LEVL</p>
   <h1>Terms of Use</h1>
-  <p class="updated">Last updated 18 August 2026</p>
+  <p class="updated">Last updated 1 October 2026 · replaces the version of 18 August 2026</p>
 </header>
-
+<main id="main">
 <p>By creating an account you agree to these terms. They exist mostly to say two
 things: be decent to other people, and do not cheat.</p>
 
@@ -75,16 +105,16 @@ for what happens under your account. One account per person.</p>
   <li>Spam, scams, or impersonation of another person</li>
   <li>Anyone else's photograph without their permission</li>
 </ul>
+<p>The <a href="community-guidelines.html">community guidelines</a> explain these rules in more detail.</p>
 
 <h3>How this is enforced</h3>
-<p><strong>Filtering.</strong> Captions, comments, usernames and display names are checked
-against a blocklist as you post them. Anything that matches is refused outright.</p>
-<p><strong>Reporting.</strong> Every Check In and comment can be reported from the ⋯ menu, and
-any user can be blocked. Once three different people report the same post or comment
+<p><strong>Filtering.</strong> Captions, photo descriptions, comments, usernames and display names are checked
+against a list of blocked terms as you post them. Anything that matches is refused.</p>
+<p><strong>Reporting.</strong> Every Check In and comment can be reported from its ⋯ menu, and the person who
+posted it can be blocked from the same menu. Players can also be reported and blocked from their profile. Once three different people report the same post or comment,
 it is hidden automatically, straight away, before anyone has reviewed it.</p>
-<p><strong>Review.</strong> Reports are reviewed and acted on <strong>within 24 hours</strong>.
-Content that breaks these rules is removed and the account may be suspended or
-terminated without notice or refund.</p>
+<p><strong>Review.</strong> The LEVL team reviews every report, once a day.
+Content that breaks these rules is removed, and the account may be suspended or terminated without notice.</p>
 
 <h2>Fair play</h2>
 <p>LEVL is competitive. Do not:</p>
@@ -98,8 +128,8 @@ terminate accounts that do it repeatedly.</p>
 
 <h2>Your content</h2>
 <p>You keep ownership of everything you post. You grant us a licence to store and
-display it inside LEVL so the app can function — showing your Check In to the
-friends you posted it to, for example. This licence ends when you delete the content
+display it inside LEVL so the app can function, for example showing your Check In to the
+friends you posted it to. This licence ends when you delete the content
 or your account.</p>
 
 <h2>Health disclaimer</h2>
@@ -112,21 +142,26 @@ programme, and stop if something hurts.</p>
 </div>
 
 <h2>Virtual items</h2>
-<p>Coins, packs, cosmetics, titles and pass rewards have no monetary value, cannot be
-exchanged for money, and may be changed or discontinued. Losing them is not a loss
+<p>Coins, packs, cosmetics, titles and pass rewards are earned by using LEVL. They are never sold for real money,
+have no monetary value, cannot be exchanged for money, and may be changed or discontinued. Losing them is not a loss
 of property.</p>
 
 <h2>Availability</h2>
 <p>LEVL is provided "as is". We do not guarantee it will always be available or free of
-faults, and we are not liable for lost data beyond what the law requires. Keep your
-backup code if your history matters to you.</p>
+faults, and we are not liable for lost data beyond what the law requires. If you play as a guest,
+keep your backup code (Profile › Export my data) if your history matters to you.</p>
 
 <h2>Ending it</h2>
-<p>You may delete your account at any time in Settings. We may suspend or terminate an
-account that breaks these terms.</p>
+<p>You may delete your account at any time in the app: tap your picture at the top right, then
+<strong>Delete account</strong>. The <a href="account-deletion.html">account deletion page</a> explains what is removed.
+We may suspend or terminate an account that breaks these terms.</p>
 
 <h2>Contact</h2>
+<p>LEVL is provided by Matteo Shidrawi and Seb Michel, in the United Kingdom. Contact us by email.
+These terms are governed by the law of England and Wales.</p>
 <p><a href="mailto:Levlup18@gmail.com">Levlup18@gmail.com</a></p>
-
-<footer>LEVL — Terms of Use — 18 August 2026</footer>
+</main>
+<footer>LEVL — Terms of Use — <a href="mailto:Levlup18@gmail.com">Levlup18@gmail.com</a></footer>
 </div>
+</body>
+</html>

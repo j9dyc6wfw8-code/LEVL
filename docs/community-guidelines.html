@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<meta name="description" content="What can be posted on LEVL, the tools you control, and how reports, blocking and moderation work.">
+<title>LEVL Community Guidelines</title>
+<style>
+  :root{
+    --ground:#FBFAF8; --surface:#fff; --line:#E4E0D8; --text:#1A1B1E;
+    --muted:#565B63; --faint:#6F747C; --accent:#8A6D1F; --otc:#B3261E;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+    --ground:#111316; --surface:#171A1E; --line:#2A2F36; --text:#E9EAEC;
+    --muted:#A0A6AE; --faint:#8A919A; --accent:#D9B45A; --otc:#FF8A80;
+  }}
+  :root[data-theme="dark"]{
+    --ground:#111316; --surface:#171A1E; --line:#2A2F36; --text:#E9EAEC;
+    --muted:#A0A6AE; --faint:#8A919A; --accent:#D9B45A; --otc:#FF8A80;
+  }
+  *{box-sizing:border-box}
+  body{background:var(--ground);color:var(--text);font-family:var(--sans);
+    font-size:17px;line-height:1.65;margin:0;padding:0 22px 88px;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:720px;margin:0 auto}
+  .skip{position:absolute;left:-999px}
+  .skip:focus{left:16px;top:12px;background:var(--surface);padding:6px 10px;border:1px solid var(--line)}
+  nav.pages{padding-top:20px;font-size:14px}
+  nav.pages ul{list-style:none;padding:0;margin:0;display:flex;flex-wrap:wrap;gap:6px 16px}
+  nav.pages li{margin:0}
+  nav.pages a[aria-current="page"]{color:var(--accent);text-decoration:none;font-weight:600}
+  header{padding:36px 0 26px;border-bottom:1px solid var(--line);margin-bottom:34px}
+  .brand{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 12px}
+  h1{font-size:clamp(30px,5vw,40px);line-height:1.1;letter-spacing:-.028em;margin:0 0 10px;font-weight:700}
+  .updated{color:var(--faint);font-size:14px;margin:0;font-family:var(--mono)}
+  h2{font-size:21px;letter-spacing:-.018em;margin:42px 0 12px;font-weight:700;
+    padding-bottom:8px;border-bottom:1px solid var(--line)}
+  h3{font-size:17px;margin:26px 0 8px;font-weight:700}
+  p,li{color:var(--muted);max-width:66ch}
+  strong{color:var(--text);font-weight:600}
+  ul,ol{padding-left:20px}
+  li{margin-bottom:7px}
+  a{color:var(--text);text-decoration-color:var(--accent);text-underline-offset:3px}
+  a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .tbl{overflow-x:auto;margin:16px 0}
+  table{border-collapse:collapse;width:100%;font-size:15px;min-width:560px}
+  caption{text-align:left;color:var(--faint);font-size:13px;padding-bottom:6px}
+  th,td{text-align:left;padding:10px 14px 10px 0;border-bottom:1px solid var(--line);vertical-align:top}
+  th{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--faint);font-weight:600}
+  td{color:var(--muted)}
+  td:first-child{color:var(--text);font-weight:600}
+  .callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:3px;padding:16px 18px;margin:20px 0}
+  .callout p{margin:0}
+  .callout p+p,.callout ul{margin-top:10px}
+  mark.otc{background:transparent;color:var(--otc);border:1.5px dashed var(--otc);border-radius:3px;
+    padding:0 4px;font-family:var(--mono);font-size:.8em;font-weight:600}
+  footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--line);
+    color:var(--faint);font-size:14px}
+  code{font-family:var(--mono);font-size:.9em;background:var(--surface);
+    border:1px solid var(--line);border-radius:3px;padding:1px 5px;color:var(--accent)}
+  @media (max-width:480px){body{padding:0 16px 64px;font-size:16px}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div class="wrap">
+<nav class="pages" aria-label="LEVL pages">
+  <ul>
+    <li><a href="privacy.html">Privacy</a></li>
+    <li><a href="terms.html">Terms</a></li>
+    <li><a href="community-guidelines.html" aria-current="page">Community guidelines</a></li>
+    <li><a href="account-deletion.html">Delete your account</a></li>
+    <li><a href="support.html">Support</a></li>
+  </ul>
+</nav>
+<header>
+  <p class="brand">LEVL</p>
+  <h1>Community guidelines</h1>
+  <p class="updated">Last updated 1 October 2026</p>
+</header>
+<main id="main">
+<p>LEVL is about training, and a Check In is a photo of real people in real gyms. These guidelines keep it a place people want to post. They apply to Check In photos, captions, photo descriptions, comments, display names and usernames. They sit alongside the <a href="terms.html">Terms of Use</a>, which set out what happens when they are broken.</p>
+
+<h2>What belongs here</h2>
+<ul>
+  <li>Your training: the bar, the machine, the track, the pool, the trail.</li>
+  <li>You, as you train.</li>
+  <li>Encouragement, questions and honest congratulations in the comments.</li>
+</ul>
+
+<h2>What doesn't</h2>
+<div class="callout">
+<p>There is <strong>zero tolerance</strong> for objectionable content or abusive behaviour.</p>
+</div>
+<ul>
+  <li>Sexual content or nudity, or anything that sexualises a minor.</li>
+  <li>Harassment, bullying, threats, or singling someone out, including in comments on their Check In.</li>
+  <li>Hate speech, or attacking people for who they are.</li>
+  <li>Violence, gore, or promotion of suicide, self-harm or disordered eating. Dangerous stunts or challenges that could get someone hurt.</li>
+  <li>Illegal content, or promotion of illegal drugs, including anabolic steroids.</li>
+  <li>Spam, scams, advertising, or pretending to be someone else.</li>
+  <li><strong>Other people's photographs without their permission.</strong> Frame your Check In so that other gym users aren't identifiable unless they have agreed, and follow your gym's rules on photography.</li>
+  <li>Display names or usernames that break any of the above.</li>
+</ul>
+
+<h2>Fair play</h2>
+<p>Log what you actually did. Logging training you didn't do to gain XP, rank or duel wins, or tampering with the app, is against the <a href="terms.html">Terms</a>. Scores gained that way may be corrected or removed.</p>
+
+<h2>Tools you control</h2>
+<ul>
+  <li><strong>Audience.</strong> Choose friends or public for each Check In. Set a default in <strong>Profile › Check In</strong>, Public discovery is off unless you turn it on: only then can people who aren't your friends see Check Ins you mark Public.</li>
+  <li><strong>Your posts.</strong> Delete any of your Check Ins from their menu (⋯). Remove any comment left on your own Check In.</li>
+  <li><strong>Block.</strong> From the menu on someone's Check In or comment, or on their profile, choose <strong>Block</strong>. You won't see each other's Check Ins, neither of you can react or comment on the other's, and the friendship is removed. Unblock any time in <strong>Profile › Privacy › Blocked people</strong>.</li>
+  <li><strong>Report.</strong> Every Check In and comment has <strong>Report</strong> in its menu, and a player's profile has a <strong>Report</strong> button for a name, username or picture. Choose a reason: Inappropriate content, Harassment or bullying, Spam, or Something else.</li>
+</ul>
+
+<h2>How reports are handled</h2>
+<ol>
+  <li><strong>Your report reaches the LEVL team.</strong> The app shows "Reported" only once our server has accepted it. If it couldn't be sent, the app says so and you can try again. The person you report is not told who reported them.</li>
+  <li><strong>Several reports hide content straight away.</strong> When three different people report the same Check In or comment, it is hidden from everyone automatically, before anyone has reviewed it.</li>
+  <li><strong>The team reviews every report.</strong> We look at reports once a day. We may put hidden content back if it doesn't break these guidelines, or remove it for good.</li>
+  <li><strong>We act on accounts.</strong> Breaking these guidelines can lead to content being removed and the account being suspended or closed, depending on how serious it is and whether it has happened before. There is no fixed suspension process yet: we decide case by case.</li>
+</ol>
+<p>Captions, photo descriptions, comments, display names and usernames are checked against a list of blocked terms as they are posted, and a match is refused. Photos are not scanned automatically, so your reports matter.</p>
+
+<h2>Serious harm and illegal content</h2>
+<p>If anyone is in immediate danger, contact your local emergency services first. If you're struggling, or thinking about harming yourself, you can talk to Samaritans for free, any time, on 116 123 (UK and Ireland) or at <a href="https://www.samaritans.org">samaritans.org</a>.</p>
+<p> We remove illegal content and report it to the relevant authorities where the law requires or allows: in the UK, the Internet Watch Foundation and the police. Content involving the sexual abuse or exploitation of a child is removed and reported.</p>
+
+<h2>Questions and appeals</h2>
+<p>If you think we got a decision wrong, or want to tell us about something the in-app tools can't cover, email <a href="mailto:Levlup18@gmail.com?subject=LEVL%20community">Levlup18@gmail.com</a>. We may not reply to every report individually.</p>
+</main>
+<footer>LEVL — Community guidelines — <a href="mailto:Levlup18@gmail.com">Levlup18@gmail.com</a></footer>
+</div>
+</body>
+</html>
